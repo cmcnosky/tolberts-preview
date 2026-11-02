@@ -1,0 +1,58 @@
+[
+  {
+    "name": "Byron Haynie",
+    "genre": "Classic Texas Country",
+    "date": "2026-11-02",
+    "start": "7:00 pm",
+    "end": "9:00 pm",
+    "image": "assets/show-0.webp"
+  },
+  {
+    "name": "Tuff E Nuff",
+    "genre": "Texas Blues",
+    "date": "2026-11-03",
+    "start": "7:30 pm",
+    "end": "9:45 pm",
+    "image": "assets/show-1.webp"
+  },
+  {
+    "name": "Texas Flood",
+    "genre": "Tribute to SRV",
+    "date": "2026-11-04",
+    "start": "8:00 pm",
+    "end": "10:45 pm",
+    "image": "assets/show-2.webp"
+  },
+  {
+    "name": "The Songs Remain",
+    "genre": "Tribute to Led Zeppelin",
+    "date": "2026-11-05",
+    "start": "8:00 pm",
+    "end": "10:45 pm",
+    "image": "assets/show-3.webp"
+  },
+  {
+    "name": "Velvet Love Box",
+    "genre": "Variety hits from the past and present!",
+    "date": "2026-11-06",
+    "start": "9:00 pm",
+    "end": "11:59 pm",
+    "image": "assets/show-4.webp"
+  },
+  {
+    "name": "Texas Floyd",
+    "genre": "Tribute to Pink Floyd",
+    "date": "2026-11-07",
+    "start": "9:00 pm",
+    "end": "11:59 pm",
+    "image": "assets/show-5.webp"
+  },
+  {
+    "name": "FaceGiving - Thanksgiving Charity Show & Auction",
+    "genre": "Texas Blues",
+    "date": "2026-11-08",
+    "start": "3:00 pm",
+    "end": "6:00 pm",
+    "image": "assets/show-6.webp"
+  }
+]

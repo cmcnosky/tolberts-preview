@@ -1,0 +1,428 @@
+[
+  {
+    "category": "Chili",
+    "name": "The Original Texas “Bowl of Red”",
+    "description": "The original family chili recipe. Ask for 5 Alarm or 10 Alarm for extra heat.",
+    "price": "Cup 8.49 / Bowl 11.99 / Super Bowl 14.49"
+  },
+  {
+    "category": "Chili",
+    "name": "North of the Border",
+    "description": "With pinto beans. Add 5 Alarm or 10 Alarm for extra hot chili.",
+    "price": "Cup 8.49 / Bowl 11.99 / Super Bowl 14.49"
+  },
+  {
+    "category": "Chili",
+    "name": "Frank’s Frito Pie",
+    "description": "Add 5 Alarm or 10 Alarm for extra hot chili.",
+    "price": "Cup 8.49 / Bowl 11.99 / Super Bowl 14.49"
+  },
+  {
+    "category": "Chili",
+    "name": "Chili Verde",
+    "description": "Chicken and roasted green chili. Add 5 Alarm or 10 Alarm for extra hot chili.",
+    "price": "Cup 8.49 / Bowl 11.99 / Super Bowl 14.49"
+  },
+  {
+    "category": "Chili",
+    "name": "Vegetarian Chili",
+    "description": "Tomato based with vegetables. Add 5 Alarm or 10 Alarm for extra hot chili.",
+    "price": "Cup 8.49 / Bowl 11.99 / Super Bowl 14.49"
+  },
+  {
+    "category": "Starters",
+    "name": "Terlingua Trio",
+    "description": "Chips with salsa, queso, and guacamole.",
+    "price": "11.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Donkey Tails",
+    "description": "Two all beef franks wrapped in a tortilla with cheese and deep fried.",
+    "price": "11.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Torpedoes",
+    "description": "Spicy chicken and cheese-stuffed, breaded and fried jalapeno peppers.",
+    "price": "12.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Salsa and Chips",
+    "description": "Salsa and chips, with guacamole available.",
+    "price": "4.99 / with guacamole 8.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Queso",
+    "description": "",
+    "price": "Cup 6.99 / Bowl 9.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Queso Rojo",
+    "description": "Queso and chili.",
+    "price": "Cup 7.99 / Bowl 10.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Bean and Cheese Nachos",
+    "description": "With pico, jalapenos, sour cream and guacamole.",
+    "price": "11.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Fajita Nachos",
+    "description": "Chicken or beef.",
+    "price": "Chicken 13.99 / Beef 15.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Hand-Breaded Onion Rings",
+    "description": "With a side of honey mustard.",
+    "price": "9.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Cheese Fries with Jalapenos",
+    "description": "Available with chili.",
+    "price": "10.99 / with chili 13.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Fried Pickles",
+    "description": "",
+    "price": "10.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Fried Zucchini",
+    "description": "",
+    "price": "10.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Quesadillas",
+    "description": "Cheese, chicken, fajita beef, brisket or shrimp.",
+    "price": "Cheese 10.99 / Chicken 13.49 / Fajita beef, brisket or shrimp 15.49"
+  },
+  {
+    "category": "Starters",
+    "name": "Fried Chicken Wings",
+    "description": "Breaded or naked.",
+    "price": "7 for 12.99 / 14 wings 20.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Fried Buffalo Chicken Bites",
+    "description": "",
+    "price": "11.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Jalapeno Corn Bread Muffins",
+    "description": "Four muffins.",
+    "price": "4.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Sampler Platter",
+    "description": "Donkey tails, breaded wings, onion rings, torpedoes, fried zucchini.",
+    "price": "22.99"
+  },
+  {
+    "category": "Starters",
+    "name": "Tater Tots",
+    "description": "Basket or loaded.",
+    "price": "Basket 5.99 / Loaded 8.99"
+  },
+  {
+    "category": "Burgers & sandwiches",
+    "name": "Henderson County Burger",
+    "description": "Grilled certified angus burger on brioche bun with lettuce, tomato, pickles and onion. Served with fries or choice of side.",
+    "price": "14.99"
+  },
+  {
+    "category": "Burgers & sandwiches",
+    "name": "Frank’s Flat Burger",
+    "description": "Two smashed patties, American cheese, grilled onion, chipotle mayo. Served with fries or choice of side.",
+    "price": "15.99"
+  },
+  {
+    "category": "Burgers & sandwiches",
+    "name": "Terlingua Burger",
+    "description": "Flame-grilled burger on brioche bun, topped with our Texas Red Chili and two onion rings. Served with fries or choice of side.",
+    "price": "17.99"
+  },
+  {
+    "category": "Burgers & sandwiches",
+    "name": "Cod Sandwich",
+    "description": "Fried, on brioche bun with coleslaw, tartar sauce, lettuce, tomato, pickle and onion. Served with fries or choice of side.",
+    "price": "15.99"
+  },
+  {
+    "category": "Burgers & sandwiches",
+    "name": "Red Dog",
+    "description": "Large beef hot dog on a bun topped with our famous chili. Served with fries or choice of side.",
+    "price": "15.99"
+  },
+  {
+    "category": "Burgers & sandwiches",
+    "name": "Cheeseburger or Fried Chicken Sliders",
+    "description": "Three sliders with chipotle mayo, lettuce, tomato, pickles and onion. Served with fries or choice of side.",
+    "price": "14.99"
+  },
+  {
+    "category": "Burgers & sandwiches",
+    "name": "Fried or Grilled Chicken Breast Sandwich",
+    "description": "On brioche bun with lettuce, tomato, pickles and onion. Served with fries or choice of side.",
+    "price": "12.99"
+  },
+  {
+    "category": "Burgers & sandwiches",
+    "name": "Jalapeño Jam Brisket Sandwich",
+    "description": "With fried onion crisps and pickle slices. Served with fries or choice of side.",
+    "price": "15.49"
+  },
+  {
+    "category": "Burgers & sandwiches",
+    "name": "BLT",
+    "description": "On sourdough bread with bacon, lettuce, tomato and mayo on the side. Served with fries or choice of side.",
+    "price": "11.99"
+  },
+  {
+    "category": "Burgers & sandwiches",
+    "name": "Arturo’s Grilled Cheese",
+    "description": "Cheddar, tomato and bacon on sourdough bread. Served with fries or choice of side.",
+    "price": "13.99"
+  },
+  {
+    "category": "Texas plates",
+    "name": "Sirloin",
+    "description": "6-ounce flame-grilled Angus steak. Served with two sides. Add three grilled shrimp for 6.",
+    "price": "20.99"
+  },
+  {
+    "category": "Texas plates",
+    "name": "Ribeye",
+    "description": "10-ounce flame-grilled Angus steak. Served with two sides. Add three grilled shrimp for 6.",
+    "price": "28.99"
+  },
+  {
+    "category": "Texas plates",
+    "name": "New York Strip",
+    "description": "12-ounce flame-grilled Angus steak. Served with two sides. Add three grilled shrimp for 6.",
+    "price": "32.99"
+  },
+  {
+    "category": "Texas plates",
+    "name": "Fried Shrimp Platter",
+    "description": "Eight or twelve pieces. Served with choice of two sides. Add Texas Toast for 1.00.",
+    "price": "8 pieces 17.99 / 12 pieces 22.99"
+  },
+  {
+    "category": "Texas plates",
+    "name": "Paris Texas Fried Catfish",
+    "description": "With hush puppies, tartar and cocktail sauce. Served with choice of two sides. Add Texas Toast for 1.00.",
+    "price": "17.99"
+  },
+  {
+    "category": "Texas plates",
+    "name": "Chicken Fried Steak",
+    "description": "With cream gravy. Served with choice of two sides. Add Texas Toast for 1.00.",
+    "price": "18.99"
+  },
+  {
+    "category": "Texas plates",
+    "name": "Chicken Fried Chicken",
+    "description": "With cream gravy. Served with choice of two sides. Add Texas Toast for 1.00.",
+    "price": "17.99"
+  },
+  {
+    "category": "Texas plates",
+    "name": "Lajitas Grilled Chicken Breast",
+    "description": "Mushrooms, monterrey jack cheese, poblano peppers and diced tomatoes. Served with choice of two sides. Add Texas Toast for 1.00.",
+    "price": "17.99"
+  },
+  {
+    "category": "Texas plates",
+    "name": "Salmon Filet",
+    "description": "Grilled or blackened. Served with choice of two sides. Add Texas Toast for 1.00.",
+    "price": "21.99"
+  },
+  {
+    "category": "Texas plates",
+    "name": "Fish & Chips",
+    "description": "Deep fried cod with coleslaw and choice of side.",
+    "price": "15.99"
+  },
+  {
+    "category": "Texas plates",
+    "name": "Chicken Fried Steak Fingers",
+    "description": "With side of gravy and choice of side.",
+    "price": "14.99"
+  },
+  {
+    "category": "Tex-Mex",
+    "name": "Fajitas",
+    "description": "Grilled chicken, steak, shrimp or any two. Served with rice and beans.",
+    "price": "Chicken 20.99 / Steak or shrimp 23.99 / Combo, any two 25.99"
+  },
+  {
+    "category": "Tex-Mex",
+    "name": "Carne Asada",
+    "description": "Outside skirt steak with pico, guacamole, sour cream and choice of tortillas. Served with rice and beans.",
+    "price": "22.99"
+  },
+  {
+    "category": "Tex-Mex",
+    "name": "Sour Cream Chicken Enchiladas",
+    "description": "With tomatillo sauce on top. Served with rice and beans.",
+    "price": "14.99"
+  },
+  {
+    "category": "Tex-Mex",
+    "name": "Poblano Chicken Enchiladas",
+    "description": "With cheese, poblano pepper and cream sauce. Served with rice and beans.",
+    "price": "14.99"
+  },
+  {
+    "category": "Tex-Mex",
+    "name": "Shrimp Enchiladas",
+    "description": "Chipotle cream sauce. Served with rice and beans.",
+    "price": "16.99"
+  },
+  {
+    "category": "Tex-Mex",
+    "name": "Street Tacos",
+    "description": "Three tacos on corn tortillas with sauteed onions and jalapenos on the side. Served with rice and beans.",
+    "price": "Chicken 14.99 / Steak 15.99"
+  },
+  {
+    "category": "Tex-Mex",
+    "name": "Brisket Tacos",
+    "description": "With sour cream and pico de gallo on the side. Served with rice and beans.",
+    "price": "15.99"
+  },
+  {
+    "category": "Tex-Mex",
+    "name": "Fish Tacos",
+    "description": "Fried or grilled, corn tortillas, cabbage, pico de gallo, chipotle tartar sauce. Served with rice and beans.",
+    "price": "15.99"
+  },
+  {
+    "category": "Tex-Mex",
+    "name": "Chili Tacos",
+    "description": "With cheese, onion, lettuce and tomato. Served with rice and beans.",
+    "price": "14.99"
+  },
+  {
+    "category": "Salads & soups",
+    "name": "Teacher’s Salad",
+    "description": "Lettuce, mushrooms, tomato, avocado, cheese, croutons. Dressings: House, Ranch, Blue Cheese, Balsamic, Honey Mustard, Caesar or Avocado Ranch. Steak, salmon or shrimp may be grilled or blackened.",
+    "price": "12.99 / add chicken or buffalo chicken 4 / add steak, salmon or shrimp 6"
+  },
+  {
+    "category": "Salads & soups",
+    "name": "Caesar Salad",
+    "description": "Lettuce, shredded parmesan, homemade croutons, Caesar dressing. Other dressings: House, Ranch, Blue Cheese, Balsamic, Honey Mustard or Avocado Ranch. Steak, salmon or shrimp may be grilled or blackened.",
+    "price": "12.99 / add chicken or buffalo chicken 4 / add steak, salmon or shrimp 6"
+  },
+  {
+    "category": "Salads & soups",
+    "name": "Cobb Salad",
+    "description": "Lettuce, tomato, avocado, bacon, blue cheese crumbles, hard boiled egg. Dressings: House, Ranch, Blue Cheese, Balsamic, Honey Mustard, Caesar or Avocado Ranch. Steak, salmon or shrimp may be grilled or blackened.",
+    "price": "13.99 / add chicken or buffalo chicken 4 / add steak, salmon or shrimp 6"
+  },
+  {
+    "category": "Salads & soups",
+    "name": "Taco Salad",
+    "description": "Served in a crispy taco shell with Monterrey jack and cheddar, fresh guacamole, sour cream and salsa with chicken breast or spicy taco meat.",
+    "price": "16.99"
+  },
+  {
+    "category": "Salads & soups",
+    "name": "Broccoli Cheese Soup",
+    "description": "Homemade soup.",
+    "price": "Cup 6.99 / Bowl 9.99"
+  },
+  {
+    "category": "Salads & soups",
+    "name": "Cream of Jalapeno Soup",
+    "description": "Homemade soup.",
+    "price": "Cup 6.99 / Bowl 9.99"
+  },
+  {
+    "category": "Salads & soups",
+    "name": "Chicken Tortilla Soup",
+    "description": "Homemade soup.",
+    "price": "Cup 7.99 / Bowl 10.99"
+  },
+  {
+    "category": "Kids & sweets",
+    "name": "Kids Donkey Tail",
+    "description": "Served with fries and drink.",
+    "price": "8.99"
+  },
+  {
+    "category": "Kids & sweets",
+    "name": "Kids Grilled Cheese Sandwich",
+    "description": "Served with fries and drink.",
+    "price": "8.99"
+  },
+  {
+    "category": "Kids & sweets",
+    "name": "Kids Cheeseburger",
+    "description": "Served with fries and drink.",
+    "price": "8.99"
+  },
+  {
+    "category": "Kids & sweets",
+    "name": "Kids Chicken Strips",
+    "description": "Served with fries and drink.",
+    "price": "8.99"
+  },
+  {
+    "category": "Kids & sweets",
+    "name": "Kids Hot Dog",
+    "description": "Served with fries and drink.",
+    "price": "8.99"
+  },
+  {
+    "category": "Kids & sweets",
+    "name": "Kids Cheese Quesadilla",
+    "description": "Served with fries and drink.",
+    "price": "8.99"
+  },
+  {
+    "category": "Kids & sweets",
+    "name": "Key Lime Pie",
+    "description": "",
+    "price": "8.99"
+  },
+  {
+    "category": "Kids & sweets",
+    "name": "Irish Cream Cheesecake",
+    "description": "",
+    "price": "9.99"
+  },
+  {
+    "category": "Kids & sweets",
+    "name": "Seasonal Cobbler a la mode",
+    "description": "Beth Marie’s.",
+    "price": "8.99"
+  },
+  {
+    "category": "Sides & drinks",
+    "name": "Choice of Side",
+    "description": "Mac and Cheese, French Fries, Sweet Potato Fries, Mashed Potatoes, Homemade Potato Chips, Fried Okra, Onion Rings, Broccoli, Green Beans, Asparagus, Tater Tots, Side Salad, Cole Slaw, Pinto Beans or Baked Potato. Mashed Potatoes, Homemade Potato Chips and Baked Potato may be ordered loaded for an additional charge.",
+    "price": "With any entrée, substitute one side with a cup of soup or chili 3.99"
+  },
+  {
+    "category": "Sides & drinks",
+    "name": "Drinks",
+    "description": "Coke, Diet Coke, Coke Zero, Dr. Pepper, Diet Dr. Pepper, Sprite, Lemonade, Tea, Coffee, Sparkling Water, Bottled Spring Water, Mexican Coke or Root Beer.",
+    "price": ""
+  }
+]
