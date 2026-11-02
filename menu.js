@@ -2,12 +2,13 @@
 const search = $('#dish-search'), categorySelect = $('#category-select');
 const dishes = $$('.menu-item'), groups = $$('.menu-group');
 const categories = new Set(['All dishes', ...dishes.map(dish => dish.dataset.category)]);
-const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’‘]/g,"'").toLowerCase().trim();
-const searchable = new Map(dishes.map(dish => {
-  const name = $('h3', dish).textContent;
-  const aliases = /^(Key Lime Pie|Irish Cream Cheesecake|Seasonal Cobbler a la mode)$/i.test(name) ? 'dessert sweet sweets' : /drinks/i.test(name) ? 'beverage beverages drinks' : '';
-  return [dish, normalize(dish.textContent + ' ' + dish.dataset.category + ' ' + aliases)];
-}));
+const normalize = MenuSearch.normalize;
+const searchable = new Map(dishes.map(dish => [dish, MenuSearch.textFor({
+  name:$('h3',dish).textContent,
+  description:$('p',dish)?.textContent || '',
+  price:$('.item-price',dish).textContent,
+  category:dish.dataset.category
+})]));
 let category = 'All dishes';
 function readLocation() {
   const params = new URLSearchParams(location.search);

@@ -1,0 +1,14 @@
+'use strict';
+const assert=require('node:assert/strict');
+const model=require('../menu-search.js');
+const data=require('../menu-data.json');
+const tests=[];const test=(name,run)=>tests.push({name,run});
+const hits=q=>data.filter(item=>model.matches(q,model.textFor(item))).map(item=>item.name);
+test('Donkey Tails cannot be created by concatenating Tail and Served',()=>assert.deepEqual(hits('Donkey Tails'),['Donkey Tails','Sampler Platter']));
+test('The singular kids dish remains findable by its actual name',()=>assert(hits('Kids Donkey Tail').includes('Kids Donkey Tail')));
+test('Accents and apostrophes normalize without dropping word boundaries',()=>assert.equal(model.normalize('  Sautéed Frank’s  '),"sauteed frank's"));
+test('All search words must match, regardless of order',()=>{assert(model.matches('chili texas',model.textFor(data[0])));assert(!model.matches('chili unicorn',model.textFor(data[0])))});
+test('Dessert synonym finds the named desserts',()=>{for(const name of ['Key Lime Pie','Irish Cream Cheesecake','Seasonal Cobbler a la mode'])assert(hits('dessert').includes(name))});
+test('Empty search returns the whole published menu',()=>assert.equal(hits('').length,71));
+test('Unknown dish gives an empty result rather than an invented item',()=>assert.deepEqual(hits('unicorn burger'),[]));
+let failed=0;for(const t of tests){try{t.run();console.log('PASS',t.name)}catch(e){failed++;console.error('FAIL',t.name,e.message)}}console.log(`${tests.length-failed}/${tests.length} tests passed`);process.exitCode=failed?1:0;

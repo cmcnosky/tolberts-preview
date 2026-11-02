@@ -18,12 +18,20 @@ menuToggle?.addEventListener('click', () => {
   menuToggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
   navigation.style.top = `${$('.header').getBoundingClientRect().bottom}px`;
 });
-$$('#mobile-nav a').forEach(a => a.addEventListener('click', () => {
+const sameDocumentPath = path => path.replace(/\/index\.html$/, '/');
+$$('#mobile-nav a').forEach(a => a.addEventListener('click', event => {
   closeNavigation();
+  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
   const destination = new URL(a.href, location.href);
-  if (destination.pathname === location.pathname && destination.hash) {
+  if (destination.origin === location.origin && sameDocumentPath(destination.pathname) === sameDocumentPath(location.pathname) && destination.hash) {
     const target = document.getElementById(destination.hash.slice(1));
-    if (target) {target.setAttribute('tabindex', '-1'); target.focus({preventScroll:true});}
+    if (target) {
+      event.preventDefault();
+      const url = new URL(location.href); url.hash = destination.hash;
+      if (url.href !== location.href) history.pushState({}, '', url);
+      target.setAttribute('tabindex', '-1'); target.focus({preventScroll:true});
+      target.scrollIntoView({block:'start'});
+    }
   }
 }));
 document.addEventListener('keydown', event => {
