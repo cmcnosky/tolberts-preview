@@ -58,6 +58,33 @@ test('pending events hide ended listings and preserve chronological order', () =
   assert.deepEqual(Music.pendingEvents(events, now).map(event => event.name), ['Tonight', 'Later']);
 });
 
+test('today events use the Chicago civil date, retain ended sets, and sort by start', () => {
+  const now = new Date('2026-11-04T04:30:00Z'); // 10:30 pm Central on November 3.
+  const events = [
+    show({name: 'Tomorrow Artist', date: '2026-11-04', start: '7:00 pm', end: '9:00 pm'}),
+    show({name: 'House Band', date: '2026-11-03', start: '10:45 pm', end: '11:45 pm'}),
+    show({name: 'Two-Set Artist', date: '2026-11-03', start: '7:00 pm', end: '8:00 pm'}),
+    show({name: 'Two-Set Artist', date: '2026-11-03', start: '5:00 pm', end: '6:00 pm'}),
+    show({name: 'Yesterday Artist', date: '2026-11-02', start: '8:00 pm', end: '10:00 pm'})
+  ];
+
+  assert.deepEqual(
+    Music.todayEvents(events, now).map(event => `${event.name}|${event.start}`),
+    ['Two-Set Artist|5:00 pm', 'Two-Set Artist|7:00 pm', 'House Band|10:45 pm']
+  );
+  assert.equal(Music.isPending(Music.todayEvents(events, now)[0], now), false);
+});
+
+test('today events never substitute the next date when today has no listing', () => {
+  const now = new Date('2026-11-03T18:00:00Z'); // Noon Central on November 3.
+  const events = [
+    show({name: 'Tomorrow Artist', date: '2026-11-04'}),
+    show({name: 'Later This Week', date: '2026-11-06'})
+  ];
+
+  assert.deepEqual(Music.todayEvents(events, now), []);
+});
+
 test('Tonight, exact upcoming-weekend, date, and tokenized text filters compose correctly', () => {
   const now = new Date('2026-11-04T18:00:00Z');
   const events = [

@@ -135,6 +135,11 @@ const MusicModel = (() => {
     return sortEvents((Array.isArray(events) ? events : []).filter(event => isPending(event, now)));
   }
 
+  function todayEvents(events, now = Date.now()) {
+    const today = chicagoDate(now);
+    return sortEvents((Array.isArray(events) ? events : []).filter(event => event && event.date === today));
+  }
+
   function normalizeText(value) {
     return String(value || '')
       .normalize('NFD')
@@ -264,6 +269,7 @@ const MusicModel = (() => {
     shareUrl,
     sortEvents,
     stamp,
+    todayEvents,
     validDate,
     weekendRange,
     weekday,

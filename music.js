@@ -32,6 +32,7 @@
   let suppressNextClose = false;
   let pendingFocusKey = '';
   let lastDialogSignature = '';
+  let lastTodaySignature = '';
 
   function setSource(message) {
     if (source) source.textContent = message;
@@ -133,6 +134,42 @@
     if (time) time.textContent = `${MusicModel.displayDate(next.date, {long: true})} · ${next.start}–${next.end} Central`;
   }
 
+  function renderTodayStage() {
+    const list = $('#today-stage-list');
+    if (!list) return;
+    const now = new Date();
+    const today = MusicModel.chicagoDate(now);
+    const artists = MusicModel.todayEvents(events, now);
+    const dateLabel = $('#today-stage-date');
+    const status = $('#today-stage-source');
+    if (dateLabel) dateLabel.textContent = MusicModel.displayDate(today, {long: true});
+    const sourceText = source?.textContent || 'Times are Central. Confirm the schedule before heading over.';
+    if (status && status.textContent !== sourceText) status.textContent = sourceText;
+    if (!artists.length) {
+      lastTodaySignature = '';
+      const message = !liveResolved
+        ? 'Checking today’s artists and set times…'
+        : liveChecked
+          ? 'No artist is listed for today. Explore the calendar for your next night out.'
+          : 'Today’s lineup could not be confirmed. Check the official calendar before heading over.';
+      list.innerHTML = `<p class="today-empty">${esc(message)} <a href="${officialCalendar}" target="_blank" rel="noopener">Official calendar ↗</a></p>`;
+      return;
+    }
+    const signature = JSON.stringify(artists.map(event => [event, MusicModel.eventEnd(event).getTime() <= now.getTime(), MusicModel.eventStart(event).getTime() <= now.getTime()]));
+    if (signature === lastTodaySignature) return;
+    lastTodaySignature = signature;
+    list.innerHTML = artists.map(event => {
+      const ended = MusicModel.eventEnd(event).getTime() <= now.getTime();
+      const started = MusicModel.eventStart(event).getTime() <= now.getTime();
+      const state = ended ? 'Set finished' : started ? 'Scheduled on stage now' : 'View show details ↗';
+      const href = ended ? 'music.html' : MusicModel.shareUrl(event, location.href);
+      const image = event.image || 'assets/stage.webp';
+      const alt = event.image ? (event.imageAlt || `${event.name} — artist promotional image`) : 'The Tolbert’s stage';
+      return `<a class="today-artist" href="${esc(href)}" aria-label="${esc(event.name)}, ${esc(event.start)} to ${esc(event.end)} Central. ${ended ? 'Set finished. View upcoming shows.' : 'View show details.'}"><img class="today-artist-photo" src="${esc(image)}" alt="${esc(alt)}" width="80" height="80"><span class="today-artist-copy"><strong class="today-artist-name">${esc(event.name)}</strong><span class="today-artist-time">${esc(event.start)}–${esc(event.end)} <span>Central</span></span><span class="today-artist-state">${esc(state)}</span></span></a>`;
+    }).join('');
+    $$('.today-artist-photo', list).forEach((image, index) => setImageFallback(image, artists[index]));
+  }
+
   function renderShows() {
     renderDateOptions();
     const matching = MusicModel.filterEvents(events, {
@@ -182,6 +219,7 @@
     }
 
     updateHero();
+    renderTodayStage();
     resolveRequestedShow();
   }
 
