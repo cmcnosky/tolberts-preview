@@ -170,7 +170,7 @@
       const href = ended ? 'music.html' : MusicModel.shareUrl(event, location.href);
       const image = event.image || 'assets/stage.webp';
       const alt = event.image ? (event.imageAlt || `Promotional image for ${event.name}`) : 'The Tolbert’s stage';
-      return `<a class="today-artist" href="${esc(href)}" aria-label="${esc(event.name)}, ${esc(event.start)} to ${esc(event.end)} Central. ${ended ? 'Set finished. View upcoming shows.' : 'View show details.'}"><img class="today-artist-photo" src="${esc(image)}" alt="${esc(alt)}" width="80" height="80"><span class="today-artist-copy"><strong class="today-artist-name">${esc(event.name)}</strong><span class="today-artist-time">${esc(event.start)}–${esc(event.end)} <span>Central</span></span><span class="today-artist-state">${esc(state)}</span></span></a>`;
+      return `<a class="today-artist" href="${esc(href)}" aria-label="${esc(event.name)}, ${esc(event.start)} to ${esc(event.end)} Central. ${ended ? 'Set finished. View upcoming shows.' : 'View show details.'}"><img class="today-artist-photo" src="${esc(image)}" alt="${esc(alt)}" width="80" height="80"><span class="today-artist-copy"><span class="today-card-label">Playing today</span><strong class="today-artist-name">${esc(event.name)}</strong><span class="today-artist-time">${esc(event.start)}–${esc(event.end)} <span>Central</span></span><span class="today-artist-state">${esc(state)}</span></span></a>`;
     }).join('');
     $$('.today-artist-photo', list).forEach((image, index) => setImageFallback(image, artists[index]));
   }
