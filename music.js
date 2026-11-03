@@ -81,6 +81,8 @@
       event.image = 'assets/stage.webp';
       event.imageAlt = 'Live music at Tolbert’s';
       image.src = event.image;
+      const fullImageLink = image.closest('.detail-image-link');
+      if (fullImageLink) fullImageLink.href = event.image;
       image.alt = event.imageAlt;
     }, {once: true});
   }
@@ -144,7 +146,10 @@
     const status = $('#today-stage-source');
     if (dateLabel) dateLabel.textContent = MusicModel.displayDate(today, {long: true});
     const sourceText = source?.textContent || 'Times are Central. Confirm the schedule before heading over.';
-    if (status && status.textContent !== sourceText) status.textContent = sourceText;
+    if (status) {
+      if (status.textContent !== sourceText) status.textContent = sourceText;
+      status.hidden = Boolean(liveChecked) && !/unavailable/i.test(sourceText);
+    }
     if (!artists.length) {
       lastTodaySignature = '';
       const message = !liveResolved
@@ -164,7 +169,7 @@
       const state = ended ? 'Set finished' : started ? 'Scheduled on stage now' : 'View show details ↗';
       const href = ended ? 'music.html' : MusicModel.shareUrl(event, location.href);
       const image = event.image || 'assets/stage.webp';
-      const alt = event.image ? (event.imageAlt || `${event.name} — artist promotional image`) : 'The Tolbert’s stage';
+      const alt = event.image ? (event.imageAlt || `Promotional image for ${event.name}`) : 'The Tolbert’s stage';
       return `<a class="today-artist" href="${esc(href)}" aria-label="${esc(event.name)}, ${esc(event.start)} to ${esc(event.end)} Central. ${ended ? 'Set finished. View upcoming shows.' : 'View show details.'}"><img class="today-artist-photo" src="${esc(image)}" alt="${esc(alt)}" width="80" height="80"><span class="today-artist-copy"><strong class="today-artist-name">${esc(event.name)}</strong><span class="today-artist-time">${esc(event.start)}–${esc(event.end)} <span>Central</span></span><span class="today-artist-state">${esc(state)}</span></span></a>`;
     }).join('');
     $$('.today-artist-photo', list).forEach((image, index) => setImageFallback(image, artists[index]));
@@ -191,7 +196,7 @@
       const link = MusicModel.shareUrl(event, location.href);
       const image = event.image || 'assets/stage.webp';
       const imageAlt = event.imageAlt || `${event.name} — promotional image`;
-      return `<article class="show-card"><div class="show-image"><img src="${esc(image)}" width="900" height="560" alt="${esc(imageAlt)}" loading="lazy"><div class="show-date"><span>${monthLabel(event.date)}</span><strong>${Number(event.date.slice(8))}</strong></div></div><p class="genre">${esc(event.genre || 'Live music')}</p><h3>${esc(event.name)}</h3><p class="show-time">${esc(MusicModel.displayDate(event.date))} · ${esc(event.start)}–${esc(event.end)}</p><a class="show-detail" data-event="${esc(key)}" href="${esc(link)}" aria-label="Show details for ${esc(event.name)}">Plan this night <span aria-hidden="true">↗</span></a></article>`;
+      return `<article class="show-card"><div class="show-image"><img src="${esc(image)}" width="900" height="560" alt="${esc(imageAlt)}" loading="lazy"></div><time class="show-date" datetime="${esc(event.date)}"><span>${monthLabel(event.date)}</span><strong>${Number(event.date.slice(8))}</strong><span class="show-weekday">${new Intl.DateTimeFormat('en-US', {weekday: 'short', timeZone: 'UTC'}).format(new Date(`${event.date}T12:00:00Z`))}</span></time><div class="show-copy"><p class="genre">${esc(event.genre || 'Live music')}</p><h3>${esc(event.name)}</h3><p class="show-time">${esc(event.start)}–${esc(event.end)} Central</p></div><a class="show-detail" data-event="${esc(key)}" href="${esc(link)}" aria-label="Show details for ${esc(event.name)}">Plan this night <span aria-hidden="true">↗</span></a></article>`;
     }).join('') : `<div class="no-results">${available.length ? 'No upcoming shows match these filters.' : 'No upcoming listings are available here.'} <a class="text-link light" href="${officialCalendar}" target="_blank" rel="noopener">See the official calendar ↗</a></div>`;
 
     if (showMore) {
@@ -261,6 +266,7 @@
       await navigator.clipboard.writeText(input.value);
       actionStatus('Show link copied.');
     } catch {
+      input.closest('.show-share-fallback').hidden = false;
       input.focus();
       input.select();
       actionStatus('Copy the selected show link.');
@@ -278,7 +284,20 @@
     const sourceNote = liveChecked
       ? 'From the restaurant’s live calendar.'
       : `From saved listings checked ${savedChecked}.`;
-    details.innerHTML = `<img class="detail-image" src="${esc(image)}" alt="${esc(imageAlt)}"><div class="eyebrow">${esc(event.genre || 'Live music')}</div><h2 id="show-title">${esc(event.name)}</h2><div class="detail-meta"><strong>${esc(MusicModel.displayDate(event.date, {long: true, year: true}))}</strong><span>${esc(event.start)}–${esc(event.end)} · Central time</span><span>Tolbert’s · 423 S. Main Street, Grapevine</span></div><p>Call Tolbert’s to ask about seating, reservations, and any cover charge. This page does not book a table or ticket.</p><div class="detail-actions"><a class="button" href="menu.html">View menu ↗</a><a class="button secondary" href="tel:+18174214888">Call about seating ↗</a><a class="button secondary" href="${esc(directions)}" target="_blank" rel="noopener">Directions ↗</a><button class="button secondary" id="save-show" type="button">Add to calendar ↓</button></div><div class="show-share"><label for="show-share-url">Shareable show link</label><input id="show-share-url" type="text" readonly value="${esc(share)}"><button class="text-link copy-button" id="copy-show-link" type="button">Copy show link</button></div><p id="show-action-status" role="status"></p><p class="fine" style="margin-top:18px">${sourceNote} Confirm details before heading over.</p>`;
+    details.innerHTML = `<div class="detail-layout">
+        <figure class="detail-art"><a class="detail-image-link" href="${esc(image)}" target="_blank" rel="noopener" aria-label="Open full-size image for ${esc(event.name)}"><img class="detail-image" src="${esc(image)}" alt="${esc(imageAlt)}"><span>View full image ↗</span></a></figure>
+        <div class="detail-heading"><p class="detail-genre">${esc(event.genre || 'Live music')}</p><h2 id="show-title">${esc(event.name)}</h2>
+          <div class="detail-meta"><strong>${esc(MusicModel.displayDate(event.date, {long: true, year: true}))}</strong><span>${esc(event.start)}–${esc(event.end)} <small>Central</small></span></div>
+        </div>
+        <div class="detail-information">
+          <p class="detail-place"><strong>Tolbert’s Restaurant &amp; Chili Parlor</strong><span>423 S. Main Street · Grapevine, Texas</span></p>
+          <div class="detail-actions"><a class="detail-call" href="tel:+18174214888">Call for seating <span aria-hidden="true">↗</span></a><a href="menu.html">View menu</a><a href="${esc(directions)}" target="_blank" rel="noopener">Directions ↗</a></div>
+          <p class="detail-note">For reservations and any cover charge, call the restaurant.</p>
+          <div class="detail-utilities"><button id="save-show" type="button"><span aria-hidden="true">↓</span> Add to calendar</button><button id="copy-show-link" type="button"><span aria-hidden="true">↗</span> Copy show link</button></div>
+          <div class="show-share-fallback" hidden><label for="show-share-url">Select and copy this show link</label><input id="show-share-url" type="text" readonly value="${esc(share)}"></div>
+          <p id="show-action-status" role="status"></p><p class="detail-source">${sourceNote} Confirm details before heading over.</p>
+        </div>
+      </div>`;
     setImageFallback($('.detail-image', details), event);
     $('#save-show', details).addEventListener('click', () => downloadCalendar(event));
     $('#copy-show-link', details).addEventListener('click', () => copyShowLink($('#show-share-url', details)));

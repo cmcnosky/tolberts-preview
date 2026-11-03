@@ -1,0 +1,97 @@
+/* Artist artwork is content: never crop it, darken it, or cover it with labels. */
+#show-grid .show-card{display:grid;grid-template-columns:58px 180px minmax(0,1fr) auto;gap:24px;align-items:center;padding:24px 0}
+#show-grid .show-image{grid-column:2;grid-row:1;position:relative;width:180px;height:150px;aspect-ratio:auto;min-width:0;border:0;background:#191815;overflow:visible}
+#show-grid .show-image::after{content:none}
+#show-grid .show-image img{width:100%;height:100%;object-fit:contain;object-position:center;opacity:1;filter:none;transform:none;transition:none}
+#show-grid .show-date{grid-column:1;grid-row:1;position:static;display:block;min-width:0;padding:9px 0;background:transparent;color:var(--gold);text-align:center;border-block:1px solid #aa9875;line-height:1.1}
+#show-grid .show-date span{font-size:11px;letter-spacing:1px}
+#show-grid .show-date strong{font-family:var(--cond);font-size:37px;font-weight:600;line-height:1.2}
+#show-grid .show-copy{grid-column:3;grid-row:1;min-width:0}
+#show-grid .genre{margin:0 0 8px;font-size:11px;line-height:1.5}
+#show-grid h3{font-family:var(--cond);font-size:36px;font-weight:600;line-height:1.05;margin:0;overflow-wrap:anywhere}
+#show-grid .show-time{font-size:14px;line-height:1.65;margin:10px 0 0;padding:0}
+#show-grid .show-detail{grid-column:4;grid-row:1;position:static;align-self:center;margin:0;min-height:44px}
+
+/* A compact concert bill, with an uncropped portrait or band poster beside the details. */
+#show-dialog{padding:0;width:min(880px,calc(100% - 32px));max-width:880px;max-height:calc(100dvh - 32px);border:1px solid #b6a68a;border-radius:0;background:var(--cream);color:var(--ink);box-shadow:0 20px 80px #0007;overflow:auto}
+#show-dialog::backdrop{background:#15130fd9;backdrop-filter:blur(3px)}
+#show-dialog .close-dialog{position:static;float:none;margin:0;width:44px;height:44px;min-width:44px;border:0;background:transparent;box-shadow:none;display:grid;place-items:center;font-size:28px;font-weight:400;line-height:1;color:var(--ink);z-index:2}
+#show-dialog .close-dialog:hover{background:var(--paper)}
+#show-dialog :focus-visible{outline:2px solid var(--red);outline-offset:3px}
+#show-dialog .close-dialog:focus-visible{outline-offset:-4px}
+#show-dialog .show-dialog-bar{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:6px 10px 6px 26px;border-bottom:1px solid #b6a68a;background:var(--cream)}
+#show-dialog .show-dialog-bar>span{font-size:10px;line-height:1.5;font-weight:700;text-transform:uppercase;letter-spacing:1.8px;color:var(--red)}
+#show-dialog .detail-layout{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);grid-template-rows:auto 1fr;gap:0 28px;padding:26px}
+#show-dialog .detail-art{grid-column:1;grid-row:1/3;align-self:start;margin:0;background:#191815;display:flex;align-items:center;justify-content:center;min-width:0}
+#show-dialog .detail-image-link{display:block;width:100%;color:var(--cream);text-decoration:none}
+#show-dialog .detail-image-link>span{display:flex;align-items:center;justify-content:center;min-height:36px;padding:8px;font-size:10px;line-height:1.5;text-decoration:underline;text-underline-offset:3px}
+#show-dialog .detail-image{display:block;width:100%;height:450px;max-height:54dvh;object-fit:contain;object-position:center;margin:0;border:0;filter:none;opacity:1}
+#show-dialog .detail-heading{grid-column:2;grid-row:1;min-width:0}
+#show-dialog .detail-genre{font-size:11px;line-height:1.5;letter-spacing:.8px;color:var(--red);margin:0 0 9px}
+#show-dialog #show-title{font-family:var(--cond);font-size:48px;font-weight:700;line-height:1;letter-spacing:-.4px;text-transform:uppercase;margin:0 0 19px;overflow-wrap:anywhere}
+#show-dialog .detail-meta{display:flex;flex-direction:column;gap:6px;font-size:17px;line-height:1.5;margin:0}
+#show-dialog .detail-meta strong{font-size:15px;font-weight:600}
+#show-dialog .detail-meta small{font-size:12px;color:#665d4d;white-space:nowrap}
+#show-dialog .detail-information{grid-column:2;grid-row:2;min-width:0}
+#show-dialog .detail-place{display:flex;flex-direction:column;gap:3px;font-size:12px;line-height:1.7;padding-top:18px;border-top:1px solid #b6a68a;margin:20px 0 17px;color:#51483a}
+#show-dialog .detail-place strong{font-size:13px;color:var(--ink)}
+#show-dialog .detail-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;margin:0}
+#show-dialog .detail-actions a{display:inline-flex;align-items:center;min-height:44px;font-size:12px;font-weight:600;text-decoration:underline;text-underline-offset:4px;color:var(--red)}
+#show-dialog .detail-actions .detail-call{justify-content:space-between;gap:20px;padding:12px 17px;background:var(--red);color:var(--cream);text-decoration:none;font-size:13px}
+#show-dialog .detail-call:hover{background:#702317}
+#show-dialog .detail-note{font-size:11px;line-height:1.6;color:#665d4d;margin:10px 0 17px}
+#show-dialog .detail-utilities{display:flex;flex-wrap:wrap;gap:6px 20px;padding-top:12px;border-top:1px solid #b6a68a}
+#show-dialog .detail-utilities button{appearance:none;display:inline-flex;align-items:center;gap:9px;border:0;border-bottom:1px solid transparent;border-radius:0;background:transparent;color:var(--ink);font-family:inherit;font-size:12px;font-weight:600;padding:4px 0;min-height:44px;cursor:pointer}
+#show-dialog .detail-utilities button:hover{border-bottom-color:currentColor;color:var(--red)}
+#show-dialog .detail-utilities button span{font-size:19px;font-weight:400}
+#show-dialog #show-action-status{font-size:12px;line-height:1.5;color:var(--red);margin:8px 0}
+#show-dialog #show-action-status:empty{margin:0}
+#show-dialog .detail-source{font-size:10px;line-height:1.6;color:#665d4d;margin:14px 0 0}
+#show-dialog .show-share-fallback{padding:12px 0}
+#show-dialog .show-share-fallback[hidden]{display:none}
+#show-dialog .show-share-fallback label{font-size:12px}
+#show-dialog .show-share-fallback input{width:100%;font-size:12px;padding:10px;margin-top:6px}
+
+@media(max-width:1000px){
+  #show-grid .show-card{grid-template-columns:48px 150px minmax(0,1fr);gap:20px}
+  #show-grid .show-image{width:150px;height:150px;grid-row:1/3}
+  #show-grid .show-date{grid-row:1/3}
+  #show-grid .show-detail{grid-column:3;grid-row:2;justify-self:start;margin-top:0}
+  #show-grid h3{font-size:33px}
+}
+@media(max-width:600px){
+  #show-grid .show-card{grid-template-columns:116px minmax(0,1fr);gap:9px 18px;padding-block:23px;align-items:start}
+  #show-grid .show-image{grid-column:1;grid-row:1/4;width:116px;height:150px;align-self:start}
+  #show-grid .show-date{grid-column:2;grid-row:1;display:flex;align-items:baseline;gap:7px;justify-self:start;border:0;padding:0;font-size:12px}
+  #show-grid .show-date span{display:inline;font-size:11px}
+  #show-grid .show-date .show-weekday{order:-1;margin-right:3px;color:#ded6c3}
+  #show-grid .show-date strong{display:inline;font-family:inherit;font-size:14px;font-weight:600;line-height:1.5}
+  #show-grid .show-copy{grid-column:2;grid-row:2}
+  #show-grid .genre{font-size:10px;margin-bottom:5px}
+  #show-grid h3{font-size:29px}
+  #show-grid .show-time{font-size:12px;margin-top:8px}
+  #show-grid .show-detail{grid-column:2;grid-row:3;font-size:12px;padding:9px 11px;gap:14px;margin-top:4px}
+  #show-dialog{width:calc(100% - 20px);max-height:calc(100dvh - 20px)}
+  #show-dialog .show-dialog-bar{padding-left:20px}
+  #show-dialog .detail-layout{grid-template-columns:108px minmax(0,1fr);gap:0 18px;padding:20px}
+  #show-dialog .detail-art{grid-row:1;align-self:start}
+  #show-dialog .detail-image{height:194px;max-height:none}
+  #show-dialog #show-title{font-size:34px;margin-bottom:14px}
+  #show-dialog .detail-genre{font-size:10px;margin-bottom:7px}
+  #show-dialog .detail-meta{font-size:15px;gap:7px;line-height:1.5}
+  #show-dialog .detail-meta strong{font-size:13px}
+  #show-dialog .detail-meta small{display:block;font-size:11px}
+  #show-dialog .detail-information{grid-column:1/-1;grid-row:2}
+  #show-dialog .detail-place{margin-top:20px;padding-top:16px}
+  #show-dialog .detail-actions{display:grid;grid-template-columns:1fr 1fr;gap:4px 20px}
+  #show-dialog .detail-actions .detail-call{grid-column:1/-1}
+  #show-dialog .detail-actions a:not(.detail-call){justify-content:center}
+}
+@media(max-width:370px){
+  #show-grid .show-card{grid-template-columns:100px minmax(0,1fr);gap:9px 14px}
+  #show-grid .show-image{width:100px;height:140px}
+  #show-grid h3{font-size:26px}
+  #show-dialog .detail-layout{grid-template-columns:92px minmax(0,1fr);padding:17px;column-gap:14px}
+  #show-dialog .detail-image{height:165px}
+  #show-dialog #show-title{font-size:30px}
+}
