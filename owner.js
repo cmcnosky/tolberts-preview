@@ -30,7 +30,7 @@
   function status(message) { const el = $('#owner-status'); el.textContent = message; el.classList.add('visible'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('visible'),6000); }
   function persist(message) { if (message) M.addActivity(state,message); const saved = write(KEY,JSON.stringify(state)); status(saved ? (message ? message + ' · saved in this browser.' : 'Demo saved in this browser.') : 'Browser storage is unavailable or full. These changes last only while this page stays open.'); }
   const button = (label,action,id='',kind='secondary',ariaLabel='') => `<button type="button" class="button ${kind}" data-action="${action}"${id ? ` data-id="${esc(id)}"` : ''}${ariaLabel ? ` aria-label="${esc(ariaLabel)}"` : ''}>${label}</button>`;
-  const preview = (file='index.html',label='Preview guest website ↗') => `<a class="button secondary" href="${file}?owner-preview=1" target="_blank" rel="noopener">${label}</a>`;
+  const preview = (file='index.html',label='Preview guest website ↗') => `<a class="button secondary" href="${file}?owner-preview=1">${label}</a>`;
   const empty = (title,text) => `<div class="empty-state"><h3>${title}</h3><p>${text}</p></div>`;
   const pill = (value,kind='') => `<span class="status-pill ${kind}">${esc(value)}</span>`;
   const heading = (title,description,actions='') => `<div class="page-heading"><div><p class="eyebrow">THE OWNER ROOM</p><h1>${title}</h1><p>${description}</p></div><div class="row-actions">${actions}</div></div>`;
@@ -252,7 +252,7 @@
   });
   function showOwner(){loggedIn=true;$('#login-view').hidden=true;$('#owner-shell').hidden=false;syncSkipLink(true);view=['overview','menu','music','hours','inventory','purchases','team','activity','settings'].includes(location.hash.slice(1))?location.hash.slice(1):'overview';render();workspace.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
   function showLogin(message=''){loggedIn=false;$('#owner-shell').hidden=true;$('#login-view').hidden=false;syncSkipLink(false);if(dialog.open)dialog.close();$('#login-form').reset();$('#login-error').textContent=message;syncDemoKey();$('#owner-username').focus();window.scrollTo({top:0,behavior:'instant'});}
-  $('#logout').addEventListener('click',()=>{removeSession(SESSION);showLogin();});
+  $('#logout').addEventListener('click',()=>{removeSession(SESSION);window.location.assign('index.html?logged-out=1');});
   function syncDemoKey(){const ticket=$('.demo-ticket');if(read(AUTH)){ticket.innerHTML='<span>YOUR DEMO KEY</span><p>Username: <strong>Steven</strong><br>Use the demo password set in this browser.</p>';}else ticket.innerHTML='<span>YOUR DEMO KEY</span><dl><div><dt>Username</dt><dd>Steven</dd></div><div><dt>Password</dt><dd>Steven</dd></div></dl>';}
   $('#login-reset').addEventListener('click',()=>{
     if(!baseline){$('#login-error').textContent='Wait for the demo data to load, or refresh the page.';return;}

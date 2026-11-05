@@ -37,11 +37,13 @@ The current integration reads Tolbert’s public WordPress event feed in the vis
 
 ## Interactive owner demo — November 5, 2026
 
-Open `owner.html` on GitHub Pages. Initial demo username and password are both `Steven` (case-sensitive). This is a public, browser-local UI demonstration, not authentication or authorization for production systems. Do not enter private business records or reuse a real password.
+Start at the main GitHub Pages website and choose **Owner login** in the header, **More → Owner log in** on a phone, or the **Owner room** area in the homepage footer. The homepage, menu, and music pages share the same in-site sign-in dialog. Initial demo username and password are both `Steven` (case-sensitive). This is a public, browser-local UI demonstration, not authentication or authorization for production systems. Do not enter private business records or reuse a real password.
 
 The owner room supports menu editing/availability, show editing/photos, weekly and special hours, sample stock counts, a draft → simulated submission → received purchase-order lifecycle, illustrative team roles, activity, settings, and a browser-local password change. Only the Steven demo login works; team entries do not create accounts. No vendor, POS, CMS, payment, or email connection is used by owner actions.
 
 State is stored under `tolberts-owner-demo-v1` in this browser. The demo session uses sessionStorage; a changed demo password is stored as a SHA-256 digest, which is not a production password scheme or security boundary. Settings → Reset demo restores the starting records and `Steven` password. Clearing browser site data does the same.
+
+Successful sign-in opens the owner workspace in the same tab. **Guest website** returns to the restaurant site, where the entry becomes **Owner room**; **Guest preview** shows local edits. Logging out returns to the homepage with a signed-out confirmation. Direct `owner.html` bookmarks retain a fallback sign-in and a visible way back to the restaurant.
 
 Guest preview links use `?owner-preview=1` to render this browser's edited menu, events, hours, and contact details. Normal guest URLs continue using the public menu and official calendar integration. The preview flag and local edits do not travel to another person's browser.
 
@@ -52,3 +54,9 @@ Validation: `node --test tests/owner-model.test.cjs` plus the existing site chec
 The calendar keeps names and times from the official REST feed and resolves artist artwork through the official public GraphQL endpoint. The November 5 saved fallback contains 13 events and 13 unchanged local promotional images for November 5–15. Existing browser-local owner edits remain intact; resetting the demo loads the latest packaged baseline.
 
 This revision repairs stale-editor overwrites across tabs, strengthens saved-state and stock-receipt validation, improves keyboard names/focus/skip links, removes research-table sideways scrolling, and completes social metadata for all eight pages. Browser checks and their limits are recorded in audit.html. All 58 individual regression cases passed: 13 feed, 7 menu, 19 music model, and 19 owner model. The Node combined runner additionally counts the three legacy suite files as wrapper tests; do not add those wrappers to the individual total.
+
+## Integrated owner access — November 5, 2026
+
+`owner-access.js` and `owner-access.css` provide a shared sign-in for all three guest-page shells. They reuse the owner model and existing browser-local password/session keys. Header navigation collapses to More at 1100px, and the phone header keeps owner access inside More below 761px. The homepage footer includes a dedicated owner-room area. The established hero, photography, green visit strip, and Playing Today content remain intact.
+
+Browser verification exercised successful sign-in from home, menu, and music; a rejected password; Escape and focus return from desktop and mobile entries; all nine owner sections; same-tab guest and edited-preview return; and logout. The three guest headers were checked at 320, 390, 760, 768, 901, 1024, 1101, and 1280px without horizontal page scrolling or overlapping visible header controls. The owner navigation was checked at 320, 390, 768, 1024, and 1280px; a 320px avatar/control collision was repaired and visually rechecked. These are desktop-browser viewport checks, not physical-device certification.

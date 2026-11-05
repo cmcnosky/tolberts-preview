@@ -175,6 +175,23 @@ img { display: block; max-width: 100%; }
   background-size: 20px 20px;
 }
 
+.back-to-website {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: 18px;
+  color: var(--cream);
+  font-size: 14px;
+  font-weight: 600;
+  text-underline-offset: 4px;
+}
+
+@media(max-width:390px) {
+  .topbar-actions .owner-identity { display: none; }
+  .owner-topbar .topbar-actions { gap: 6px; }
+  .topbar-actions #logout { white-space: nowrap; padding-inline: 8px; }
+}
+
 .login-panel::before {
   content: "";
   position: absolute;
