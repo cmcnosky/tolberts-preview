@@ -759,10 +759,11 @@ img { display: block; max-width: 100%; }
 }
 
 .split > * { min-width: 0; }
+.split + .split { margin-top: 24px; }
 .split > .panel + .panel { margin-top: 0; }
 .split.equal { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (min-width: 901px) {
-  .workspace:has(.stat-grid) > .split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .workspace > .stat-grid + .split { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 .card-grid {
@@ -1542,6 +1543,11 @@ details > :not(summary) {
 
 .event-feature > div { min-width: 0; }
 .event-feature .eyebrow { margin-bottom: 10px; }
+
+@media (min-width: 901px) and (max-width: 1180px) {
+  .event-feature { grid-template-columns: 1fr; }
+  .event-feature > img { height: 280px; }
+}
 
 .event-feature h3 {
   margin: 0 0 11px;
