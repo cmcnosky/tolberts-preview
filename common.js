@@ -8,14 +8,14 @@ function closeNavigation(returnFocus = false) {
   if (!menuToggle || !navigation) return;
   navigation.hidden = true;
   menuToggle.setAttribute('aria-expanded', 'false');
-  menuToggle.setAttribute('aria-label', 'Open navigation');
+  menuToggle.setAttribute('aria-label', 'More');
   if (returnFocus) menuToggle.focus();
 }
 menuToggle?.addEventListener('click', () => {
   const open = navigation.hidden;
   navigation.hidden = !open;
   menuToggle.setAttribute('aria-expanded', String(open));
-  menuToggle.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+  menuToggle.setAttribute('aria-label', open ? 'Close More menu' : 'More');
   navigation.style.top = `${$('.header').getBoundingClientRect().bottom}px`;
 });
 const sameDocumentPath = path => path.replace(/\/index\.html$/, '/');

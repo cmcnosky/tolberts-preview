@@ -103,7 +103,7 @@ img { display: block; max-width: 100%; }
 }
 
 .login-scene::after {
-  content: "OWNER\A ACCESS";
+  content: "WELCOME\A BACK";
   white-space: pre;
   position: absolute;
   top: 26px;
