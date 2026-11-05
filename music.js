@@ -9,6 +9,7 @@
   const showMore = $('#show-more');
   const search = $('#show-search');
   const dateSelect = $('#show-date');
+  const resetButton = $('#reset-shows');
   const dialog = $('#show-dialog');
   const details = $('#show-details');
   const fullPage = document.body.dataset.musicPage === 'full';
@@ -176,6 +177,9 @@
   }
 
   function renderShows() {
+    const focusedEventKey = grid.contains(document.activeElement)
+      ? document.activeElement.closest('[data-event]')?.dataset.event
+      : null;
     renderDateOptions();
     const matching = MusicModel.filterEvents(events, {
       filter,
@@ -184,6 +188,8 @@
     });
     const visible = fullPage || expanded ? matching : matching.slice(0, 3);
     const available = MusicModel.pendingEvents(events);
+    const hasFilters = filter !== 'all' || Boolean(query) || Boolean(selectedDate);
+    if (resetButton) resetButton.hidden = !hasFilters;
 
     if (count) {
       count.textContent = matching.length
@@ -197,7 +203,7 @@
       const image = event.image || 'assets/stage.webp';
       const imageAlt = event.imageAlt || `${event.name} — promotional image`;
       return `<article class="show-card"><div class="show-image"><img src="${esc(image)}" width="900" height="560" alt="${esc(imageAlt)}" loading="lazy"></div><time class="show-date" datetime="${esc(event.date)}"><span>${monthLabel(event.date)}</span><strong>${Number(event.date.slice(8))}</strong><span class="show-weekday">${new Intl.DateTimeFormat('en-US', {weekday: 'short', timeZone: 'UTC'}).format(new Date(`${event.date}T12:00:00Z`))}</span></time><div class="show-copy"><p class="genre">${esc(event.genre || 'Live music')}</p><h3>${esc(event.name)}</h3><p class="show-time">${esc(event.start)}–${esc(event.end)} Central</p></div><a class="show-detail" data-event="${esc(key)}" href="${esc(link)}" aria-label="Show details for ${esc(event.name)}">Plan this night <span aria-hidden="true">↗</span></a></article>`;
-    }).join('') : `<div class="no-results">${available.length ? 'No upcoming shows match these filters.' : 'No upcoming listings are available here.'} <a class="text-link light" href="${officialCalendar}" target="_blank" rel="noopener">See the official calendar ↗</a></div>`;
+    }).join('') : `<div class="no-results"><p>${available.length ? 'No upcoming shows match these filters.' : 'No upcoming listings are available here.'}</p>${hasFilters ? '<button type="button" class="reset-shows" data-reset-shows>Clear filters and see all shows</button>' : ''}<a class="text-link light" href="${officialCalendar}" target="_blank" rel="noopener">See the official calendar ↗</a></div>`;
 
     if (showMore) {
       showMore.hidden = fullPage || matching.length <= 3;
@@ -223,10 +229,34 @@
       }));
     }
 
+    $('[data-reset-shows]', grid)?.addEventListener('click', resetFilters);
+    if (focusedEventKey) {
+      const replacement = $$('.show-detail', grid).find(link => link.dataset.event === focusedEventKey);
+      if (replacement) replacement.focus({preventScroll: true});
+      else if (count) {
+        count.setAttribute('tabindex', '-1');
+        count.focus({preventScroll: true});
+      }
+    }
+
     updateHero();
     renderTodayStage();
     resolveRequestedShow();
   }
+
+  function resetFilters() {
+    filter = 'all';
+    query = '';
+    selectedDate = '';
+    expanded = fullPage;
+    if (search) search.value = '';
+    if (dateSelect) dateSelect.value = '';
+    writeBrowseState();
+    renderShows();
+    (search || $('[data-filter="all"]'))?.focus({preventScroll: true});
+  }
+
+  resetButton?.addEventListener('click', resetFilters);
 
   function actionStatus(message) {
     const node = $('#show-action-status');
@@ -285,7 +315,7 @@
       ? 'From the restaurant’s live calendar.'
       : `From saved listings checked ${savedChecked}.`;
     details.innerHTML = `<div class="detail-layout">
-        <figure class="detail-art"><a class="detail-image-link" href="${esc(image)}" target="_blank" rel="noopener" aria-label="Open full-size image for ${esc(event.name)}"><img class="detail-image" src="${esc(image)}" alt="${esc(imageAlt)}"><span>View full image ↗</span></a></figure>
+        <figure class="detail-art"><a class="detail-image-link" href="${esc(image)}" target="_blank" rel="noopener" aria-label="Open full-size image for ${esc(event.name)}"><img class="detail-image" src="${esc(image)}" alt="${esc(imageAlt)}"><span>Full image ↗</span></a></figure>
         <div class="detail-heading"><p class="detail-genre">${esc(event.genre || 'Live music')}</p><h2 id="show-title">${esc(event.name)}</h2>
           <div class="detail-meta"><strong>${esc(MusicModel.displayDate(event.date, {long: true, year: true}))}</strong><span>${esc(event.start)}–${esc(event.end)} <small>Central</small></span></div>
         </div>

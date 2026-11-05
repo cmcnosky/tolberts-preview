@@ -28,3 +28,7 @@ Also check the home, menu, music finder, show links, contact draft, and owner pr
 GitHub Pages serves this repository’s main branch root. Publish the reviewed commit, wait for the Pages deployment to succeed, and verify the live URL and primary tasks. Preserve the previous commit for rollback. This static preview is independent of the earlier private hosted Site; they do not update automatically together.
 
 The current integration reads Tolbert’s public WordPress event feed in the visitor’s browser. A production engagement needs owner-approved access, content/update ownership, form delivery, analytics, structured data, redirects, image permissions, and launch testing. These are proposed work, not completed integrations or an agreed contract.
+
+## Presentation finish — November 4, 2026
+
+`guest-finish.css` aligns the menu/music navigation and type with the retained homepage aesthetic. `music.js` provides filter reset and preserves show-link keyboard focus when the live list refreshes. `proposal.html` and `operations.html` are the current owner-review materials; the November 2 PDF and comparison captures remain dated evidence. Header/navigation text is present in all three guest-page shells, so check those together when changing destinations.

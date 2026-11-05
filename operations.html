@@ -1,1 +1,101 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Operating Plan | Tolbert’s Redesign</title><link rel="icon" href="assets/favicon.svg"><link rel="stylesheet" href="fonts.css"><link rel="stylesheet" href="review.css"><meta property="og:image" content="https://cmcnosky.github.io/tolberts-preview/assets/social-preview-20261103.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:type" content="image/png"><meta property="og:image:alt" content="Tolbert’s Restaurant and Chili Parlor: hot chili, cold beer and live music, with its Main Street sign."><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="https://cmcnosky.github.io/tolberts-preview/assets/social-preview-20261103.png"><meta name="twitter:image:alt" content="Tolbert’s Restaurant and Chili Parlor: hot chili, cold beer and live music, with its Main Street sign."></head><body><main><a class="back" href="proposal.html">← The business case</a><p class="eyebrow">OWNER REVIEW · NOVEMBER 2, 2026</p><h1>Keep it useful<br>after launch.</h1><p class="lede">A restaurant website is only as reliable as its menu, hours, show listings, and contact routes. This is the operating plan to agree before an official launch.</p><div class="note"><strong>Current status:</strong> a public, independently hosted redesign preview. The restaurant’s official domain and systems have not been changed. The preview is marked noindex; it is still accessible to anyone with its URL.</div><h2>What is already in the working preview</h2><ul><li>A complete, readable HTML menu, enhanced with search, categories, and shareable links.</li><li>A music finder using the restaurant’s existing public event feed. It removes ended shows, checks for changes while the page is open, labels source freshness, and provides dated saved listings and an official-calendar link when the feed fails.</li><li>A show plan with dinner, phone, directions, a shareable URL, and a calendar reminder.</li><li>Today’s posted hours in Grapevine’s time zone, plus full weekly hours and visit information.</li><li>Existing SpotOn, telephone, directions, newsletter, and social destinations. Group inquiries prepare an email for the guest to review and send; they are not server submissions.</li></ul><h2>Who changes what</h2><table><thead><tr><th>Information</th><th>Current preview</th><th>Production agreement</th></tr></thead><tbody><tr><td>Menu and prices</td><td>Reviewed entries in <code>menu-data.json</code>; <code>scripts/build-menu.py</code> regenerates the HTML while preserving the design.</td><td>Choose one approved source of truth and an owner editor. Resolve PDF/SpotOn discrepancies before publishing changes. Provide an agreed CMS workflow so routine updates do not require editing code.</td></tr><tr><td>Shows</td><td>Reads the public WordPress event feed. Saved listings are dated November 1, 2026; they are never presented as a fresh live check.</td><td>Keep the owner’s existing show-entry process. Confirm feed access and field definitions, caching, failure handling, and the person responsible for cancellations or changes.</td></tr><tr><td>Hours and special closures</td><td>Weekly hours are in the page and the opening-hours script. Special closures are not modeled.</td><td>Provide a single editable hours source, holiday exceptions, and responsibility for checking it.</td></tr><tr><td>Inquiries</td><td>A reviewable email draft; no confirmed availability or delivery.</td><td>Connect the owner-approved delivery route, spam controls, confirmation behavior, and a tested inbox. Preserve the existing service until that test succeeds.</td></tr></tbody></table><h2>The change process</h2><ol><li><strong>Confirm the facts.</strong> Reconcile prices, ingredients, hours, and show details with the team. The Chili Verde ingredient conflict between the PDF and checkout is a concrete example that needs owner resolution.</li><li><strong>Preview the update.</strong> Review the changed menu or show on a phone-sized page and in a desktop browser. Check empty states as well as the usual path.</li><li><strong>Run the release checks.</strong> The repository includes menu-search, live-feed, and calendar/time-zone regression checks. Verify internal links and the primary guest journeys.</li><li><strong>Publish an identifiable version.</strong> Keep source history, a rollback point, and a release note. Verify the public URL, event-feed status, menu result links, and external handoffs after publishing.</li></ol><h2>Before replacing the official domain</h2><ul><li>Approve the content, design, photo/brand use, integrations, fee, scope, and support period.</li><li>Keep or deliberately redirect existing URLs. Carry forward appropriate analytics and correct Restaurant/MusicVenue/Event metadata; use Grapevine’s actual time zone.</li><li>Verify actual form delivery, checkout handoff, and phone/directions behavior with authorized tests. The preview audit does not prove completed orders or reservations.</li><li>Test physical phones, major browsers, keyboard navigation, screen-reader flows, zoom, contrast, and representative connection speeds.</li><li>Document ownership, access, backups, update responsibilities, and rollback. Provide training using an actual menu or show update.</li></ul><h2>Measure the work after launch</h2><p>Agree a baseline before migration and a comparable review window afterward. Measure whether guests can find a dish and price, identify a suitable show, and reach directions or a call. Approved analytics can count ordering handoffs, calendar downloads, and show-link sharing; those actions are not completed purchases or visits. Review errors and owner update effort alongside the numbers. No analytics collector has been added to this preview.</p><p class="links"><a href="index.html">Open the guest experience ↗</a><a href="audit.html">Read the current audit ↗</a></p><footer>Independent redesign preview · Proposed operating scope, not an agreed service contract.</footer></main></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#852919">
+  <title>Ownership &amp; Launch Plan | Tolbert’s Redesign</title>
+  <meta name="description" content="The proposed ownership, update, migration, testing, and measurement plan for a production Tolbert’s website.">
+  <meta property="og:title" content="Ownership &amp; Launch Plan | Tolbert’s Redesign">
+  <meta property="og:description" content="How menu, music, hours, inquiries, migration, testing, and measurement would be owned after launch.">
+  <meta property="og:image" content="https://cmcnosky.github.io/tolberts-preview/assets/social-preview-20261103.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:alt" content="Tolbert’s Restaurant and Chili Parlor: hot chili, cold beer and live music, with its Main Street sign.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://cmcnosky.github.io/tolberts-preview/assets/social-preview-20261103.png">
+  <meta name="twitter:image:alt" content="Tolbert’s Restaurant and Chili Parlor: hot chili, cold beer and live music, with its Main Street sign.">
+  <link rel="icon" href="assets/favicon.svg">
+  <link rel="stylesheet" href="fonts.css">
+  <link rel="stylesheet" href="review.css?v=2">
+</head>
+<body>
+  <main>
+    <a class="back" href="proposal.html">← The owner proposal</a>
+    <p class="eyebrow">OWNER REVIEW · NOVEMBER 4, 2026</p>
+    <h1>Keep it useful<br>after launch.</h1>
+    <p class="lede">A restaurant website is only as dependable as its menu, hours, show listings, and contact routes. This plan turns the working demonstration into a system the Tolbert’s team can own and keep current.</p>
+
+    <div class="note"><strong>Current status:</strong> this is a public, independently hosted redesign preview. It is marked noindex and has not changed the restaurant’s official domain, CMS, ordering, analytics, or contact systems.</div>
+
+    <h2>What this review can decide</h2>
+    <ul class="decision-list">
+      <li><strong>Keep the direction</strong><span>Confirm that the guest experience, visual character, and three primary tasks are worth taking into production.</span></li>
+      <li><strong>Name the sources</strong><span>Identify the approved source and staff owner for menu, hours, shows, photographs, and inquiries.</span></li>
+      <li><strong>Price the launch</strong><span>Define the integrations, migration, testing, training, support period, and acceptance criteria before setting the fee.</span></li>
+    </ul>
+
+    <h2>What the working preview demonstrates</h2>
+    <ul>
+      <li>A complete HTML menu with prices, categories, search, and shareable filtered links.</li>
+      <li>A music finder that reads the restaurant’s public event feed, removes ended shows, labels freshness, and provides a dated fallback and official-calendar route when live data is unavailable.</li>
+      <li>Individual show planning with menu, phone, directions, a shareable link, and a calendar reminder.</li>
+      <li>Today’s posted hours in Grapevine’s time zone, plus full weekly hours and visit information.</li>
+      <li>Clear handoffs to the existing SpotOn ordering, telephone, directions, newsletter, and social destinations.</li>
+      <li>A group-inquiry tool that prepares an email for the guest to review and send. It is not a delivered web submission.</li>
+    </ul>
+
+    <h2>Who changes what</h2>
+    <table>
+      <thead>
+        <tr><th>Information</th><th>Working preview</th><th>Production agreement</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Menu and prices</td>
+          <td data-label="Working preview">Reviewed entries in <code>menu-data.json</code>; <code>scripts/build-menu.py</code> regenerates the page while preserving its design.</td>
+          <td data-label="Production agreement">Choose one approved source of truth and a staff editor. Resolve PDF and SpotOn discrepancies before publication, then provide a routine editing and approval workflow.</td>
+        </tr>
+        <tr>
+          <td>Shows</td>
+          <td data-label="Working preview">Reads the public WordPress event feed. The saved fallback is dated November 1, 2026 and is always identified as saved data.</td>
+          <td data-label="Production agreement">Keep the owner’s established show-entry process where it works. Confirm feed access, fields, caching, cancellation handling, artist-image standards, and the person responsible for changes.</td>
+        </tr>
+        <tr>
+          <td>Hours and closures</td>
+          <td data-label="Working preview">Weekly hours are stored in the page and opening-hours script. Holiday and emergency exceptions are not modeled.</td>
+          <td data-label="Production agreement">Provide one editable hours source, special-date exceptions, and a named person responsible for checking them.</td>
+        </tr>
+        <tr>
+          <td>Inquiries</td>
+          <td data-label="Working preview">Builds a reviewable email draft; it does not confirm availability or delivery.</td>
+          <td data-label="Production agreement">Connect the owner-approved delivery route, spam controls, confirmation behavior, and a tested inbox. Preserve the existing service until the replacement passes delivery testing.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>The production sequence</h2>
+    <ol>
+      <li><strong>Confirm the facts and owners.</strong> Reconcile prices, ingredients, hours, and show details. The Chili Verde disagreement between published sources is one concrete issue that needs an owner decision.</li>
+      <li><strong>Connect the approved systems.</strong> Preserve SpotOn, analytics, newsletter, event publishing, and existing contact delivery unless the owners deliberately replace them.</li>
+      <li><strong>Test the real operation.</strong> Verify actual inquiry delivery and external handoffs. Test physical phones, major browsers, keyboard and screen-reader use, enlarged text, and representative network conditions.</li>
+      <li><strong>Migrate with a recovery path.</strong> Preserve or redirect useful URLs, publish an identifiable version, verify the official domain, and document backup and rollback.</li>
+      <li><strong>Train with a real update.</strong> Have the named staff editor change an actual menu item, special-hours exception, or show before handoff is accepted.</li>
+    </ol>
+
+    <h2>Measure the first 30 days</h2>
+    <p>Record a comparable pre-launch baseline, then measure menu searches, show-detail views, directions, tap-to-call, order handoffs, calendar saves, and completed inquiries. Review broken paths, content-update effort, traffic mix, and event timing alongside those actions.</p>
+    <p>These are activity signals. They are not completed purchases or visits, and the preview contains no analytics collector or revenue result. Any financial case should use project cost and verified business inputs supplied by Tolbert’s.</p>
+
+    <p class="links">
+      <a href="index.html">Open the guest experience ↗</a>
+      <a href="proposal.html">Review the owner proposal ↗</a>
+      <a href="audit.html">Read the evidence &amp; audit ↗</a>
+    </p>
+
+    <footer>Independent redesign preview · Proposed operating scope, not an agreed service contract or production acceptance.</footer>
+  </main>
+</body>
+</html>
