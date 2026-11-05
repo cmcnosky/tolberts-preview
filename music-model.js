@@ -218,7 +218,9 @@ const MusicModel = (() => {
   function buildIcs(event, options = {}) {
     const start = eventStart(event);
     const end = eventEnd(event);
-    const checked = options.live
+    const checked = options.preview
+      ? 'Owner preview from this browser; not the official calendar.'
+      : options.live
       ? 'From the restaurant’s live calendar.'
       : 'Saved schedule checked November 1, 2026.';
     const uidPart = String(event.id || eventKey(event))
@@ -233,11 +235,11 @@ const MusicModel = (() => {
       'PRODID:-//Tolberts Website Preview//Live Music//EN',
       'CALSCALE:GREGORIAN',
       'BEGIN:VEVENT',
-      `UID:${uidPart}@tolberts-preview`,
+      `UID:${options.preview ? 'owner-demo-' : ''}${uidPart}@tolberts-preview`,
       `DTSTAMP:${stamp(options.now ? new Date(options.now) : new Date())}`,
       `DTSTART:${stamp(start)}`,
       `DTEND:${stamp(end)}`,
-      `SUMMARY:${icsText(`${event.name} at Tolbert’s`)}`,
+      `SUMMARY:${icsText(`${options.preview ? 'DEMO: ' : ''}${event.name} at Tolbert’s`)}`,
       `LOCATION:${icsText('Tolbert’s Restaurant, 423 S Main St, Grapevine, TX 76051')}`,
       `DESCRIPTION:${icsText(`${event.genre || 'Live music'}. ${checked} Confirm details with Tolbert’s: (817) 421-4888. https://tolbertsrestaurant.com/calendar/`)}`,
       'URL:https://tolbertsrestaurant.com/calendar/',

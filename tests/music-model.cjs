@@ -188,6 +188,17 @@ test('saved calendar output states its dated fallback rather than implying a liv
   assert.match(text.replace(/\r\n /g, ''), /Saved schedule checked November 1\\, 2026\./);
 });
 
+test('owner-preview calendar downloads have a demo title, distinct identity, and correctly escaped disclosure', () => {
+  const event = show({genre: 'A long genre ' + 'music '.repeat(30)});
+  const text = Music.buildIcs(event, {preview: true, live: true});
+  const unfolded = text.replace(/\r\n /g, '');
+  assert.match(unfolded, /SUMMARY:DEMO: /);
+  assert.match(unfolded, /UID:owner-demo-/);
+  assert.match(unfolded, /Owner preview from this browser\\; not the official calendar\./);
+  assert.doesNotMatch(unfolded, /Saved schedule checked|From the restaurant’s live calendar/);
+  for (const line of text.split('\r\n').slice(0, -1)) assert.ok(Buffer.byteLength(line, 'utf8') <= 75);
+});
+
 let passed = 0;
 for (const {name, fn} of tests) {
   try {

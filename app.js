@@ -3,7 +3,15 @@ const chicagoDate = () => new Intl.DateTimeFormat('en-CA', {timeZone:'America/Ch
 const closing = {Monday:'9 pm',Tuesday:'10 pm',Wednesday:'11 pm',Thursday:'11 pm',Friday:'midnight',Saturday:'midnight',Sunday:'9 pm'};
 function updateHours() {
   const day = new Intl.DateTimeFormat('en-US', {timeZone:'America/Chicago',weekday:'long'}).format(new Date());
-  $('#today-hours').textContent = `11\u00a0am–${closing[day].replace(' ', '\u00a0')}`;
+  const ownerSchedule = window.OwnerPreview?.active ? window.OwnerPreview.getTodaySchedule?.() : null;
+  if (ownerSchedule) {
+    const label = ownerSchedule.exception && ownerSchedule.label ? ` · ${ownerSchedule.label}` : '';
+    $('#today-hours').textContent = ownerSchedule.closed
+      ? `Closed today${label}`
+      : `${window.OwnerPreview.displayTime(ownerSchedule.open)}–${window.OwnerPreview.displayTime(ownerSchedule.close)}${label}`;
+  } else {
+    $('#today-hours').textContent = `11\u00a0am–${closing[day].replace(' ', '\u00a0')}`;
+  }
   $$('.hours>div').forEach(row => row.classList.toggle('current-day', $('dt', row).textContent === day));
 }
 updateHours();

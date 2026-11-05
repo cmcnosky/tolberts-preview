@@ -15,7 +15,16 @@
   const fullPage = document.body.dataset.musicPage === 'full';
   const savedChecked = 'November 1, 2026';
   const officialCalendar = 'https://tolbertsrestaurant.com/calendar/';
-  const directions = 'https://www.google.com/maps/dir/?api=1&destination=Tolbert%27s+Restaurant+423+S+Main+St+Grapevine+TX+76051';
+  const previewState = window.OwnerPreview?.active ? window.OwnerPreview.state : null;
+  const previewMode = Boolean(previewState && Array.isArray(previewState.events));
+  const previewLink = value => previewMode ? window.OwnerPreview.guestUrl(value) : value;
+  const previewPhone = previewState?.settings?.phone || '(817) 421-4888';
+  const previewPhoneHref = `tel:${previewPhone.replace(/[^\d+]/g, '') || '+18174214888'}`;
+  const previewAddress = previewState?.settings?.address || '423 S. Main Street, Grapevine, Texas 76051';
+  const detailAddress = previewMode ? previewAddress : '423 S. Main Street · Grapevine, Texas';
+  const directions = previewMode
+    ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(previewAddress)}`
+    : 'https://www.google.com/maps/dir/?api=1&destination=Tolbert%27s+Restaurant+423+S+Main+St+Grapevine+TX+76051';
 
   let savedEvents = [];
   let savedLoaded = false;
@@ -34,6 +43,19 @@
   let pendingFocusKey = '';
   let lastDialogSignature = '';
   let lastTodaySignature = '';
+
+  function ownerPreviewEvents() {
+    if (!previewMode) return [];
+    return previewState.events
+      .filter(event => String(event.status || '').toLowerCase() !== 'cancelled')
+      .map(event => ({
+        ...event,
+        start: window.OwnerPreview.eventTime(event.start),
+        end: window.OwnerPreview.eventTime(event.end),
+        image: window.OwnerPreview.safeImage(event.image)
+      }))
+      .filter(event => event.name && MusicModel.validDate(event.date) && event.start && event.end);
+  }
 
   function setSource(message) {
     if (source) source.textContent = message;
@@ -133,7 +155,7 @@
     if (label) label.textContent = happening ? 'ON STAGE NOW' : 'NEXT ON STAGE';
     if (name) name.textContent = next.name;
     else heroLink.textContent = time ? `${next.name} →` : `${MusicModel.displayDate(next.date)} · ${next.name} · ${next.start} →`;
-    heroLink.href = MusicModel.shareUrl(next, location.href);
+    heroLink.href = previewLink(MusicModel.shareUrl(next, location.href));
     if (time) time.textContent = `${MusicModel.displayDate(next.date, {long: true})} · ${next.start}–${next.end} Central`;
   }
 
@@ -149,11 +171,13 @@
     const sourceText = source?.textContent || 'Times are Central. Confirm the schedule before heading over.';
     if (status) {
       if (status.textContent !== sourceText) status.textContent = sourceText;
-      status.hidden = Boolean(liveChecked) && !/unavailable/i.test(sourceText);
+      status.hidden = !previewMode && Boolean(liveChecked) && !/unavailable/i.test(sourceText);
     }
     if (!artists.length) {
       lastTodaySignature = '';
-      const message = !liveResolved
+      const message = previewMode
+        ? 'No artist is scheduled for today in this browser’s owner preview. Explore the calendar for another night.'
+        : !liveResolved
         ? 'Checking today’s artists and set times…'
         : liveChecked
           ? 'No artist is listed for today. Explore the calendar for your next night out.'
@@ -168,7 +192,7 @@
       const ended = MusicModel.eventEnd(event).getTime() <= now.getTime();
       const started = MusicModel.eventStart(event).getTime() <= now.getTime();
       const state = ended ? 'Set finished' : started ? 'Scheduled on stage now' : 'View show details ↗';
-      const href = ended ? 'music.html' : MusicModel.shareUrl(event, location.href);
+      const href = ended ? previewLink('music.html') : previewLink(MusicModel.shareUrl(event, location.href));
       const image = event.image || 'assets/stage.webp';
       const alt = event.image ? (event.imageAlt || `Promotional image for ${event.name}`) : 'The Tolbert’s stage';
       return `<a class="today-artist" href="${esc(href)}" aria-label="${esc(event.name)}, ${esc(event.start)} to ${esc(event.end)} Central. ${ended ? 'Set finished. View upcoming shows.' : 'View show details.'}"><img class="today-artist-photo" src="${esc(image)}" alt="${esc(alt)}" width="80" height="80"><span class="today-artist-copy"><span class="today-card-label">Playing today</span><strong class="today-artist-name">${esc(event.name)}</strong><span class="today-artist-time">${esc(event.start)}–${esc(event.end)} <span>Central</span></span><span class="today-artist-state">${esc(state)}</span></span></a>`;
@@ -199,7 +223,7 @@
 
     grid.innerHTML = visible.length ? visible.map(event => {
       const key = MusicModel.eventKey(event);
-      const link = MusicModel.shareUrl(event, location.href);
+      const link = previewLink(MusicModel.shareUrl(event, location.href));
       const image = event.image || 'assets/stage.webp';
       const imageAlt = event.imageAlt || `${event.name} — promotional image`;
       return `<article class="show-card"><div class="show-image"><img src="${esc(image)}" width="900" height="560" alt="${esc(imageAlt)}" loading="lazy"></div><time class="show-date" datetime="${esc(event.date)}"><span>${monthLabel(event.date)}</span><strong>${Number(event.date.slice(8))}</strong><span class="show-weekday">${new Intl.DateTimeFormat('en-US', {weekday: 'short', timeZone: 'UTC'}).format(new Date(`${event.date}T12:00:00Z`))}</span></time><div class="show-copy"><p class="genre">${esc(event.genre || 'Live music')}</p><h3>${esc(event.name)}</h3><p class="show-time">${esc(event.start)}–${esc(event.end)} Central</p></div><a class="show-detail" data-event="${esc(key)}" href="${esc(link)}" aria-label="Show details for ${esc(event.name)}">Plan this night <span aria-hidden="true">↗</span></a></article>`;
@@ -271,13 +295,13 @@
       event.genre || '',
       event.image || '',
       event.imageAlt || '',
-      liveChecked ? 'live' : 'saved'
+      previewMode ? 'owner-preview' : liveChecked ? 'live' : 'saved'
     ]);
   }
 
   function downloadCalendar(event) {
-    const text = MusicModel.buildIcs(event, {live: Boolean(liveChecked)});
-    const blob = new Blob([text], {type: 'text/calendar;charset=utf-8'});
+    const calendarText = MusicModel.buildIcs(event, {live: Boolean(liveChecked) && !previewMode, preview: previewMode});
+    const blob = new Blob([calendarText], {type: 'text/calendar;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     const filename = event.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'show';
@@ -288,7 +312,9 @@
     anchor.click();
     anchor.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    actionStatus('Calendar download requested. Confirm the schedule before you go.');
+    actionStatus(previewMode
+      ? 'Owner-preview calendar downloaded. This is not an official listing.'
+      : 'Calendar download requested. Confirm the schedule before you go.');
   }
 
   async function copyShowLink(input) {
@@ -308,10 +334,12 @@
     const focusedControl = dialog.open && details.contains(document.activeElement)
       ? document.activeElement.id
       : '';
-    const share = MusicModel.shareUrl(event, location.href);
+    const share = previewLink(MusicModel.shareUrl(event, location.href));
     const image = event.image || 'assets/stage.webp';
     const imageAlt = event.imageAlt || `${event.name} — promotional image`;
-    const sourceNote = liveChecked
+    const sourceNote = previewMode
+      ? 'From this browser’s owner preview; not the official calendar.'
+      : liveChecked
       ? 'From the restaurant’s live calendar.'
       : `From saved listings checked ${savedChecked}.`;
     details.innerHTML = `<div class="detail-layout">
@@ -320,8 +348,8 @@
           <div class="detail-meta"><strong>${esc(MusicModel.displayDate(event.date, {long: true, year: true}))}</strong><span>${esc(event.start)}–${esc(event.end)} <small>Central</small></span></div>
         </div>
         <div class="detail-information">
-          <p class="detail-place"><strong>Tolbert’s Restaurant &amp; Chili Parlor</strong><span>423 S. Main Street · Grapevine, Texas</span></p>
-          <div class="detail-actions"><a class="detail-call" href="tel:+18174214888">Call for seating <span aria-hidden="true">↗</span></a><a href="menu.html">View menu</a><a href="${esc(directions)}" target="_blank" rel="noopener">Directions ↗</a></div>
+          <p class="detail-place"><strong>Tolbert’s Restaurant &amp; Chili Parlor</strong><span>${esc(detailAddress)}</span></p>
+          <div class="detail-actions"><a class="detail-call" href="${esc(previewPhoneHref)}">Call for seating <span aria-hidden="true">↗</span></a><a href="${esc(previewLink('menu.html'))}">View menu</a><a href="${esc(directions)}" target="_blank" rel="noopener">Directions ↗</a></div>
           <p class="detail-note">For reservations and any cover charge, call the restaurant.</p>
           <div class="detail-utilities"><button id="save-show" type="button"><span aria-hidden="true">↓</span> Add to calendar</button><button id="copy-show-link" type="button"><span aria-hidden="true">↗</span> Copy show link</button></div>
           <div class="show-share-fallback" hidden><label for="show-share-url">Select and copy this show link</label><input id="show-share-url" type="text" readonly value="${esc(share)}"></div>
@@ -383,6 +411,8 @@
     lastOpenedKey = requested;
     if (matching) {
       setLinkStatus('This shared show has ended. The current upcoming lineup appears below.');
+    } else if (previewMode) {
+      setLinkStatus('This shared show is not in this browser’s current owner preview. The preview lineup appears below.');
     } else if (liveChecked) {
       setLinkStatus('This shared show was not found in the last successful live-calendar check. The current upcoming lineup appears below.');
     } else {
@@ -486,7 +516,7 @@
 
   function refreshTimeSensitiveContent() {
     renderShows();
-    if (!document.hidden && Date.now() - lastFetch > 300000) refreshCalendar();
+    if (!previewMode && !document.hidden && Date.now() - lastFetch > 300000) refreshCalendar();
   }
 
   setInterval(refreshTimeSensitiveContent, 60000);
@@ -495,6 +525,15 @@
   });
 
   readUrlState();
+  if (previewMode) {
+    savedLoaded = true;
+    savedEvents = ownerPreviewEvents();
+    events = savedEvents;
+    liveResolved = true;
+    setSource('Owner preview · lineup changes from this browser. This is not the official calendar. Times are Central.');
+    renderShows();
+    return;
+  }
   setSource(`Loading the saved lineup checked ${savedChecked} and checking Tolbert’s live calendar…`);
   fetch('events.json', {cache: 'no-store'})
     .then(response => {

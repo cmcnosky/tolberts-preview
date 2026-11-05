@@ -32,3 +32,16 @@ The current integration reads Tolbert’s public WordPress event feed in the vis
 ## Presentation finish — November 4, 2026
 
 `guest-finish.css` aligns the menu/music navigation and type with the retained homepage aesthetic. `music.js` provides filter reset and preserves show-link keyboard focus when the live list refreshes. `proposal.html` and `operations.html` are the current owner-review materials; the November 2 PDF and comparison captures remain dated evidence. Header/navigation text is present in all three guest-page shells, so check those together when changing destinations.
+
+
+## Interactive owner demo — November 5, 2026
+
+Open `owner.html` on GitHub Pages. Initial demo username and password are both `Steven` (case-sensitive). This is a public, browser-local UI demonstration, not authentication or authorization for production systems. Do not enter private business records or reuse a real password.
+
+The owner room supports menu editing/availability, show editing/photos, weekly and special hours, sample stock counts, a draft → simulated submission → received purchase-order lifecycle, illustrative team roles, activity, settings, and a browser-local password change. Only the Steven demo login works; team entries do not create accounts. No vendor, POS, CMS, payment, or email connection is used by owner actions.
+
+State is stored under `tolberts-owner-demo-v1` in this browser. The demo session uses sessionStorage; a changed demo password is stored as a SHA-256 digest, which is not a production password scheme or security boundary. Settings → Reset demo restores the starting records and `Steven` password. Clearing browser site data does the same.
+
+Guest preview links use `?owner-preview=1` to render this browser's edited menu, events, hours, and contact details. Normal guest URLs continue using the public menu and official calendar integration. The preview flag and local edits do not travel to another person's browser.
+
+Validation: `node --test tests/owner-model.test.cjs` plus the existing site checks above. Stock and supplier prices in this demo are fictional examples. Published event/menu records are only starting content; demo edits are never published as restaurant facts.
