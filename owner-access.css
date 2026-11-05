@@ -13,10 +13,11 @@
 }
 :is(.parlor-skin,.menu-page,.music-page) .header .brand {
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-  width:144px; height:66px; padding:5px 6px; background:#8cad74;
+  width:144px; height:66px; padding:5px 6px; background:#a6cc70;
 }
-:is(.parlor-skin,.menu-page,.music-page) .header .brand img { width:126px; height:43px; margin:0; object-fit:contain; }
-:is(.parlor-skin,.menu-page,.music-page) .header .brand span { font-size:9px; line-height:11px; letter-spacing:1px; white-space:nowrap; }
+:is(.parlor-skin,.menu-page,.music-page) .header .brand img { width:126px; height:43px; margin:0; object-fit:contain; filter:brightness(0) saturate(100%) invert(27%) sepia(33%) saturate(4500%) hue-rotate(5deg) brightness(90%) contrast(90%); }
+:is(.parlor-skin,.menu-page,.music-page) .header .brand span { font:800 11.5px/12px var(--cond); color:#24211c; letter-spacing:.4px; white-space:nowrap; margin:0; }
+.brand-tagline-break { display:none; }
 @media(min-width:761px) {
   :is(.parlor-skin,.menu-page,.music-page) .mobile-nav {
     left:auto; right:4%; width:290px; padding:12px 20px;
@@ -40,14 +41,18 @@
   :is(.parlor-skin,.menu-page,.music-page) .header .order-link { margin-left:auto; }
 }
 @media(max-width:760px) {
-  :is(.parlor-skin,.menu-page,.music-page) .header .brand { width:108px; height:58px; padding:4px; }
-  :is(.parlor-skin,.menu-page,.music-page) .header .brand img { width:98px; height:38px; }
-  :is(.parlor-skin,.menu-page,.music-page) .header .brand span { font-size:7.5px; line-height:10px; letter-spacing:.35px; }
+  :is(.parlor-skin,.menu-page,.music-page) .header { height:76px; }
+  :is(.parlor-skin,.menu-page,.music-page) .header .brand { width:108px; height:64px; padding:2px 4px; gap:1px; }
+  .brand-tagline-break { display:block; }
+  .menu-tools { top:76px; }
+  .menu-sidebar { top:96px; }
+  :is(.parlor-skin,.menu-page,.music-page) .header .brand img { width:98px; height:34px; }
+  :is(.parlor-skin,.menu-page,.music-page) .header .brand span { font-size:12px; line-height:12.5px; letter-spacing:.5px; }
 }
 @media(max-width:370px) {
   :is(.parlor-skin,.menu-page,.music-page) .header .brand { width:98px; }
   :is(.parlor-skin,.menu-page,.music-page) .header .brand img { width:90px; }
-  :is(.parlor-skin,.menu-page,.music-page) .header .brand span { font-size:7px; letter-spacing:.2px; }
+  :is(.parlor-skin,.menu-page,.music-page) .header .brand span { font-size:12px; letter-spacing:.5px; }
 }
 body.owner-login-open { overflow: hidden; }
 body.owner-login-open .mobile-bottom { visibility: hidden; }
