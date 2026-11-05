@@ -13,7 +13,7 @@
 }
 :is(.parlor-skin,.menu-page,.music-page) .header .brand {
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-  width:144px; height:66px; padding:5px 6px; background:#dce5d5;
+  width:144px; height:66px; padding:5px 6px; background:#8cad74;
 }
 :is(.parlor-skin,.menu-page,.music-page) .header .brand img { width:126px; height:43px; margin:0; object-fit:contain; }
 :is(.parlor-skin,.menu-page,.music-page) .header .brand span { font-size:9px; line-height:11px; letter-spacing:1px; white-space:nowrap; }
