@@ -53,7 +53,7 @@ Validation: `node --test tests/owner-model.test.cjs` plus the existing site chec
 
 The calendar keeps names and times from the official REST feed and resolves artist artwork through the official public GraphQL endpoint. The November 5 saved fallback contains 13 events and 13 unchanged local promotional images for November 5–15. Existing browser-local owner edits remain intact; resetting the demo loads the latest packaged baseline.
 
-This revision repairs stale-editor overwrites across tabs, strengthens saved-state and stock-receipt validation, improves keyboard names/focus/skip links, removes research-table sideways scrolling, and completes social metadata for all eight pages. Browser checks and their limits are recorded in audit.html. All 58 individual regression cases passed: 13 feed, 7 menu, 19 music model, and 19 owner model. The Node combined runner additionally counts the three legacy suite files as wrapper tests; do not add those wrappers to the individual total.
+This revision repairs stale-editor overwrites across tabs, strengthens saved-state and stock-receipt validation, improves keyboard names/focus/skip links, removes research-table sideways scrolling, and completes social metadata for all eight pages. Browser checks and their limits are recorded in audit.html. The current release passes 60 individual regression cases: 13 feed, 7 menu, 19 music model, and 21 owner model. The Node combined runner additionally counts the three legacy suite files as wrapper tests; do not add those wrappers to the individual total.
 
 ## Shared login — November 5, 2026
 
@@ -62,3 +62,9 @@ This revision repairs stale-editor overwrites across tabs, strengthens saved-sta
 Full desktop navigation remains above 1100px. Its More menu contains only the additional destinations; below that breakpoint More also contains the primary navigation. The logo and tagline sit together on a brighter, more saturated green background (#A6CC70), limited to their brand block. The logo uses a warmer burnt-orange treatment. The dark tagline is weight 800 in the site’s Barlow Condensed typeface: 11.5px on desktop and 12px in two lines on phones. Desktop headers stay 78px tall; phone headers use 76px to fit the readable caption. Hero, artist imagery, green visit strip, and Playing Today remain as established.
 
 Verify More → Login on home, menu, and music across narrow and wide layouts, Escape/focus return, Steven sign-in, guest return, logout, and the absence of horizontal overflow. Tests and production boundaries are documented above and in audit.html.
+
+## Final audit follow-up — November 5, 2026
+
+The management preview now offsets sticky menu controls, sidebar, and root anchor scroll padding by the measured preview-banner height. This was checked after scrolling on phone and desktop layouts. The owner model now rejects costs, stock values, and order quantities above the interface limits, rejects unsafe order totals, and refuses an over-limit receipt before changing inventory. Two regression cases cover the repaired numeric-state failures.
+
+The browser pass covered all eight pages and all nine owner sections at 320/390/768/1280px, six editor dialogs at 320px, guest search/filter/share/inquiry flows, login, saved content previews, and the simulated purchase lifecycle. Heading semantics, research favicon/theme metadata, audit theme metadata, and private-event inquiry wording were also corrected. The approved visual treatment and single More → Login entrance are preserved. Published delivery verification is recorded with the source package.

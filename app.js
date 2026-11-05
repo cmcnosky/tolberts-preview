@@ -19,7 +19,8 @@ $('#inquiry-open').addEventListener('click', () => {$('input[name="date"]').min 
 $('#inquiry-form').addEventListener('submit', event => {
   event.preventDefault(); const data = Object.fromEntries(new FormData(event.currentTarget));
   const name = data.name.trim(); if (!name) {$('input[name="name"]').setCustomValidity('Please enter your name.'); $('input[name="name"]').reportValidity(); return;}
-  const message = `Hello Tolbert’s team,\n\nI’d like to ask about ${data.occasion.toLowerCase()}.\n\nName: ${name}\nPreferred date: ${data.date || 'To be discussed'}\nApproximate group size: ${data.size || 'To be discussed'}\n\n${data.message.trim() || 'Please let me know about availability and next steps.'}\n\nThank you,\n${name}`;
+  const topic = data.occasion === 'Private event' ? 'a private event' : data.occasion === 'Band booking' ? 'booking a band' : data.occasion.toLowerCase();
+  const message = `Hello Tolbert’s team,\n\nI’d like to ask about ${topic}.\n\nName: ${name}\nPreferred date: ${data.date || 'To be discussed'}\nApproximate group size: ${data.size || 'To be discussed'}\n\n${data.message.trim() || 'Please let me know about availability and next steps.'}\n\nThank you,\n${name}`;
   $('#inquiry-message').textContent = message;
   $('#inquiry-send').href = `mailto:tolbertsrestaurant@gmail.com?subject=${encodeURIComponent(data.occasion + ' inquiry' + (data.date ? ' — ' + data.date : ''))}&body=${encodeURIComponent(message)}`;
   $('#inquiry-form').hidden = true; $('#inquiry-result').hidden = false; $('#inquiry-result').focus();

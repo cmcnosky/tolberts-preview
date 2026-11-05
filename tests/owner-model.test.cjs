@@ -172,6 +172,52 @@ test("rounds captured unit costs to cents before multiplying", () => {
   assert.equal(Model.orderTotal(order), 40);
 });
 
+test("rejects saved and newly captured values outside the interface limits", () => {
+  const subject = state();
+  const item = firstVendorItem(subject);
+
+  item.cost = Number.MAX_VALUE;
+  assert.equal(Model.isUsableState(subject), false);
+  assert.throws(
+    () => Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 2 }] }),
+    /invalid unit cost/i
+  );
+  assert.equal(subject.orders.length, 0);
+
+  item.cost = 10;
+  assert.throws(
+    () => Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 10001 }] }),
+    /1 to 10000/i
+  );
+  assert.throws(
+    () => Model.orderTotal({ lines: [{ quantity: 2, unitCost: Number.POSITIVE_INFINITY }] }),
+    /invalid line total/i
+  );
+});
+
+test("refuses an over-limit receipt before changing any inventory", () => {
+  const subject = state();
+  const item = firstVendorItem(subject);
+  item.onHand = 99999;
+  item.par = 100000;
+  const order = Model.createOrder(subject, {
+    vendor: item.vendor,
+    lines: [{ itemId: item.id, quantity: 2 }]
+  });
+  Model.submitOrder(subject, order.id);
+
+  assert.throws(() => Model.receiveOrder(subject, order.id), /stock limit/i);
+  assert.equal(item.onHand, 99999);
+  assert.equal(order.lines[0].received, 0);
+  assert.equal(order.status, "Submitted (demo)");
+
+  item.onHand = 99998;
+  Model.receiveOrder(subject, order.id);
+  assert.equal(item.onHand, 100000);
+  assert.equal(order.status, "Received");
+  assert.equal(Model.isUsableState(subject), true);
+});
+
 test("identifies inventory at or below its reorder threshold", () => {
   const subject = state();
   const expected = subject.inventory
@@ -267,19 +313,21 @@ test("receipt validation is atomic when an inventory record is missing", () => {
 });
 
 test("receipt validation rejects corrupted quantities before any inventory mutation", () => {
-  const subject = state();
-  const items = subject.inventory.filter((item) => item.vendor === "Demo food supplier").slice(0, 2);
-  const before = items.map((item) => item.onHand);
-  const order = Model.createOrder(subject, {
-    vendor: "Demo food supplier",
-    lines: items.map((item) => ({ itemId: item.id, quantity: 2 }))
-  });
-  Model.submitOrder(subject, order.id);
-  order.lines[1].quantity = Number.NaN;
-  assert.throws(() => Model.receiveOrder(subject, order.id), /invalid receipt quantity/i);
-  assert.deepEqual(items.map((item) => item.onHand), before);
-  assert.equal(order.status, "Submitted (demo)");
-  assert.deepEqual(order.lines.map((line) => line.received), [0, 0]);
+  for (const invalidQuantity of [Number.NaN, 10001]) {
+    const subject = state();
+    const items = subject.inventory.filter((item) => item.vendor === "Demo food supplier").slice(0, 2);
+    const before = items.map((item) => item.onHand);
+    const order = Model.createOrder(subject, {
+      vendor: "Demo food supplier",
+      lines: items.map((item) => ({ itemId: item.id, quantity: 2 }))
+    });
+    Model.submitOrder(subject, order.id);
+    order.lines[1].quantity = invalidQuantity;
+    assert.throws(() => Model.receiveOrder(subject, order.id), /invalid receipt quantity/i);
+    assert.deepEqual(items.map((item) => item.onHand), before);
+    assert.equal(order.status, "Submitted (demo)");
+    assert.deepEqual(order.lines.map((line) => line.received), [0, 0]);
+  }
 });
 
 test("receipt validation rejects duplicate or previously received lines atomically", () => {

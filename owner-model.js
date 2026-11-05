@@ -42,6 +42,12 @@
   const TEAM_ROLES = new Set(["Owner", "Manager", "Editor"]);
   const TEAM_STATUSES = new Set(["Active", "Inactive"]);
   const SAFE_ID = /^[a-z0-9][a-z0-9-]{0,119}$/i;
+  // These match the bounds exposed by the demo's number inputs. Keeping the
+  // model inside the same range prevents a corrupted saved value from turning
+  // into Infinity and then serializing as null.
+  const MAX_STOCK_VALUE = 100000;
+  const MAX_UNIT_COST = 100000;
+  const MAX_ORDER_QUANTITY = 10000;
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -87,6 +93,10 @@
 
   function isNonNegativeNumber(value) {
     return typeof value === "number" && Number.isFinite(value) && value >= 0;
+  }
+
+  function isNumberInRange(value, maximum) {
+    return isNonNegativeNumber(value) && value <= maximum;
   }
 
   function isCivilDate(value) {
@@ -151,7 +161,8 @@
     const inventoryValid = value.inventory.every((item) =>
       hasStrings(item, ["id", "name", "unit", "vendor"]) &&
       item.name.trim() && item.unit.trim() && item.vendor.trim() &&
-      [item.onHand, item.par, item.reorderAt, item.cost].every(isNonNegativeNumber) &&
+      [item.onHand, item.par, item.reorderAt].every((value) => isNumberInRange(value, MAX_STOCK_VALUE)) &&
+      isNumberInRange(item.cost, MAX_UNIT_COST) &&
       item.par >= item.reorderAt
     );
     const ordersValid = value.orders.every((order) =>
@@ -163,8 +174,8 @@
       order.lines.every((line) =>
         hasNonBlankStrings(line, ["itemId", "name", "unit"]) && SAFE_ID.test(line.itemId) &&
         value.inventory.some((item) => item.id === line.itemId) &&
-        Number.isInteger(line.quantity) && line.quantity > 0 &&
-        isNonNegativeNumber(line.unitCost) && Number.isInteger(line.received) &&
+        Number.isInteger(line.quantity) && line.quantity > 0 && line.quantity <= MAX_ORDER_QUANTITY &&
+        isNumberInRange(line.unitCost, MAX_UNIT_COST) && Number.isInteger(line.received) &&
         line.received >= 0 && line.received <= line.quantity &&
         (order.status === "Received" ? line.received === line.quantity : line.received === 0)
       )
@@ -237,8 +248,15 @@
     const cents = lines.reduce((sum, line) => {
       const quantity = Number(line.quantity);
       const cost = Number(line.unitCost);
-      if (!Number.isFinite(quantity) || !Number.isFinite(cost)) return sum;
-      return sum + quantity * Math.round(cost * 100);
+      if (!Number.isInteger(quantity) || quantity <= 0 || quantity > MAX_ORDER_QUANTITY ||
+          !Number.isFinite(cost) || cost < 0 || cost > MAX_UNIT_COST) {
+        throw new Error("The order contains an invalid line total.");
+      }
+      const lineCents = quantity * Math.round(cost * 100);
+      if (!Number.isSafeInteger(lineCents) || !Number.isSafeInteger(sum + lineCents)) {
+        throw new Error("The order total is outside the supported demo range.");
+      }
+      return sum + lineCents;
     }, 0);
     return cents / 100;
   }
@@ -285,13 +303,13 @@
       if (!itemId) throw new Error("Each order line needs an inventory item.");
       if (seen.has(itemId)) throw new Error("Each inventory item may appear only once per order.");
       seen.add(itemId);
-      if (!Number.isFinite(quantity) || !Number.isInteger(quantity) || quantity <= 0) {
-        throw new Error("Order quantities must be positive whole numbers.");
+      if (!Number.isFinite(quantity) || !Number.isInteger(quantity) || quantity <= 0 || quantity > MAX_ORDER_QUANTITY) {
+        throw new Error(`Order quantities must be whole numbers from 1 to ${MAX_ORDER_QUANTITY}.`);
       }
       const item = state.inventory.find((candidate) => candidate.id === itemId);
       if (!item) throw new Error("An order line references an unknown inventory item.");
       if (item.vendor !== vendor) throw new Error("Every item must belong to the selected demo vendor.");
-      if (!Number.isFinite(Number(item.cost)) || Number(item.cost) < 0) {
+      if (!Number.isFinite(Number(item.cost)) || Number(item.cost) < 0 || Number(item.cost) > MAX_UNIT_COST) {
         throw new Error("The inventory item has an invalid unit cost.");
       }
       return {
@@ -345,17 +363,17 @@
       const item = state.inventory.find((candidate) => candidate && candidate.id === line.itemId);
       if (!item) throw new Error("The order contains an inventory item that no longer exists.");
       const quantity = Number(line.quantity);
-      if (!Number.isFinite(quantity) || !Number.isInteger(quantity) || quantity <= 0) {
+      if (!Number.isFinite(quantity) || !Number.isInteger(quantity) || quantity <= 0 || quantity > MAX_ORDER_QUANTITY) {
         throw new Error("The order contains an invalid receipt quantity.");
       }
-      if (!Number.isFinite(Number(item.onHand))) {
+      if (!Number.isFinite(Number(item.onHand)) || Number(item.onHand) < 0 || Number(item.onHand) > MAX_STOCK_VALUE) {
         throw new Error("The inventory item has an invalid on-hand count.");
       }
       if (Number(line.received) !== 0) {
         throw new Error("The order contains an item that was already marked received.");
       }
-      if (!Number.isFinite(Number(item.onHand) + quantity)) {
-        throw new Error("Receiving this order would create an invalid on-hand count.");
+      if (!Number.isFinite(Number(item.onHand) + quantity) || Number(item.onHand) + quantity > MAX_STOCK_VALUE) {
+        throw new Error("Receiving this order would exceed the supported demo stock limit.");
       }
       return { item, line, quantity };
     });
