@@ -87,3 +87,7 @@ footer { margin-top: 40px; padding-top: 25px; color: #675d4c; border-top: 1px so
   h2 { break-after: avoid; }
   li, tr, .note, .decision-list { break-inside: avoid; }
 }
+
+.earlier-audits { margin: 28px 0; border-block: 1px solid var(--line); }
+.earlier-audits summary { min-height: 48px; padding: 12px 0; color: var(--red); font-weight: 700; cursor: pointer; }
+.earlier-audits summary:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }

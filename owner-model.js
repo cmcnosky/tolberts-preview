@@ -36,6 +36,12 @@
     { day: "Saturday", open: "11:00", close: "00:00", closed: false },
     { day: "Sunday", open: "11:00", close: "21:00", closed: false }
   ];
+  const DAYS = HOURS.map((entry) => entry.day);
+  const EVENT_STATUSES = new Set(["Scheduled", "Cancelled"]);
+  const ORDER_STATUSES = new Set(["Draft", "Submitted (demo)", "Received", "Cancelled"]);
+  const TEAM_ROLES = new Set(["Owner", "Manager", "Editor"]);
+  const TEAM_STATUSES = new Set(["Active", "Inactive"]);
+  const SAFE_ID = /^[a-z0-9][a-z0-9-]{0,119}$/i;
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -70,6 +76,15 @@
     return isRecord(value) && fields.every((field) => typeof value[field] === "string");
   }
 
+  function hasNonBlankStrings(value, fields) {
+    return hasStrings(value, fields) && fields.every((field) => value[field].trim().length > 0);
+  }
+
+  function hasUniqueSafeIds(values) {
+    const ids = values.map((value) => value && value.id);
+    return ids.every((value) => typeof value === "string" && SAFE_ID.test(value)) && new Set(ids).size === ids.length;
+  }
+
   function isNonNegativeNumber(value) {
     return typeof value === "number" && Number.isFinite(value) && value >= 0;
   }
@@ -89,48 +104,77 @@
       /^(?:0?[1-9]|1[0-2]):[0-5]\d\s*(?:am|pm)$/i.test(value);
   }
 
+  function isIsoTimestamp(value) {
+    if (typeof value !== "string") return false;
+    const parsed = new Date(value);
+    return !Number.isNaN(parsed.getTime()) && parsed.toISOString() === value;
+  }
+
+  function isStoredImage(value) {
+    if (typeof value !== "string") return false;
+    if (/^assets\/[a-zA-Z0-9._-]+$/.test(value)) return true;
+    return value.length <= 850000 && /^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/i.test(value);
+  }
+
   function isUsableState(value) {
     if (!isRecord(value) || value.version !== 1) return false;
     const arrayFields = ["menu", "events", "hours", "exceptions", "inventory", "orders", "team", "activity"];
     if (!arrayFields.every((field) => Array.isArray(value[field]))) return false;
-    if (!hasStrings(value.settings, ["phone", "address", "announcement"])) return false;
+    if (!hasStrings(value.settings, ["phone", "address", "announcement"]) ||
+        !value.settings.phone.trim() || !value.settings.address.trim()) return false;
+    const idCollections = ["menu", "events", "exceptions", "inventory", "orders", "team", "activity"];
+    if (!idCollections.every((field) => hasUniqueSafeIds(value[field]))) return false;
 
     const menuValid = value.menu.every((item) =>
-      hasStrings(item, ["id", "category", "name", "description", "price"]) && typeof item.available === "boolean"
+      hasStrings(item, ["id", "category", "name", "description", "price"]) &&
+      item.category.trim() && item.name.trim() && typeof item.available === "boolean"
     );
     const eventsValid = value.events.every((event) =>
       hasStrings(event, ["id", "name", "genre", "date", "start", "end", "image", "status"]) &&
-      isCivilDate(event.date) && isClock(event.start) && isClock(event.end)
+      event.name.trim() && isCivilDate(event.date) && isClock(event.start) && isClock(event.end) &&
+      event.start !== event.end && isStoredImage(event.image) && EVENT_STATUSES.has(event.status)
     );
     const validClock = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
-    const hoursValid = value.hours.length === 7 && value.hours.every((hours) =>
+    const hoursValid = value.hours.length === DAYS.length &&
+      value.hours.every((entry, index) => isRecord(entry) && entry.day === DAYS[index]) &&
+      value.hours.every((hours) =>
       hasStrings(hours, ["day", "open", "close"]) &&
-      typeof hours.closed === "boolean" && validClock.test(hours.open) && validClock.test(hours.close)
+      typeof hours.closed === "boolean" && validClock.test(hours.open) && validClock.test(hours.close) &&
+      (hours.closed || hours.open !== hours.close)
     );
     const exceptionsValid = value.exceptions.every((exception) =>
       hasStrings(exception, ["id", "date", "label", "open", "close"]) &&
-      typeof exception.closed === "boolean" && isCivilDate(exception.date) &&
-      validClock.test(exception.open) && validClock.test(exception.close)
-    );
+      exception.label.trim() && typeof exception.closed === "boolean" && isCivilDate(exception.date) &&
+      validClock.test(exception.open) && validClock.test(exception.close) &&
+      (exception.closed || exception.open !== exception.close)
+    ) && new Set(value.exceptions.map((entry) => entry.date)).size === value.exceptions.length;
     const inventoryValid = value.inventory.every((item) =>
       hasStrings(item, ["id", "name", "unit", "vendor"]) &&
-      [item.onHand, item.par, item.reorderAt, item.cost].every(isNonNegativeNumber)
+      item.name.trim() && item.unit.trim() && item.vendor.trim() &&
+      [item.onHand, item.par, item.reorderAt, item.cost].every(isNonNegativeNumber) &&
+      item.par >= item.reorderAt
     );
     const ordersValid = value.orders.every((order) =>
       hasStrings(order, ["id", "number", "vendor", "notes", "status", "createdAt"]) &&
-      Number.isFinite(Date.parse(order.createdAt)) && typeof order.sample === "boolean" &&
+      /^PO-DEMO-\d+$/.test(order.number) && order.vendor.trim() && ORDER_STATUSES.has(order.status) &&
+      isIsoTimestamp(order.createdAt) && order.sample === true &&
       Array.isArray(order.lines) && order.lines.length > 0 &&
+      new Set(order.lines.map((line) => line && line.itemId)).size === order.lines.length &&
       order.lines.every((line) =>
-        hasStrings(line, ["itemId", "name", "unit"]) &&
+        hasNonBlankStrings(line, ["itemId", "name", "unit"]) && SAFE_ID.test(line.itemId) &&
+        value.inventory.some((item) => item.id === line.itemId) &&
         Number.isInteger(line.quantity) && line.quantity > 0 &&
-        isNonNegativeNumber(line.unitCost) && isNonNegativeNumber(line.received)
+        isNonNegativeNumber(line.unitCost) && Number.isInteger(line.received) &&
+        line.received >= 0 && line.received <= line.quantity &&
+        (order.status === "Received" ? line.received === line.quantity : line.received === 0)
       )
+    ) && new Set(value.orders.map((order) => order.number)).size === value.orders.length;
+    const teamValid = value.team.some((member) => member && member.id === "steven" && member.role === "Owner" && member.status === "Active") && value.team.every((member) =>
+      hasNonBlankStrings(member, ["id", "name", "role", "status"]) &&
+      TEAM_ROLES.has(member.role) && TEAM_STATUSES.has(member.status)
     );
-    const teamValid = value.team.some((member) => member && member.id === "steven") && value.team.every((member) =>
-      hasStrings(member, ["id", "name", "role", "status"])
-    );
-    const activityValid = value.activity.every((entry) =>
-      hasStrings(entry, ["id", "message", "createdAt"]) && Number.isFinite(Date.parse(entry.createdAt))
+    const activityValid = value.activity.length <= 100 && value.activity.every((entry) =>
+      hasNonBlankStrings(entry, ["id", "message", "createdAt"]) && isIsoTimestamp(entry.createdAt)
     );
     return menuValid && eventsValid && hoursValid && exceptionsValid && inventoryValid && ordersValid && teamValid && activityValid;
   }
@@ -293,8 +337,12 @@
     if (order.status !== "Submitted (demo)") {
       throw new Error("Only submitted demo purchase orders can be received.");
     }
+    const seen = new Set();
     const receipt = order.lines.map((line) => {
-      const item = state.inventory.find((candidate) => candidate.id === line.itemId);
+      if (!isRecord(line)) throw new Error("The order contains an invalid line item.");
+      if (seen.has(line.itemId)) throw new Error("The order contains the same inventory item more than once.");
+      seen.add(line.itemId);
+      const item = state.inventory.find((candidate) => candidate && candidate.id === line.itemId);
       if (!item) throw new Error("The order contains an inventory item that no longer exists.");
       const quantity = Number(line.quantity);
       if (!Number.isFinite(quantity) || !Number.isInteger(quantity) || quantity <= 0) {
@@ -302,6 +350,12 @@
       }
       if (!Number.isFinite(Number(item.onHand))) {
         throw new Error("The inventory item has an invalid on-hand count.");
+      }
+      if (Number(line.received) !== 0) {
+        throw new Error("The order contains an item that was already marked received.");
+      }
+      if (!Number.isFinite(Number(item.onHand) + quantity)) {
+        throw new Error("Receiving this order would create an invalid on-hand count.");
       }
       return { item, line, quantity };
     });

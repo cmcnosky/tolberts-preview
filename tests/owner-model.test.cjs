@@ -49,8 +49,24 @@ test("accepts seeded and legitimately mutated demo state", () => {
   assert.equal(Model.isUsableState(subject), true);
   subject.exceptions.push({ id: "hours-special", date: "2026-12-24", label: "Christmas Eve", open: "11:00", close: "18:00", closed: false });
   subject.team.push({ id: "team-2", name: "Demo manager", role: "Manager", status: "Active" });
+  subject.events[0].image = "data:image/png;base64,AA==";
   const item = firstVendorItem(subject);
   Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 2 }] });
+  assert.equal(Model.isUsableState(subject), true);
+});
+
+test("accepts every state produced by the simulated purchase lifecycle", () => {
+  const subject = state();
+  const item = firstVendorItem(subject);
+  const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 2 }] });
+  assert.equal(Model.isUsableState(subject), true);
+  Model.submitOrder(subject, order.id);
+  assert.equal(Model.isUsableState(subject), true);
+  Model.receiveOrder(subject, order.id);
+  assert.equal(Model.isUsableState(subject), true);
+
+  const cancelled = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] });
+  Model.cancelOrder(subject, cancelled.id);
   assert.equal(Model.isUsableState(subject), true);
 });
 
@@ -64,18 +80,59 @@ test("rejects malformed browser state before the owner interface uses it", () =>
     (subject) => { subject.events[0].start = "25:00"; },
     (subject) => { subject.events[0].end = "13:00 pm"; },
     (subject) => { subject.menu[0].available = "yes"; },
+    (subject) => { subject.menu[0].id = "unsafe id"; },
+    (subject) => { subject.menu.push({ ...subject.menu[0] }); },
+    (subject) => { subject.events[0].status = "Maybe"; },
+    (subject) => { subject.events[0].end = subject.events[0].start; },
+    (subject) => { subject.events[0].image = "javascript:alert(1)"; },
+    (subject) => { subject.hours[0] = null; },
+    (subject) => { subject.hours.reverse(); },
+    (subject) => { subject.hours[0].close = subject.hours[0].open; },
     (subject) => { subject.inventory[0].onHand = null; },
+    (subject) => { subject.inventory[0].par = subject.inventory[0].reorderAt - 1; },
     (subject) => { subject.team = []; },
     (subject) => { subject.team.push(null); },
+    (subject) => { subject.team[0].role = "Editor"; },
+    (subject) => { subject.team.push({ id: "team-2", name: "Demo", role: "Administrator", status: "Active" }); },
     (subject) => { subject.settings.phone = 8174214888; },
+    (subject) => { subject.settings.phone = "   "; },
     (subject) => { subject.activity.push({ id: "bad", message: "Bad date", createdAt: "not-a-date" }); },
     (subject) => { subject.orders.push({ id: "bad-order", lines: null }); },
     (subject) => {
       const item = firstVendorItem(subject);
       const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] });
+      order.lines[0] = null;
+    },
+    (subject) => {
+      const item = firstVendorItem(subject);
+      const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] });
       order.createdAt = "not-a-date";
     },
-    (subject) => { subject.exceptions.push({ id: "bad-date", date: "2026-02-30", label: "Bad", open: "11:00", close: "18:00", closed: false }); }
+    (subject) => {
+      const item = firstVendorItem(subject);
+      const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] });
+      order.status = "Sent";
+    },
+    (subject) => {
+      const item = firstVendorItem(subject);
+      const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] });
+      order.lines.push({ ...order.lines[0] });
+    },
+    (subject) => {
+      const item = firstVendorItem(subject);
+      const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] });
+      order.lines[0].itemId = "stock-missing";
+    },
+    (subject) => {
+      const item = firstVendorItem(subject);
+      const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] });
+      order.lines[0].received = 1;
+    },
+    (subject) => { subject.exceptions.push({ id: "bad-date", date: "2026-02-30", label: "Bad", open: "11:00", close: "18:00", closed: false }); },
+    (subject) => {
+      subject.exceptions.push({ id: "hours-1", date: "2026-12-24", label: "One", open: "11:00", close: "18:00", closed: false });
+      subject.exceptions.push({ id: "hours-2", date: "2026-12-24", label: "Two", open: "11:00", close: "17:00", closed: false });
+    }
   ];
   cases.forEach((corrupt) => {
     const subject = state();
@@ -223,6 +280,24 @@ test("receipt validation rejects corrupted quantities before any inventory mutat
   assert.deepEqual(items.map((item) => item.onHand), before);
   assert.equal(order.status, "Submitted (demo)");
   assert.deepEqual(order.lines.map((line) => line.received), [0, 0]);
+});
+
+test("receipt validation rejects duplicate or previously received lines atomically", () => {
+  for (const corrupt of [
+    (order) => order.lines.push({ ...order.lines[0] }),
+    (order) => { order.lines[0].received = 1; },
+    (order) => { order.lines[0] = null; }
+  ]) {
+    const subject = state();
+    const item = firstVendorItem(subject);
+    const before = item.onHand;
+    const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 2 }] });
+    Model.submitOrder(subject, order.id);
+    corrupt(order);
+    assert.throws(() => Model.receiveOrder(subject, order.id), /same inventory item|already marked received|invalid line item/i);
+    assert.equal(item.onHand, before);
+    assert.equal(order.status, "Submitted (demo)");
+  }
 });
 
 test("keeps only the newest 100 activity records", () => {

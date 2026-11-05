@@ -185,7 +185,7 @@ test('calendar output preserves DST-safe times, escaping, folding, and source di
 
 test('saved calendar output states its dated fallback rather than implying a live check', () => {
   const text = Music.buildIcs(show(), {live: false, now: new Date('2026-11-01T18:00:00Z')});
-  assert.match(text.replace(/\r\n /g, ''), /Saved schedule checked November 1\\, 2026\./);
+  assert.match(text.replace(/\r\n /g, ''), /Saved schedule checked November 5\\, 2026\./);
 });
 
 test('owner-preview calendar downloads have a demo title, distinct identity, and correctly escaped disclosure', () => {

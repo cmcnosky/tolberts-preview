@@ -1,9 +1,11 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const path = require('node:path');
 
 const CalendarData = require(path.join(__dirname, '../calendar-data.js'));
+const savedEvents = require(path.join(__dirname, '../events.json'));
 
 const tests = [];
 function test(name, fn) {
@@ -61,6 +63,21 @@ test('clockValue converts valid 24-hour ACF values and rejects invalid formats',
   }
 });
 
+test('saved fallback has unique listings and packaged artwork for every show', () => {
+  assert.ok(savedEvents.length > 0);
+  const keys = new Set();
+  for (const event of savedEvents) {
+    assert.match(event.date, /^\d{4}-\d{2}-\d{2}$/);
+    assert.match(event.start, /^(?:0?[1-9]|1[0-2]):[0-5]\d (?:am|pm)$/);
+    assert.match(event.end, /^(?:0?[1-9]|1[0-2]):[0-5]\d (?:am|pm)$/);
+    assert.match(event.image, /^assets\/[a-zA-Z0-9._-]+$/);
+    assert.ok(fs.existsSync(path.join(__dirname, '..', event.image)), `missing artwork for ${event.name}`);
+    const key = `${event.date}|${event.name}|${event.start}`;
+    assert.ok(!keys.has(key), `duplicate saved listing ${key}`);
+    keys.add(key);
+  }
+});
+
 test('normalizeEvent trims names, converts fields, and preserves valid end dates', () => {
   assert.deepEqual(
     CalendarData.normalizeEvent(post({id: 44, name: '  Night Band  ', genre: 'Texas Blues', date: '20261107', start: '21:00:00', end: '01:15:00', endDate: '20261108', image: '1766'})),
@@ -90,11 +107,25 @@ test('normalizeEvent rejects incomplete events, impossible clocks/dates, and bac
     post({id: 5, name: 'Bad End Date', date: '20261101', endDate: '20261031'}),
     post({id: 6, name: 'Malformed End Date', date: '20261101', endDate: '2026-11-02'}),
     {id: 7, acf: {}},
+    {acf: post({id: 8, name: 'Missing ID', date: '20261101'}).acf},
+    null,
   ];
   for (const item of invalid) assert.equal(CalendarData.normalizeEvent(item), null);
 });
 
-test('fetchEvents paginates, sorts, sends bounded request options, and restricts media origins', async () => {
+test('GraphQL image parsing accepts only the official HTTPS origin and valid event IDs', () => {
+  const images = CalendarData.imageMap({data: {events: {nodes: [
+    {databaseId: 1, postTypeEvent: {image: {sourceUrl: 'https://tolbertscms.com/uploads/artist.jpg'}}},
+    {databaseId: 2, postTypeEvent: {image: {sourceUrl: 'http://tolbertscms.com/uploads/insecure.jpg'}}},
+    {databaseId: 3, postTypeEvent: {image: {sourceUrl: 'https://cdn.tolbertscms.com/uploads/subdomain.jpg'}}},
+    {databaseId: 0, postTypeEvent: {image: {sourceUrl: 'https://tolbertscms.com/uploads/no-id.jpg'}}},
+  ]}}});
+  assert.deepEqual([...images], [[1, 'https://tolbertscms.com/uploads/artist.jpg']]);
+  assert.equal(CalendarData.officialImage('https://tolbertscms.com:444/uploads/wrong-port.jpg'), null);
+  assert.throws(() => CalendarData.imageMap({events: []}), /Invalid calendar image response/);
+});
+
+test('fetchEvents paginates, sorts, sends bounded request options, and restricts GraphQL image origins', async () => {
   const calls = [];
   const pageOne = [
     post({id: 3, name: 'Later Date', date: '20261103', start: '19:30:00', image: 102}),
@@ -111,13 +142,16 @@ test('fetchEvents paginates, sorts, sends bounded request options, and restricts
     assert.ok(options.signal instanceof AbortSignal);
     if (url.includes('/event?') && !url.includes('&page=')) return response(pageOne, {headers: {'X-WP-TotalPages': 2}});
     if (url.includes('&page=2')) return response(pageTwo);
-    if (url.includes('/media?')) {
-      return response([
-        {id: 102, source_url: 'https://tolbertscms.com/uploads/later.jpg'},
-        {id: 101, source_url: 'https://evil.example/fallback.jpg'},
-        {id: 103, source_url: 'http://tolbertscms.com/uploads/insecure.jpg'},
-        {id: 104, source_url: 'https://cdn.tolbertscms.com/uploads/subdomain.jpg'},
-      ]);
+    if (url === 'https://tolbertscms.com/graphql') {
+      assert.equal(options.method, 'POST');
+      assert.deepEqual(options.headers, {'Content-Type': 'application/json'});
+      assert.match(JSON.parse(options.body).query, /events\(first: 100\)/);
+      return response({data: {events: {nodes: [
+        {databaseId: 3, postTypeEvent: {image: {sourceUrl: 'https://tolbertscms.com/uploads/later.jpg'}}},
+        {databaseId: 2, postTypeEvent: {image: {sourceUrl: 'https://evil.example/fallback.jpg'}}},
+        {databaseId: 1, postTypeEvent: {image: {sourceUrl: 'http://tolbertscms.com/uploads/insecure.jpg'}}},
+        {databaseId: 4, postTypeEvent: {image: {sourceUrl: 'https://cdn.tolbertscms.com/uploads/subdomain.jpg'}}},
+      ]}}});
     }
     throw new Error(`unexpected URL ${url}`);
   };
@@ -136,7 +170,7 @@ test('fetchEvents paginates, sorts, sends bounded request options, and restricts
   assert.equal(calls.length, 3);
   assert.match(calls[0].url, /event\?per_page=100&_fields=id,acf$/);
   assert.match(calls[1].url, /event\?per_page=100&_fields=id,acf&page=2$/);
-  assert.match(calls[2].url, /media\?include=102,101,103,104&per_page=100&_fields=id,source_url$/);
+  assert.equal(calls[2].url, 'https://tolbertscms.com/graphql');
 });
 
 test('fetchEvents rejects a non-OK event response', async () => {
@@ -174,7 +208,7 @@ test('fetchEvents rejects excessive pagination and any incomplete listing', asyn
   );
 });
 
-test('fetchEvents degrades media failures to saved or stage imagery without losing valid event text', async () => {
+test('fetchEvents degrades image lookup failures to saved or stage imagery without losing valid event text', async () => {
   let call = 0;
   const source = [
     post({id: 1, name: 'Saved Image', date: '20261101', image: 201}),

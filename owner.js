@@ -9,7 +9,10 @@
   const $$ = (s, root = document) => [...root.querySelectorAll(s)];
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const cash = v => M.money(Number(v) || 0);
-  const dayKey = () => new Intl.DateTimeFormat('en-CA', {timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const dayKey = () => {
+    const parts = Object.fromEntries(new Intl.DateTimeFormat('en-US', {timeZone:'America/Chicago',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()).map(part=>[part.type,part.value]));
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  };
   const dateLabel = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '') ? new Intl.DateTimeFormat('en-US', {month:'short', day:'numeric', year:'numeric',timeZone:'UTC'}).format(new Date(value + 'T12:00:00Z')) : String(value || '');
   const timeLabel = v => /^\d{2}:\d{2}$/.test(v || '') ? new Intl.DateTimeFormat('en-US', {hour:'numeric',minute:'2-digit',timeZone:'UTC'}).format(new Date(`2000-01-01T${v}:00Z`)).toLowerCase() : v;
   const inputTime = v => { if (/^\d{2}:\d{2}$/.test(v || '')) return v; const m = /^(\d{1,2}):(\d{2})\s*(am|pm)$/i.exec(v || ''); return m ? String(Number(m[1]) % 12 + (m[3].toLowerCase() === 'pm' ? 12 : 0)).padStart(2,'0') + ':' + m[2] : '20:00'; };
@@ -19,9 +22,14 @@
   const form = $('#editor-form');
   function read(key) { try { return localStorage.getItem(key); } catch { storageOK = false; return null; } }
   function write(key,value) { try { localStorage.setItem(key,value); return true; } catch { storageOK = false; return false; } }
+  function removeLocal(key) { try { localStorage.removeItem(key); return true; } catch { storageOK = false; return false; } }
+  function readSession(key) { try { return sessionStorage.getItem(key); } catch { return null; } }
+  function writeSession(key,value) { try { sessionStorage.setItem(key,value); return true; } catch { return false; } }
+  function removeSession(key) { try { sessionStorage.removeItem(key); return true; } catch { return false; } }
+  function syncSkipLink(ownerVisible) { const skip=$('#owner-skip-link'); if(!skip)return; skip.href=ownerVisible?'#workspace':'#login-title'; skip.textContent=ownerVisible?'Skip to owner workspace':'Skip to sign-in'; }
   function status(message) { const el = $('#owner-status'); el.textContent = message; el.classList.add('visible'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('visible'),6000); }
   function persist(message) { if (message) M.addActivity(state,message); const saved = write(KEY,JSON.stringify(state)); status(saved ? (message ? message + ' · saved in this browser.' : 'Demo saved in this browser.') : 'Browser storage is unavailable or full. These changes last only while this page stays open.'); }
-  const button = (label,action,id='',kind='secondary') => `<button type="button" class="button ${kind}" data-action="${action}"${id ? ` data-id="${esc(id)}"` : ''}>${label}</button>`;
+  const button = (label,action,id='',kind='secondary',ariaLabel='') => `<button type="button" class="button ${kind}" data-action="${action}"${id ? ` data-id="${esc(id)}"` : ''}${ariaLabel ? ` aria-label="${esc(ariaLabel)}"` : ''}>${label}</button>`;
   const preview = (file='index.html',label='Preview guest website ↗') => `<a class="button secondary" href="${file}?owner-preview=1" target="_blank" rel="noopener">${label}</a>`;
   const empty = (title,text) => `<div class="empty-state"><h3>${title}</h3><p>${text}</p></div>`;
   const pill = (value,kind='') => `<span class="status-pill ${kind}">${esc(value)}</span>`;
@@ -30,7 +38,7 @@
   const field = (name,label,value='',type='text',extra='') => `<label class="field">${label}<input name="${name}" type="${type}" value="${esc(value)}" ${extra}></label>`;
   const area = (name,label,value='',extra='') => `<label class="field full">${label}<textarea name="${name}" rows="3" maxlength="1000" ${extra}>${esc(value)}</textarea></label>`;
   const select = (name,label,options,value='') => `<label class="field">${label}<select name="${name}">${options.map(x => {const [v,t] = Array.isArray(x) ? x : [x,x]; return `<option value="${esc(v)}"${v === value ? ' selected' : ''}>${esc(t)}</option>`;}).join('')}</select></label>`;
-  const check = (name,label,on) => `<label class="check-field"><input name="${name}" type="checkbox"${on ? ' checked' : ''}> ${label}</label>`;
+  const check = (name,label,on,ariaLabel='') => `<label class="check-field"><input name="${name}" type="checkbox"${on ? ' checked' : ''}${ariaLabel ? ` aria-label="${esc(ariaLabel)}"` : ''}> ${label}</label>`;
   const listRow = (title,detail,actions='',tag='') => `<div class="list-row"><div class="row-main"><h3>${esc(title)}</h3><p>${detail}</p>${tag}</div><div class="row-actions">${actions}</div></div>`;
   function safeImage(src) { return /^(assets\/[a-zA-Z0-9._-]+|data:image\/(png|jpeg|webp);base64,[a-zA-Z0-9+/=]+)$/.test(src || '') ? src : 'assets/stage.webp'; }
   function searchBar(label,placeholder,extra='') { return `<div class="toolbar"><label class="field">${label}<input id="list-search" type="search" value="${esc(filter)}" placeholder="${placeholder}" autocomplete="off"></label>${extra}</div><p id="result-count" class="result-count" role="status"></p>`; }
@@ -74,12 +82,12 @@
     return heading('Good to see you, Steven.','A clear view of the parlor—and the things that need your attention.',preview()) +
       `<div class="stat-grid"><div class="stat"><span>Menu available</span><strong>${state.menu.filter(i=>i.available).length}<small> / ${state.menu.length}</small></strong><p>Items in your guest preview</p></div><div class="stat"><span>On the calendar</span><strong>${future.length}</strong><p>Upcoming demo shows</p></div><div class="stat"><span>Stock to review</span><strong>${low.length}</strong><p>Sample items at reorder level</p></div><div class="stat"><span>Orders in progress</span><strong>${pending.length}</strong><p>Draft or simulated submission</p></div></div>` +
       `<div class="split">${panel('Make yourself at home.',`<p>Try a complete task, then check the result. Your changes are saved as you go.</p><div class="row-list">${listRow('Update a dish','Change a price, description, or availability.',button('Edit menu →','nav-menu'))}${listRow('Plan the next show','Set the artist, photograph, date, and set times.',button('Manage music →','nav-music'))}${listRow('Restock the kitchen','Build a sample order and receive it into stock.',button('Start an order →','new-order'))}</div>`)}` +
-      `${panel('Needs a look.',low.length ? `<p class="muted">Illustrative inventory, quantities, and supplier prices.</p><div class="row-list">${low.slice(0,3).map(i=>listRow(i.name,`${i.onHand} ${esc(i.unit)} on hand · target ${i.par}`,button('Review','edit-stock',i.id),pill('Low stock','warning'))).join('')}</div>` : empty('Stock is covered.','No sample items are at their reorder level.'),button('All inventory →','nav-inventory'))}</div>` +
+      `${panel('Needs a look.',low.length ? `<p class="muted">Illustrative inventory, quantities, and supplier prices.</p><div class="row-list">${low.slice(0,3).map(i=>listRow(i.name,`${i.onHand} ${esc(i.unit)} on hand · target ${i.par}`,button('Review','edit-stock',i.id,'secondary',`Review ${i.name}`),pill('Low stock','warning'))).join('')}</div>` : empty('Stock is covered.','No sample items are at their reorder level.'),button('All inventory →','nav-inventory'))}</div>` +
       `<div class="split">${panel('Next on the stage.',future[0] ? `<div class="event-feature"><img src="${esc(safeImage(future[0].image))}" alt="${esc(future[0].name)}"><div><p class="eyebrow">${esc(dateLabel(future[0].date))}</p><h3>${esc(future[0].name)}</h3><p>${esc(timeLabel(future[0].start))}–${esc(timeLabel(future[0].end))} Central</p>${button('Edit show','edit-event',future[0].id)}</div></div>` : empty('The stage is yours.','Add a show to see it in the guest preview.'))}${panel('Recent changes.',activityRows(4),button('All activity →','nav-activity'))}</div>`;
   }
   function renderMenu() {
     return heading('The menu, in your hands.','Edit the menu guests see. Availability changes remove a dish from your guest preview.',button('Add a dish','new-menu','','') + preview('menu.html','Preview menu ↗')) +
-    searchBar('Find a dish','Name, category, or ingredient') + `<div class="row-list panel">${state.menu.map(i=>`<article data-search="${esc([i.name,i.category,i.description].join(' ').toLowerCase())}" class="list-row"><div class="row-main"><p class="eyebrow">${esc(i.category)}</p><h3>${esc(i.name)}</h3><p>${esc(i.description)}</p><strong>${esc(i.price || 'Ask for current pricing')}</strong></div><div class="row-actions">${pill(i.available ? 'Available' : 'Unavailable',i.available ? 'good':'warning')}${button('Edit','edit-menu',i.id)}<button class="button quiet" data-action="toggle-menu" data-id="${esc(i.id)}" aria-label="${i.available ? 'Mark unavailable' : 'Make available'}: ${esc(i.name)}">${i.available ? 'Mark unavailable' : 'Make available'}</button></div></article>`).join('')}</div><div id="search-empty" hidden>${empty('No dishes found.','Try another name or clear the search.')}</div>`;
+    searchBar('Find a dish','Name, category, or ingredient') + `<div class="row-list panel">${state.menu.map(i=>`<article data-search="${esc([i.name,i.category,i.description].join(' ').toLowerCase())}" class="list-row"><div class="row-main"><p class="eyebrow">${esc(i.category)}</p><h3>${esc(i.name)}</h3><p>${esc(i.description)}</p><strong>${esc(i.price || 'Ask for current pricing')}</strong></div><div class="row-actions">${pill(i.available ? 'Available' : 'Unavailable',i.available ? 'good':'warning')}${button('Edit','edit-menu',i.id,'secondary',`Edit ${i.name}`)}<button class="button quiet" data-action="toggle-menu" data-id="${esc(i.id)}" aria-label="${i.available ? 'Mark unavailable' : 'Make available'}: ${esc(i.name)}">${i.available ? 'Mark unavailable' : 'Make available'}</button></div></article>`).join('')}</div><div id="search-empty" hidden>${empty('No dishes found.','Try another name or clear the search.')}</div>`;
   }
   function editMenu(id) {
     const item = state.menu.find(i=>i.id===id); const categories = [...new Set(state.menu.map(i=>i.category))];
@@ -91,11 +99,11 @@
   function renderMusic() {
     const events = [...state.events].sort((a,b)=>a.date.localeCompare(b.date));
     return heading('Keep the stage moving.','Manage the artist, photo, date, and set times. The saved lineup is a starting point for this demo.',button('Add a show','new-event','','') + preview('music.html','Preview calendar ↗')) +
-      `<p class="notice">This is an editable copy of the saved lineup. It does not change Tolbert’s official calendar.</p><div class="card-grid">${events.map(e=>`<article class="item-card event-card"><div class="photo-tile"><img src="${esc(safeImage(e.image))}" alt="${esc(e.name)}" loading="lazy"></div><div class="item-body"><div class="item-meta"><time datetime="${esc(e.date)}">${esc(dateLabel(e.date))}</time>${pill(e.status,e.status === 'Cancelled' ? 'warning' : 'good')}</div><h2>${esc(e.name)}</h2><p>${esc(e.genre || 'Live music')}</p><strong>${esc(timeLabel(e.start))}–${esc(timeLabel(e.end))} Central</strong><div class="row-actions">${button('Edit show','edit-event',e.id)}${button(e.status === 'Cancelled' ? 'Restore show' : 'Cancel show',e.status === 'Cancelled' ? 'restore-event':'cancel-event',e.id,'quiet')}</div></div></article>`).join('')}</div>${!events.length ? empty('No shows yet.','Add the first show to your calendar.') : ''}`;
+      `<p class="notice">This is an editable copy of the saved lineup. It does not change Tolbert’s official calendar.</p><div class="card-grid">${events.map(e=>`<article class="item-card event-card"><div class="photo-tile"><img src="${esc(safeImage(e.image))}" alt="${esc(e.name)}" loading="lazy"></div><div class="item-body"><div class="item-meta"><time datetime="${esc(e.date)}">${esc(dateLabel(e.date))}</time>${pill(e.status,e.status === 'Cancelled' ? 'warning' : 'good')}</div><h2>${esc(e.name)}</h2><p>${esc(e.genre || 'Live music')}</p><strong>${esc(timeLabel(e.start))}–${esc(timeLabel(e.end))} Central</strong><div class="row-actions">${button('Edit show','edit-event',e.id,'secondary',`Edit ${e.name}`)}${button(e.status === 'Cancelled' ? 'Restore show' : 'Cancel show',e.status === 'Cancelled' ? 'restore-event':'cancel-event',e.id,'quiet',`${e.status === 'Cancelled' ? 'Restore' : 'Cancel'} ${e.name}`)}</div></div></article>`).join('')}</div>${!events.length ? empty('No shows yet.','Add the first show to your calendar.') : ''}`;
   }
   function editEvent(id) {
     const item = state.events.find(i=>i.id===id);
-    const photos = [...new Map(baseline.events.map(e=>[e.image,[e.image,e.name]])).values()]; photos.unshift(['assets/stage.webp','Tolbert’s stage']);
+    const photos = [...new Map([...baseline.events,...state.events].map(e=>[e.image,[e.image,e.name]])).values()]; photos.unshift(['assets/stage.webp','Tolbert’s stage']);
     if(item?.image && !photos.some(p=>p[0]===item.image)) photos.unshift([item.image,'Current photo']);
     openEditor(item ? 'Edit the show' : 'Add a show',`<div class="field-grid">${field('name','Artist / band name',item?.name,'text','required maxlength="120"')}${field('genre','Genre / short description',item?.genre,'text','maxlength="140"')}${field('date','Show date',item?.date || dayKey(),'date','required')}${select('status','Status',['Scheduled','Cancelled'],item?.status || 'Scheduled')}${field('start','Set starts',inputTime(item?.start),'time','required')}${field('end','Set ends',inputTime(item?.end || '22:00'),'time','required')}${select('image','Artist photograph',photos,item?.image || 'assets/stage.webp')}${field('upload','Or upload a photograph','','file','accept="image/png,image/jpeg,image/webp"')}<p class="field full muted">Use a photo of the actual artist. Images are shown in full, with dates and names outside the photograph. Uploaded demo images must be under 600 KB.</p></div>`,async data=>{
       const name = required(data.name,'Artist name'); let image = data.image;
@@ -111,8 +119,8 @@
   }
   function renderHours() {
     return heading('Open doors. Clear hours.','Keep regular hours and special dates in one place.',preview('index.html','Preview hours ↗')) +
-      `<div class="split">${panel('Weekly hours.',`<form id="hours-form"><div class="row-list">${state.hours.map((h,i)=>`<div class="hours-editor"><strong>${esc(h.day)}</strong><div class="field-grid">${field('open-'+i,'Opens',h.open,'time','required')}${field('close-'+i,'Closes',h.close,'time','required')}${check('closed-'+i,'Closed',h.closed)}</div></div>`).join('')}</div><p class="muted">All times are Central. 12:00 AM means midnight at the end of the day.</p><button class="button" type="submit">Save weekly hours</button></form>`)}` +
-      `${panel('Special dates.',`<p>A holiday or one-time closure overrides the weekly hours for that date.</p><div class="row-list">${state.exceptions.map(e=>listRow(dateLabel(e.date),`${esc(e.label)} · ${e.closed ? 'Closed' : `${esc(timeLabel(e.open))}–${esc(timeLabel(e.close))}`}`,button('Edit','edit-exception',e.id)+button('Remove','remove-exception',e.id,'quiet'))).join('') || empty('No exceptions yet.','Add holiday hours or a one-time closure.')}</div>`,button('Add special date','new-exception'))}</div>`;
+      `<div class="split">${panel('Weekly hours.',`<form id="hours-form"><div class="row-list">${state.hours.map((h,i)=>`<div class="hours-editor"><strong>${esc(h.day)}</strong><div class="field-grid">${field('open-'+i,'Opens',h.open,'time',`required aria-label="${esc(h.day)} opens"`)}${field('close-'+i,'Closes',h.close,'time',`required aria-label="${esc(h.day)} closes"`)}${check('closed-'+i,'Closed',h.closed,`${h.day} closed`)}</div></div>`).join('')}</div><p class="muted">All times are Central. 12:00 AM means midnight at the end of the day.</p><button class="button" type="submit">Save weekly hours</button></form>`)}` +
+      `${panel('Special dates.',`<p>A holiday or one-time closure overrides the weekly hours for that date.</p><div class="row-list">${state.exceptions.map(e=>listRow(dateLabel(e.date),`${esc(e.label)} · ${e.closed ? 'Closed' : `${esc(timeLabel(e.open))}–${esc(timeLabel(e.close))}`}`,button('Edit','edit-exception',e.id,'secondary',`Edit special hours for ${dateLabel(e.date)}`)+button('Remove','remove-exception',e.id,'quiet',`Remove special hours for ${dateLabel(e.date)}`))).join('') || empty('No exceptions yet.','Add holiday hours or a one-time closure.')}</div>`,button('Add special date','new-exception'))}</div>`;
   }
   function editException(id) {
     const item = state.exceptions.find(i=>i.id===id);
@@ -127,7 +135,7 @@
     return heading('Know what’s on the shelf.','Sample stock and costs let you try counting, reorder levels, and receiving.',button('Add stock item','new-stock','','')+button('Create purchase order','new-order')) +
       `<p class="notice">Illustrative inventory and suppliers. These are not Tolbert’s actual stock counts, vendors, or purchase prices.</p>` +
       searchBar('Find stock','Item name or supplier',`<button class="button quiet" data-action="low-stock">Show low stock</button><button class="button quiet" data-action="clear-search">Show all</button>`) +
-      `<div class="row-list panel">${state.inventory.map(i=>`<article class="list-row" data-search="${esc((i.name+' '+i.vendor+(i.onHand<=i.reorderAt?' low stock':'')).toLowerCase())}"><div class="row-main"><p class="eyebrow">${esc(i.vendor)}</p><h3>${esc(i.name)}</h3><p>${esc(i.unit)} · ${cash(i.cost)} per unit</p><p>Reorder at ${i.reorderAt} · target ${i.par}</p></div><div class="stock-count"><strong>${i.onHand}</strong><span>${esc(i.unit)} on hand</span></div><div class="row-actions">${pill(i.onHand<=i.reorderAt ? 'Low stock':'Stocked',i.onHand<=i.reorderAt ? 'warning':'good')}${button('Update stock','edit-stock',i.id)}</div></article>`).join('')}</div><div id="search-empty" hidden>${empty('No stock matches.','Clear the filter or search by item or supplier.')}</div>`;
+      `<div class="row-list panel">${state.inventory.map(i=>`<article class="list-row" data-search="${esc((i.name+' '+i.vendor+(i.onHand<=i.reorderAt?' low stock':'')).toLowerCase())}"><div class="row-main"><p class="eyebrow">${esc(i.vendor)}</p><h3>${esc(i.name)}</h3><p>${esc(i.unit)} · ${cash(i.cost)} per unit</p><p>Reorder at ${i.reorderAt} · target ${i.par}</p></div><div class="stock-count"><strong>${i.onHand}</strong><span>${esc(i.unit)} on hand</span></div><div class="row-actions">${pill(i.onHand<=i.reorderAt ? 'Low stock':'Stocked',i.onHand<=i.reorderAt ? 'warning':'good')}${button('Update stock','edit-stock',i.id,'secondary',`Update ${i.name} stock`)}</div></article>`).join('')}</div><div id="search-empty" hidden>${empty('No stock matches.','Clear the filter or search by item or supplier.')}</div>`;
   }
   function editStock(id) {
     const item = state.inventory.find(i=>i.id===id);
@@ -141,7 +149,7 @@
     if(activeOrder) return renderOrder(state.orders.find(o=>o.id===activeOrder));
     return heading('From low stock to restocked.','Draft, review, simulate submission, then receive your sample order.',button('New purchase order','new-order','','')) +
       `<p class="notice">All purchase orders are simulated. No supplier is contacted, no payment is taken, and no restaurant stock is changed.</p>` +
-      panel('Purchase orders.',state.orders.length ? `<div class="row-list">${[...state.orders].reverse().map(o=>listRow(o.number,`${esc(o.vendor)} · ${o.lines.length} line${o.lines.length===1?'':'s'} · ${cash(M.orderTotal(o))}`,button('Open order','open-order',o.id),pill(o.status,o.status==='Received'?'good':o.status==='Cancelled'?'':'warning'))).join('')}</div>` : empty('Your first order starts here.','Choose a sample supplier and the quantities you need. You will review the order before simulating submission.'));
+      panel('Purchase orders.',state.orders.length ? `<div class="row-list">${[...state.orders].reverse().map(o=>listRow(o.number,`${esc(o.vendor)} · ${o.lines.length} line${o.lines.length===1?'':'s'} · ${cash(M.orderTotal(o))}`,button('Open order','open-order',o.id,'secondary',`Open ${o.number}`),pill(o.status,o.status==='Received'?'good':o.status==='Cancelled'?'':'warning'))).join('')}</div>` : empty('Your first order starts here.','Choose a sample supplier and the quantities you need. You will review the order before simulating submission.'));
   }
   function renderOrder(o) {
     if(!o){activeOrder=null;return renderPurchases();}
@@ -225,7 +233,7 @@
       'new-teammate':()=>editTeammate(), 'edit-teammate':()=>editTeammate(id),
       'remove-teammate':()=>confirmation('Remove demo teammate?','<p>This removes only the sample entry in this browser.</p>',()=>{state.team=state.team.filter(t=>t.id!==id);persist('Removed demo teammate');},'Remove teammate'),
       'change-password':changePassword,
-      'reset-demo':()=>confirmation('Reset this browser’s demo?',`<p>All demo edits, sample orders, stock changes, and team entries will be cleared. The password will return to <strong>Steven</strong>.</p>${field('confirm','Type RESET to confirm','','text','required autocomplete="off"')}`,data=>{if(data.confirm!=='RESET')throw new Error('Type RESET to start fresh.');state=structuredClone(baseline);try{localStorage.removeItem(AUTH);}catch{}persist('Reset the owner demo');activeOrder=null;},'Reset demo')
+      'reset-demo':()=>confirmation('Reset this browser’s demo?',`<p>All demo edits, sample orders, stock changes, and team entries will be cleared. The password will return to <strong>Steven</strong>.</p>${field('confirm','Type RESET to confirm','','text','required autocomplete="off"')}`,data=>{if(data.confirm!=='RESET')throw new Error('Type RESET to start fresh.');state=structuredClone(baseline);const passwordCleared=removeLocal(AUTH);persist('Reset the owner demo');if(!passwordCleared)status('Demo data was reset, but browser storage blocked the password reset.');activeOrder=null;},'Reset demo')
     };
     try{handlers[action]?.();}catch(error){status(error.message || 'That action could not be completed.');}
   });
@@ -242,37 +250,48 @@
       }else{state.settings={phone:required(data.phone,'Phone'),address:required(data.address,'Address'),announcement:data.announcement.trim()};persist('Updated guest-facing details');}
     }catch(error){status(error.message);}
   });
-  function showOwner(){loggedIn=true;$('#login-view').hidden=true;$('#owner-shell').hidden=false;view=['overview','menu','music','hours','inventory','purchases','team','activity','settings'].includes(location.hash.slice(1))?location.hash.slice(1):'overview';render();workspace.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
-  $('#logout').addEventListener('click',()=>{try{sessionStorage.removeItem(SESSION);}catch{}loggedIn=false;$('#owner-shell').hidden=true;$('#login-view').hidden=false;$('#login-form').reset();$('#login-error').textContent='';syncDemoKey();$('#owner-username').focus();window.scrollTo({top:0,behavior:'instant'});});
+  function showOwner(){loggedIn=true;$('#login-view').hidden=true;$('#owner-shell').hidden=false;syncSkipLink(true);view=['overview','menu','music','hours','inventory','purchases','team','activity','settings'].includes(location.hash.slice(1))?location.hash.slice(1):'overview';render();workspace.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
+  function showLogin(message=''){loggedIn=false;$('#owner-shell').hidden=true;$('#login-view').hidden=false;syncSkipLink(false);if(dialog.open)dialog.close();$('#login-form').reset();$('#login-error').textContent=message;syncDemoKey();$('#owner-username').focus();window.scrollTo({top:0,behavior:'instant'});}
+  $('#logout').addEventListener('click',()=>{removeSession(SESSION);showLogin();});
   function syncDemoKey(){const ticket=$('.demo-ticket');if(read(AUTH)){ticket.innerHTML='<span>YOUR DEMO KEY</span><p>Username: <strong>Steven</strong><br>Use the demo password set in this browser.</p>';}else ticket.innerHTML='<span>YOUR DEMO KEY</span><dl><div><dt>Username</dt><dd>Steven</dd></div><div><dt>Password</dt><dd>Steven</dd></div></dl>';}
   $('#login-reset').addEventListener('click',()=>{
     if(!baseline){$('#login-error').textContent='Wait for the demo data to load, or refresh the page.';return;}
     confirmation('Start a fresh demo?',`<p>This clears demo edits and sample orders in this browser and restores the password <strong>Steven</strong>.</p>${field('confirm','Type RESET to confirm','','text','required autocomplete="off"')}`,data=>{
       if(data.confirm!=='RESET')throw new Error('Type RESET to start fresh.');
-      state=structuredClone(baseline);try{localStorage.removeItem(AUTH);sessionStorage.removeItem(SESSION);}catch{}
-      persist('Reset the owner demo');syncDemoKey();$('#login-error').textContent='Fresh demo ready. Sign in with Steven / Steven.';
+      state=structuredClone(baseline);const passwordCleared=removeLocal(AUTH);removeSession(SESSION);
+      persist('Reset the owner demo');syncDemoKey();$('#login-error').textContent=passwordCleared?'Fresh demo ready. Sign in with Steven / Steven.':'Fresh demo data is ready, but browser storage blocked the password reset.';
     },'Reset demo');
   });
   $('#login-form').addEventListener('submit',async event=>{
     event.preventDefault();const data=Object.fromEntries(new FormData(event.target));const b=$('button[type=submit]',event.target);b.disabled=true;
-    try{if(data.username.trim()!=='Steven'||!await matchesPassword(data.password))throw new Error('That username or password does not match this demo.');if(!state)throw new Error('The demo data is still loading. Please try again.');try{sessionStorage.setItem(SESSION,'Steven');}catch{}$('#login-error').textContent='';event.target.reset();showOwner();}
+    try{if(data.username.trim()!=='Steven'||!await matchesPassword(data.password))throw new Error('That username or password does not match this demo.');if(!state)throw new Error('The demo data is still loading. Please try again.');const sessionSaved=writeSession(SESSION,'Steven');$('#login-error').textContent='';event.target.reset();showOwner();if(!sessionSaved)status('Signed in for this page. Browser settings prevent this demo session from surviving a refresh.');}
     catch(error){$('#login-error').textContent=error.message;}finally{b.disabled=false;}
   });
   async function initialize(){
+    syncSkipLink(false);
     syncDemoKey();
     try{
       if(!M)throw new Error('The owner demo could not load. Refresh this page.');
-      const responses=await Promise.all([fetch('menu-data.json'),fetch('events.json')]);
+      const responses=await Promise.all([fetch('menu-data.json', {cache:'no-store'}),fetch('events.json', {cache:'no-store'})]);
       if(responses.some(r=>!r.ok))throw new Error('Demo data could not load. Check your connection and refresh this page.');
       const [menu,events]=await Promise.all(responses.map(r=>r.json())); baseline=M.createState(menu,events);
-      let saved=null;try{saved=JSON.parse(read(KEY));}catch{}
+      const raw=read(KEY);let saved=null;let malformed=false;
+      if(raw){try{saved=JSON.parse(raw);}catch{malformed=true;}}
       if(Array.isArray(saved?.hours))saved.hours.forEach(h=>{if(h && h.close==='24:00')h.close='00:00';});
       const valid=M.isUsableState(saved);
       state=valid?saved:structuredClone(baseline);
-      if(!valid)write(KEY,JSON.stringify(state));
-      try{if(sessionStorage.getItem(SESSION)==='Steven')showOwner();}catch{}
+      if(!valid){write(KEY,JSON.stringify(state));if(raw)$('#login-error').textContent=malformed?'Saved demo data could not be read, so a fresh copy was loaded.':'Saved demo data was incomplete, so a fresh copy was loaded.';}
+      if(readSession(SESSION)==='Steven')showOwner();
     }catch(error){$('#login-error').textContent=error.message;}
   }
-  window.addEventListener('storage',event=>{if(event.key===KEY && loggedIn)status('Another tab changed this demo. Reload before making more edits.');});
+  window.addEventListener('storage',event=>{
+    if(event.key===AUTH){syncDemoKey();if(loggedIn){removeSession(SESSION);showLogin('The demo password changed in another tab. Sign in again.');}return;}
+    if(event.key!==KEY)return;
+    let incoming=null;try{incoming=JSON.parse(event.newValue);}catch{}
+    if(!M.isUsableState(incoming)){if(loggedIn)status('Another tab changed the demo, but its saved data could not be loaded.');return;}
+    if(!loggedIn){state=incoming;return;}
+    const editorWasOpen=dialog.open;state=incoming;if(editorWasOpen)dialog.close();render();
+    status(editorWasOpen?'Another tab changed the demo. The latest saved version was loaded and the open editor was closed.':'Another tab changed the demo. The latest saved version is now loaded.');
+  });
   initialize();
 })();

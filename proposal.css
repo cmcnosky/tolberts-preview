@@ -55,8 +55,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 footer > * { min-width: 0; }
 
 a:focus-visible {
-  outline: 3px solid var(--gold);
-  outline-offset: 5px;
+  outline: 3px solid var(--red);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px var(--paper);
 }
 
 .skip-link {
@@ -324,7 +325,7 @@ a:focus-visible {
 .difference strong { color: var(--ink); }
 .task-actions { display: grid; gap: 15px; }
 .task-actions .button { width: 100%; }
-.evidence-link { color: var(--red); font-size: 12px; font-weight: 700; line-height: 1.45; text-decoration: underline; text-decoration-color: #b9967d; text-underline-offset: 5px; }
+.evidence-link { min-height: 44px; display: flex; align-items: center; color: var(--red); font-size: 12px; font-weight: 700; line-height: 1.45; text-decoration: underline; text-decoration-color: #b9967d; text-underline-offset: 5px; }
 .observation-note { margin-top: 30px; padding: 20px 22px; border-left: 5px solid var(--gold); color: var(--muted); background: rgba(255, 250, 240, .7); font-size: 12px; line-height: 1.7; }
 
 .screenshots {

@@ -222,7 +222,7 @@ const MusicModel = (() => {
       ? 'Owner preview from this browser; not the official calendar.'
       : options.live
       ? 'From the restaurant’s live calendar.'
-      : 'Saved schedule checked November 1, 2026.';
+      : 'Saved schedule checked November 5, 2026.';
     const uidPart = String(event.id || eventKey(event))
       .toLowerCase()
       .normalize('NFD')

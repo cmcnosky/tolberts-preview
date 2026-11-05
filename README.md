@@ -19,6 +19,7 @@ Edit approved data in menu-data.json, then run `python3 scripts/build-menu.py`. 
 - `node tests/menu-search.cjs`
 - `node tests/calendar-audit.cjs`
 - `node tests/music-model.cjs`
+- `node --test tests/owner-model.test.cjs`
 - `python3 scripts/check-site.py`
 
 Also check the home, menu, music finder, show links, contact draft, and owner proposal in a browser at mobile and desktop sizes. Verify the live calendar and its clearly labeled fallback behavior.
@@ -45,3 +46,9 @@ State is stored under `tolberts-owner-demo-v1` in this browser. The demo session
 Guest preview links use `?owner-preview=1` to render this browser's edited menu, events, hours, and contact details. Normal guest URLs continue using the public menu and official calendar integration. The preview flag and local edits do not travel to another person's browser.
 
 Validation: `node --test tests/owner-model.test.cjs` plus the existing site checks above. Stock and supplier prices in this demo are fictional examples. Published event/menu records are only starting content; demo edits are never published as restaurant facts.
+
+## End-to-end audit — November 5, 2026
+
+The calendar keeps names and times from the official REST feed and resolves artist artwork through the official public GraphQL endpoint. The November 5 saved fallback contains 13 events and 13 unchanged local promotional images for November 5–15. Existing browser-local owner edits remain intact; resetting the demo loads the latest packaged baseline.
+
+This revision repairs stale-editor overwrites across tabs, strengthens saved-state and stock-receipt validation, improves keyboard names/focus/skip links, removes research-table sideways scrolling, and completes social metadata for all eight pages. Browser checks and their limits are recorded in audit.html. All 58 individual regression cases passed: 13 feed, 7 menu, 19 music model, and 19 owner model. The Node combined runner additionally counts the three legacy suite files as wrapper tests; do not add those wrappers to the individual total.

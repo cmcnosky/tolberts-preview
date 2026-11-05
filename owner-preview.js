@@ -185,6 +185,16 @@
       categoryMap.get(item.category).push(item);
     }
 
+    if (!items.length) {
+      const emptyState = document.querySelector('#empty-menu');
+      const title = emptyState?.querySelector('h2');
+      const detail = emptyState?.querySelector('p');
+      const reset = emptyState?.querySelector('#reset-menu');
+      if (title) title.textContent = 'No dishes are marked available.';
+      if (detail) detail.textContent = 'Return to the owner room and make at least one dish available to populate this preview.';
+      if (reset) reset.hidden = true;
+    }
+
     container.replaceChildren();
     [...categoryMap].forEach(([category, categoryItems], index) => {
       const section = document.createElement('section');

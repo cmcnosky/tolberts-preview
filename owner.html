@@ -24,12 +24,12 @@
   <meta name="twitter:image:alt" content="Tolbert’s Owner Room interactive demo, with the restaurant’s logo, deep-green and cream colors, and its Main Street sign.">
   <link rel="icon" href="assets/favicon.svg">
   <link rel="stylesheet" href="fonts.css?v=2">
-  <link rel="stylesheet" href="owner.css?v=2">
-  <script src="owner-model.js?v=3" defer></script>
-  <script src="owner.js?v=3" defer></script>
+  <link rel="stylesheet" href="owner.css?v=4">
+  <script src="owner-model.js?v=4" defer></script>
+  <script src="owner.js?v=5" defer></script>
 </head>
 <body class="owner-page">
-  <a class="skip-link" href="#workspace">Skip to owner workspace</a>
+  <a class="skip-link" id="owner-skip-link" href="#login-title">Skip to sign-in</a>
 
   <section class="login-view" id="login-view" aria-labelledby="login-title">
     <div class="login-scene" aria-hidden="true">
@@ -49,8 +49,8 @@
 
         <div class="login-heading">
           <p class="eyebrow">Steven’s owner tour</p>
-          <h1 id="login-title">Welcome to the<br><em>owner room.</em></h1>
-          <p>Try the same controls the team would use to keep the website, stage, and stockroom current.</p>
+          <h1 id="login-title" tabindex="-1">Welcome to the<br><em>owner room.</em></h1>
+          <p>Try controls a team could use to keep the website, stage, and stockroom current.</p>
         </div>
 
         <form id="login-form" class="login-form">
@@ -67,7 +67,7 @@
           <button class="button login-submit" type="submit">Enter the owner room <span aria-hidden="true">↗</span></button>
         </form>
 
-        <div class="demo-ticket" aria-label="Demo sign-in details">
+        <div class="demo-ticket" role="group" aria-label="Demo sign-in details">
           <span>YOUR DEMO KEY</span>
           <dl>
             <div><dt>Username</dt><dd>Steven</dd></div>
