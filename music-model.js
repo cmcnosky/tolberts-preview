@@ -122,6 +122,16 @@ const MusicModel = (() => {
     }
   }
 
+  function hasUsableSchedule(event) {
+    try {
+      eventStart(event);
+      eventEnd(event);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   function sortEvents(events) {
     return [...events].sort((left, right) => {
       const dateOrder = String(left.date).localeCompare(String(right.date));
@@ -137,7 +147,9 @@ const MusicModel = (() => {
 
   function todayEvents(events, now = Date.now()) {
     const today = chicagoDate(now);
-    return sortEvents((Array.isArray(events) ? events : []).filter(event => event && event.date === today));
+    return sortEvents((Array.isArray(events) ? events : []).filter(event =>
+      event && event.date === today && hasUsableSchedule(event)
+    ));
   }
 
   function normalizeText(value) {
@@ -222,13 +234,15 @@ const MusicModel = (() => {
       ? 'Owner preview from this browser; not the official calendar.'
       : options.live
       ? 'From the restaurant’s live calendar.'
-      : 'Saved schedule checked November 5, 2026.';
+      : 'Saved schedule checked November 6, 2026.';
     const uidPart = String(event.id || eventKey(event))
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '') || 'show';
+    const genre = String(event.genre || '').trim() || 'Live music';
+    const genreSentence = /[.!?]$/.test(genre) ? genre : `${genre}.`;
     const lines = [
       'BEGIN:VCALENDAR',
       'VERSION:2.0',
@@ -241,7 +255,7 @@ const MusicModel = (() => {
       `DTEND:${stamp(end)}`,
       `SUMMARY:${icsText(`${options.preview ? 'DEMO: ' : ''}${event.name} at Tolbert’s`)}`,
       `LOCATION:${icsText('Tolbert’s Restaurant, 423 S Main St, Grapevine, TX 76051')}`,
-      `DESCRIPTION:${icsText(`${event.genre || 'Live music'}. ${checked} Confirm details with Tolbert’s: (817) 421-4888. https://tolbertsrestaurant.com/calendar/`)}`,
+      `DESCRIPTION:${icsText(`${genreSentence} ${checked} Confirm details with Tolbert’s: (817) 421-4888. https://tolbertsrestaurant.com/calendar/`)}`,
       'URL:https://tolbertsrestaurant.com/calendar/',
       'END:VEVENT',
       'END:VCALENDAR'

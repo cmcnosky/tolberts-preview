@@ -126,6 +126,36 @@
     return value.length <= 850000 && /^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/i.test(value);
   }
 
+  function owns(value, field) {
+    return Object.prototype.hasOwnProperty.call(value, field);
+  }
+
+  function hasValidOrderLifecycle(order) {
+    const hasSubmittedAt = owns(order, "submittedAt");
+    const hasReceivedAt = owns(order, "receivedAt");
+    const hasCancelledAt = owns(order, "cancelledAt");
+    if ((hasSubmittedAt && !isIsoTimestamp(order.submittedAt)) ||
+        (hasReceivedAt && !isIsoTimestamp(order.receivedAt)) ||
+        (hasCancelledAt && !isIsoTimestamp(order.cancelledAt))) return false;
+
+    const createdAt = Date.parse(order.createdAt);
+    const submittedAt = hasSubmittedAt ? Date.parse(order.submittedAt) : null;
+    const receivedAt = hasReceivedAt ? Date.parse(order.receivedAt) : null;
+    const cancelledAt = hasCancelledAt ? Date.parse(order.cancelledAt) : null;
+    if (hasSubmittedAt && submittedAt < createdAt) return false;
+
+    if (order.status === "Draft") return !hasSubmittedAt && !hasReceivedAt && !hasCancelledAt;
+    if (order.status === "Submitted (demo)") return hasSubmittedAt && !hasReceivedAt && !hasCancelledAt;
+    if (order.status === "Received") {
+      return hasSubmittedAt && hasReceivedAt && !hasCancelledAt && receivedAt >= submittedAt;
+    }
+    if (order.status === "Cancelled") {
+      return hasCancelledAt && !hasReceivedAt && cancelledAt >= createdAt &&
+        (!hasSubmittedAt || cancelledAt >= submittedAt);
+    }
+    return false;
+  }
+
   function isUsableState(value) {
     if (!isRecord(value) || value.version !== 1) return false;
     const arrayFields = ["menu", "events", "hours", "exceptions", "inventory", "orders", "team", "activity"];
@@ -168,12 +198,12 @@
     const ordersValid = value.orders.every((order) =>
       hasStrings(order, ["id", "number", "vendor", "notes", "status", "createdAt"]) &&
       /^PO-DEMO-\d+$/.test(order.number) && order.vendor.trim() && ORDER_STATUSES.has(order.status) &&
-      isIsoTimestamp(order.createdAt) && order.sample === true &&
+      isIsoTimestamp(order.createdAt) && order.sample === true && hasValidOrderLifecycle(order) &&
       Array.isArray(order.lines) && order.lines.length > 0 &&
       new Set(order.lines.map((line) => line && line.itemId)).size === order.lines.length &&
       order.lines.every((line) =>
         hasNonBlankStrings(line, ["itemId", "name", "unit"]) && SAFE_ID.test(line.itemId) &&
-        value.inventory.some((item) => item.id === line.itemId) &&
+        value.inventory.some((item) => item && item.id === line.itemId && item.vendor === order.vendor) &&
         Number.isInteger(line.quantity) && line.quantity > 0 && line.quantity <= MAX_ORDER_QUANTITY &&
         isNumberInRange(line.unitCost, MAX_UNIT_COST) && Number.isInteger(line.received) &&
         line.received >= 0 && line.received <= line.quantity &&
@@ -362,6 +392,7 @@
       seen.add(line.itemId);
       const item = state.inventory.find((candidate) => candidate && candidate.id === line.itemId);
       if (!item) throw new Error("The order contains an inventory item that no longer exists.");
+      if (item.vendor !== order.vendor) throw new Error("The order contains an item from a different demo vendor.");
       const quantity = Number(line.quantity);
       if (!Number.isFinite(quantity) || !Number.isInteger(quantity) || quantity <= 0 || quantity > MAX_ORDER_QUANTITY) {
         throw new Error("The order contains an invalid receipt quantity.");

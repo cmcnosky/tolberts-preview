@@ -13,7 +13,7 @@
   const dialog = $('#show-dialog');
   const details = $('#show-details');
   const fullPage = document.body.dataset.musicPage === 'full';
-  const savedChecked = 'November 5, 2026';
+  const savedChecked = 'November 6, 2026';
   const officialCalendar = 'https://tolbertsrestaurant.com/calendar/';
   const previewState = window.OwnerPreview?.active ? window.OwnerPreview.state : null;
   const previewMode = Boolean(previewState && Array.isArray(previewState.events));

@@ -85,6 +85,16 @@ test('today events never substitute the next date when today has no listing', ()
   assert.deepEqual(Music.todayEvents(events, now), []);
 });
 
+test('today events omit a malformed same-day listing instead of breaking the daily panel', () => {
+  const now = new Date('2026-11-06T18:00:00Z');
+  const events = [
+    show({name: 'Valid Artist', date: '2026-11-06', start: '9:00 pm', end: '11:59 pm'}),
+    show({name: 'Bad Start', date: '2026-11-06', start: '25:00 pm'}),
+    show({name: 'Bad End', date: '2026-11-06', end: 'later'}),
+  ];
+  assert.deepEqual(Music.todayEvents(events, now).map(event => event.name), ['Valid Artist']);
+});
+
 test('Tonight, exact upcoming-weekend, date, and tokenized text filters compose correctly', () => {
   const now = new Date('2026-11-04T18:00:00Z');
   const events = [
@@ -183,9 +193,17 @@ test('calendar output preserves DST-safe times, escaping, folding, and source di
   for (const line of text.split('\r\n').slice(0, -1)) assert.ok(Buffer.byteLength(line, 'utf8') <= 75);
 });
 
+test('calendar description does not add duplicate punctuation to an event genre', () => {
+  const text = Music.buildIcs(show({genre: 'Variety hits!'}), {live: true});
+  assert.match(text.replace(/\r\n /g, ''), /DESCRIPTION:Variety hits! From the restaurant’s live calendar\./);
+  assert.doesNotMatch(text.replace(/\r\n /g, ''), /Variety hits!\./);
+  const fallback = Music.buildIcs(show({genre: '   '}), {live: true});
+  assert.match(fallback.replace(/\r\n /g, ''), /DESCRIPTION:Live music\. From the restaurant’s live calendar\./);
+});
+
 test('saved calendar output states its dated fallback rather than implying a live check', () => {
   const text = Music.buildIcs(show(), {live: false, now: new Date('2026-11-01T18:00:00Z')});
-  assert.match(text.replace(/\r\n /g, ''), /Saved schedule checked November 5\\, 2026\./);
+  assert.match(text.replace(/\r\n /g, ''), /Saved schedule checked November 6\\, 2026\./);
 });
 
 test('owner-preview calendar downloads have a demo title, distinct identity, and correctly escaped disclosure', () => {

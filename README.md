@@ -68,3 +68,11 @@ Verify More → Login on home, menu, and music across narrow and wide layouts, E
 The management preview now offsets sticky menu controls, sidebar, and root anchor scroll padding by the measured preview-banner height. This was checked after scrolling on phone and desktop layouts. The owner model now rejects costs, stock values, and order quantities above the interface limits, rejects unsafe order totals, and refuses an over-limit receipt before changing inventory. Two regression cases cover the repaired numeric-state failures.
 
 The browser pass covered all eight pages and all nine owner sections at 320/390/768/1280px, six editor dialogs at 320px, guest search/filter/share/inquiry flows, login, saved content previews, and the simulated purchase lifecycle. Heading semantics, research favicon/theme metadata, audit theme metadata, and private-event inquiry wording were also corrected. The approved visual treatment and single More → Login entrance are preserved. Published delivery verification is recorded with the source package.
+
+## Presentation audit - November 6, 2026
+
+The guest appearance is retained. The current saved calendar contains 12 shows checked against the official feed on November 6, with packaged artist artwork. Same-day records with malformed set times no longer break Playing Today. Calendar descriptions avoid duplicate punctuation.
+
+Management writes now restore the last saved state when storage rejects an edit. Saved orders require consistent suppliers and valid lifecycle timestamps; receipts validate before changing stock. Asynchronous editors detect replacement state from another tab. The More → Login flow and browser-local simulated purchasing remain as before.
+
+The public business case now opens with five concrete guest benefits and the production deliverables. Earlier audit notes are collapsed and retain their original dates. The release model suites pass 63 named cases (21 music, 13 feed, 7 menu, 22 owner). Browser evidence covers all eight pages at 320/768/1280px and all nine management sections at 320/1280px, menu recovery, weekend filtering, complete poster display, share/calendar feedback, inquiry drafts, login, persisted price edits, and sample stock receipt. This remains a preview, not production integration or a real-device/security certification.

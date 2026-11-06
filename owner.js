@@ -16,7 +16,7 @@
   const dateLabel = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '') ? new Intl.DateTimeFormat('en-US', {month:'short', day:'numeric', year:'numeric',timeZone:'UTC'}).format(new Date(value + 'T12:00:00Z')) : String(value || '');
   const timeLabel = v => /^\d{2}:\d{2}$/.test(v || '') ? new Intl.DateTimeFormat('en-US', {hour:'numeric',minute:'2-digit',timeZone:'UTC'}).format(new Date(`2000-01-01T${v}:00Z`)).toLowerCase() : v;
   const inputTime = v => { if (/^\d{2}:\d{2}$/.test(v || '')) return v; const m = /^(\d{1,2}):(\d{2})\s*(am|pm)$/i.exec(v || ''); return m ? String(Number(m[1]) % 12 + (m[3].toLowerCase() === 'pm' ? 12 : 0)).padStart(2,'0') + ':' + m[2] : '20:00'; };
-  let state, baseline, view = 'overview', filter = '', activeOrder = null, editorSubmit = null, editorOpener = null, loggedIn = false, storageOK = true, toastTimer;
+  let state, baseline, savedState, view = 'overview', filter = '', activeOrder = null, editorSubmit = null, editorOpener = null, loggedIn = false, storageOK = true, toastTimer;
   const workspace = $('#workspace');
   const dialog = $('#editor-dialog');
   const form = $('#editor-form');
@@ -28,7 +28,22 @@
   function removeSession(key) { try { sessionStorage.removeItem(key); return true; } catch { return false; } }
   function syncSkipLink(ownerVisible) { const skip=$('#owner-skip-link'); if(!skip)return; skip.href=ownerVisible?'#workspace':'#login-title'; skip.textContent=ownerVisible?'Skip to owner workspace':'Skip to sign-in'; }
   function status(message) { const el = $('#owner-status'); el.textContent = message; el.classList.add('visible'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('visible'),6000); }
-  function persist(message) { if (message) M.addActivity(state,message); const saved = write(KEY,JSON.stringify(state)); status(saved ? (message ? message + ' · saved in this browser.' : 'Demo saved in this browser.') : 'Browser storage is unavailable or full. These changes last only while this page stays open.'); }
+  function persist(message) {
+    const previous = savedState ? structuredClone(savedState) : null;
+    if (message) M.addActivity(state,message);
+    const valid = M.isUsableState(state);
+    const saved = valid && write(KEY,JSON.stringify(state));
+    if (saved) {
+      savedState = structuredClone(state);
+      status(message ? message + ' · saved in this browser.' : 'Demo saved in this browser.');
+      return true;
+    }
+    if (previous) state = previous;
+    status(valid
+      ? 'Browser storage is unavailable or full. That change was not saved and has been undone.'
+      : 'That change would leave the demo in an invalid state, so it was undone.');
+    return false;
+  }
   const button = (label,action,id='',kind='secondary',ariaLabel='') => `<button type="button" class="button ${kind}" data-action="${action}"${id ? ` data-id="${esc(id)}"` : ''}${ariaLabel ? ` aria-label="${esc(ariaLabel)}"` : ''}>${label}</button>`;
   const preview = (file='index.html',label='Preview guest website ↗') => `<a class="button secondary" href="${file}?owner-preview=1">${label}</a>`;
   const empty = (title,text) => `<div class="empty-state"><h3>${title}</h3><p>${text}</p></div>`;
@@ -67,6 +82,7 @@
   });
   function required(value,label) { const text = String(value || '').trim(); if(!text) throw new Error(`${label} is required.`); return text; }
   function numeric(value,label,min=0) { if(value === '' || !Number.isFinite(Number(value)) || Number(value) < min) throw new Error(`${label} must be a number of at least ${min}.`); return Number(value); }
+  function requireCurrentState(expected) { if(state!==expected) throw new Error('The demo changed in another tab. Reopen this editor and try again.'); }
   function navigate(next) { if(!loggedIn) return; view = next; filter = ''; activeOrder = null; history.replaceState(null,'','#'+next); render(); workspace.focus({preventScroll:true}); window.scrollTo({top:0,behavior:'instant'}); }
   function render() {
     if(!state || !loggedIn) return;
@@ -102,6 +118,7 @@
       `<p class="notice">This is an editable copy of the saved lineup. It does not change Tolbert’s official calendar.</p><div class="card-grid">${events.map(e=>`<article class="item-card event-card"><div class="photo-tile"><img src="${esc(safeImage(e.image))}" alt="${esc(e.name)}" loading="lazy"></div><div class="item-body"><div class="item-meta"><time datetime="${esc(e.date)}">${esc(dateLabel(e.date))}</time>${pill(e.status,e.status === 'Cancelled' ? 'warning' : 'good')}</div><h2>${esc(e.name)}</h2><p>${esc(e.genre || 'Live music')}</p><strong>${esc(timeLabel(e.start))}–${esc(timeLabel(e.end))} Central</strong><div class="row-actions">${button('Edit show','edit-event',e.id,'secondary',`Edit ${e.name}`)}${button(e.status === 'Cancelled' ? 'Restore show' : 'Cancel show',e.status === 'Cancelled' ? 'restore-event':'cancel-event',e.id,'quiet',`${e.status === 'Cancelled' ? 'Restore' : 'Cancel'} ${e.name}`)}</div></div></article>`).join('')}</div>${!events.length ? empty('No shows yet.','Add the first show to your calendar.') : ''}`;
   }
   function editEvent(id) {
+    const editState = state;
     const item = state.events.find(i=>i.id===id);
     const photos = [...new Map([...baseline.events,...state.events].map(e=>[e.image,[e.image,e.name]])).values()]; photos.unshift(['assets/stage.webp','Tolbert’s stage']);
     if(item?.image && !photos.some(p=>p[0]===item.image)) photos.unshift([item.image,'Current photo']);
@@ -112,6 +129,7 @@
         if(!['image/png','image/jpeg','image/webp'].includes(upload.type) || upload.size > 600000) throw new Error('Choose a PNG, JPEG, or WebP image under 600 KB.');
         image = await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('The photo could not be read.'));reader.readAsDataURL(upload);});
       }
+      requireCurrentState(editState);
       if(data.start === data.end) throw new Error('Start and end times must be different. A set ending earlier than it starts is treated as ending the next day.');
       const values = {name,genre:data.genre.trim(),date:data.date,start:data.start,end:data.end,image,status:data.status};
       if(item) Object.assign(item,values); else state.events.push({id:M.id('show'),...values}); persist(`${item ? 'Updated' : 'Added'} show: ${name}`);
@@ -142,6 +160,7 @@
     openEditor(item ? 'Update stock item' : 'Add a stock item',`<p class="notice">Demo inventory only. Counts and costs are illustrative.</p><div class="field-grid">${field('name','Item name',item?.name,'text','required maxlength="100"')}${field('vendor','Sample supplier',item?.vendor || 'Demo food supplier','text','required maxlength="100"')}${field('unit','Unit',item?.unit || 'case','text','required maxlength="40"')}${field('cost','Cost per unit ($)',item?.cost ?? 0,'number','required min="0" step="0.01" max="100000"')}${field('onHand','On hand',item?.onHand ?? 0,'number','required min="0" step="0.01" max="100000"')}${field('reorderAt','Reorder at',item?.reorderAt ?? 2,'number','required min="0" step="0.01" max="100000"')}${field('par','Target stock',item?.par ?? 10,'number','required min="0" step="0.01" max="100000"')}</div>`,data=>{
       const values={name:required(data.name,'Item name'),vendor:required(data.vendor,'Supplier'),unit:required(data.unit,'Unit'),cost:numeric(data.cost,'Cost'),onHand:numeric(data.onHand,'On hand'),reorderAt:numeric(data.reorderAt,'Reorder level'),par:numeric(data.par,'Target stock')};
       if(values.par < values.reorderAt) throw new Error('Target stock must be at least the reorder level.');
+      if(item && values.vendor !== item.vendor && state.orders.some(order=>order.lines.some(line=>line.itemId===item.id))) throw new Error('The supplier cannot be changed after this item has been used in a demo order.');
       if(item) Object.assign(item,values); else state.inventory.push({id:M.id('stock'),...values}); persist(`Updated stock: ${values.name}`);
     });
   }
@@ -191,14 +210,17 @@
       `${panel('Your demo login.',`<p><strong>Username: Steven</strong></p><p>You can change the demo password for this browser. Use a throwaway password; this public demonstration does not protect real information.</p>${button('Change demo password','change-password')}`)}${panel('Start fresh.',`<p>Reset menu edits, shows, stock, sample orders, team entries, and the demo password. This affects this browser only.</p>${button('Reset demo','reset-demo','','quiet')}`)}</div>`;
   }
   async function digest(value) { return M.hashDemoPassword(value); }
-  async function matchesPassword(value) { return M.verifyDemoLogin('Steven',value,read(AUTH)); }
+  async function matchesPassword(value, storedHash=read(AUTH)) { return M.verifyDemoLogin('Steven',value,storedHash); }
   function changePassword() {
+    const editState=state;const authAtOpen=read(AUTH);
     openEditor('Change demo password',`<p class="notice">This changes sign-in on this browser only. Do not use a password from another account.</p><div class="field-grid">${field('current','Current password','','password','required autocomplete="current-password"')}${field('next','New demo password','','password','required minlength="6" maxlength="100" autocomplete="new-password"')}${field('repeat','Repeat new password','','password','required minlength="6" maxlength="100" autocomplete="new-password"')}</div>`,async data=>{
-      if(!await matchesPassword(data.current))throw new Error('The current password is incorrect.');
+      if(!await matchesPassword(data.current,authAtOpen))throw new Error('The current password is incorrect.');
+      requireCurrentState(editState);if(read(AUTH)!==authAtOpen)throw new Error('The demo password changed in another tab. Reopen this editor and try again.');
       if(data.next!==data.repeat)throw new Error('The new passwords do not match.');
       if(data.next===data.current)throw new Error('Choose a different demo password.');
-      if(!write(AUTH,await digest(data.next)))throw new Error('The browser could not save the password. Check site storage settings.');
-      persist('Changed the browser-local demo password');
+      const nextHash=await digest(data.next);requireCurrentState(editState);if(read(AUTH)!==authAtOpen)throw new Error('The demo password changed in another tab. Reopen this editor and try again.');
+      if(!write(AUTH,nextHash))throw new Error('The browser could not save the password. Check site storage settings.');
+      if(!persist('Changed the browser-local demo password')) status('The demo password changed, but the activity log could not be saved.');
     },'Change demo password');
   }
   function exportOrder(o){
@@ -233,7 +255,7 @@
       'new-teammate':()=>editTeammate(), 'edit-teammate':()=>editTeammate(id),
       'remove-teammate':()=>confirmation('Remove demo teammate?','<p>This removes only the sample entry in this browser.</p>',()=>{state.team=state.team.filter(t=>t.id!==id);persist('Removed demo teammate');},'Remove teammate'),
       'change-password':changePassword,
-      'reset-demo':()=>confirmation('Reset this browser’s demo?',`<p>All demo edits, sample orders, stock changes, and team entries will be cleared. The password will return to <strong>Steven</strong>.</p>${field('confirm','Type RESET to confirm','','text','required autocomplete="off"')}`,data=>{if(data.confirm!=='RESET')throw new Error('Type RESET to start fresh.');state=structuredClone(baseline);const passwordCleared=removeLocal(AUTH);persist('Reset the owner demo');if(!passwordCleared)status('Demo data was reset, but browser storage blocked the password reset.');activeOrder=null;},'Reset demo')
+      'reset-demo':()=>confirmation('Reset this browser’s demo?',`<p>All demo edits, sample orders, stock changes, and team entries will be cleared. The password will return to <strong>Steven</strong>.</p>${field('confirm','Type RESET to confirm','','text','required autocomplete="off"')}`,data=>{if(data.confirm!=='RESET')throw new Error('Type RESET to start fresh.');state=structuredClone(baseline);const passwordCleared=removeLocal(AUTH);const dataReset=persist('Reset the owner demo');if(!dataReset)status(passwordCleared?'The password returned to Steven, but browser storage could not reset the demo data.':'Browser storage blocked both the data and password reset.');else if(!passwordCleared)status('Demo data was reset, but browser storage blocked the password reset.');activeOrder=null;},'Reset demo')
     };
     try{handlers[action]?.();}catch(error){status(error.message || 'That action could not be completed.');}
   });
@@ -259,12 +281,12 @@
     confirmation('Start a fresh demo?',`<p>This clears demo edits and sample orders in this browser and restores the password <strong>Steven</strong>.</p>${field('confirm','Type RESET to confirm','','text','required autocomplete="off"')}`,data=>{
       if(data.confirm!=='RESET')throw new Error('Type RESET to start fresh.');
       state=structuredClone(baseline);const passwordCleared=removeLocal(AUTH);removeSession(SESSION);
-      persist('Reset the owner demo');syncDemoKey();$('#login-error').textContent=passwordCleared?'Fresh demo ready. Sign in with Steven / Steven.':'Fresh demo data is ready, but browser storage blocked the password reset.';
+      const dataReset=persist('Reset the owner demo');syncDemoKey();$('#login-error').textContent=dataReset?(passwordCleared?'Fresh demo ready. Sign in with Steven / Steven.':'Fresh demo data is ready, but browser storage blocked the password reset.'):(passwordCleared?'The password returned to Steven, but browser storage could not reset the demo data.':'Browser storage blocked both the data and password reset.');
     },'Reset demo');
   });
   $('#login-form').addEventListener('submit',async event=>{
     event.preventDefault();const data=Object.fromEntries(new FormData(event.target));const b=$('button[type=submit]',event.target);b.disabled=true;
-    try{if(data.username.trim()!=='Steven'||!await matchesPassword(data.password))throw new Error('That username or password does not match this demo.');if(!state)throw new Error('The demo data is still loading. Please try again.');const sessionSaved=writeSession(SESSION,'Steven');$('#login-error').textContent='';event.target.reset();showOwner();if(!sessionSaved)status('Signed in for this page. Browser settings prevent this demo session from surviving a refresh.');}
+    try{const authAtAttempt=read(AUTH);if(data.username.trim()!=='Steven'||!await matchesPassword(data.password,authAtAttempt))throw new Error('That username or password does not match this demo.');if(read(AUTH)!==authAtAttempt)throw new Error('The demo password changed in another tab. Enter the current demo password.');if(!state)throw new Error('The demo data is still loading. Please try again.');const sessionSaved=writeSession(SESSION,'Steven');$('#login-error').textContent='';event.target.reset();showOwner();if(!sessionSaved)status('Signed in for this page. Browser settings prevent this demo session from surviving a refresh.');}
     catch(error){$('#login-error').textContent=error.message;}finally{b.disabled=false;}
   });
   async function initialize(){
@@ -281,6 +303,7 @@
       const valid=M.isUsableState(saved);
       state=valid?saved:structuredClone(baseline);
       if(!valid){write(KEY,JSON.stringify(state));if(raw)$('#login-error').textContent=malformed?'Saved demo data could not be read, so a fresh copy was loaded.':'Saved demo data was incomplete, so a fresh copy was loaded.';}
+      savedState=structuredClone(state);
       if(readSession(SESSION)==='Steven')showOwner();
     }catch(error){$('#login-error').textContent=error.message;}
   }
@@ -289,6 +312,7 @@
     if(event.key!==KEY)return;
     let incoming=null;try{incoming=JSON.parse(event.newValue);}catch{}
     if(!M.isUsableState(incoming)){if(loggedIn)status('Another tab changed the demo, but its saved data could not be loaded.');return;}
+    savedState=structuredClone(incoming);
     if(!loggedIn){state=incoming;return;}
     const editorWasOpen=dialog.open;state=incoming;if(editorWasOpen)dialog.close();render();
     status(editorWasOpen?'Another tab changed the demo. The latest saved version was loaded and the open editor was closed.':'Another tab changed the demo. The latest saved version is now loaded.');

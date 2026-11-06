@@ -283,6 +283,11 @@ a:focus-visible {
 .answers article > p:not(.section-number) { max-width: 660px; font-size: 16px; line-height: 1.75; }
 .answers .answer-note { margin-top: 22px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, .28); font-size: 12px; opacity: .8; }
 .answers article + article .answer-note { border-color: rgba(33, 31, 25, .28); }
+.answer-list { margin: 24px 0 0; padding-left: 24px; font-size: 16px; line-height: 1.65; }
+.answer-list li + li { margin-top: 18px; }
+.answer-list li { padding-left: 5px; }
+.answer-list strong { display: block; font-weight: 700; }
+.delivery-list { list-style: square; }
 
 .section-wrap { width: min(1180px, calc(100% - 48px)); margin-inline: auto; }
 .task-section,

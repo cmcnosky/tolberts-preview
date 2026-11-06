@@ -68,6 +68,11 @@ test("accepts every state produced by the simulated purchase lifecycle", () => {
   const cancelled = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] });
   Model.cancelOrder(subject, cancelled.id);
   assert.equal(Model.isUsableState(subject), true);
+
+  const cancelledAfterSubmission = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] });
+  Model.submitOrder(subject, cancelledAfterSubmission.id);
+  Model.cancelOrder(subject, cancelledAfterSubmission.id);
+  assert.equal(Model.isUsableState(subject), true);
 });
 
 test("rejects malformed browser state before the owner interface uses it", () => {
@@ -127,6 +132,34 @@ test("rejects malformed browser state before the owner interface uses it", () =>
       const item = firstVendorItem(subject);
       const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] });
       order.lines[0].received = 1;
+    },
+    (subject) => {
+      const item = firstVendorItem(subject);
+      const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] });
+      order.vendor = "Corrupted vendor";
+    },
+    (subject) => {
+      const item = firstVendorItem(subject);
+      const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] });
+      order.submittedAt = new Date().toISOString();
+    },
+    (subject) => {
+      const item = firstVendorItem(subject);
+      const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] });
+      Model.submitOrder(subject, order.id);
+      order.submittedAt = "not-a-date";
+    },
+    (subject) => {
+      const item = firstVendorItem(subject);
+      const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] });
+      Model.submitOrder(subject, order.id);
+      delete order.submittedAt;
+    },
+    (subject) => {
+      const item = firstVendorItem(subject);
+      const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] });
+      Model.cancelOrder(subject, order.id);
+      delete order.cancelledAt;
     },
     (subject) => { subject.exceptions.push({ id: "bad-date", date: "2026-02-30", label: "Bad", open: "11:00", close: "18:00", closed: false }); },
     (subject) => {
@@ -346,6 +379,20 @@ test("receipt validation rejects duplicate or previously received lines atomical
     assert.equal(item.onHand, before);
     assert.equal(order.status, "Submitted (demo)");
   }
+});
+
+test("receipt validation rejects a mismatched demo vendor before changing inventory", () => {
+  const subject = state();
+  const item = firstVendorItem(subject);
+  const before = item.onHand;
+  const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 2 }] });
+  Model.submitOrder(subject, order.id);
+  order.vendor = "Corrupted vendor";
+
+  assert.throws(() => Model.receiveOrder(subject, order.id), /different demo vendor/i);
+  assert.equal(item.onHand, before);
+  assert.equal(order.status, "Submitted (demo)");
+  assert.equal(order.lines[0].received, 0);
 });
 
 test("keeps only the newest 100 activity records", () => {
