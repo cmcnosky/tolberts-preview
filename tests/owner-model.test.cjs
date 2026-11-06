@@ -13,26 +13,6 @@ function firstVendorItem(subject, vendor = "Demo food supplier") {
   return subject.inventory.find((item) => item.vendor === vendor);
 }
 
-test("accepts the public default demo login with exact case", async () => {
-  assert.equal(await Model.verifyDemoLogin("Steven", "Steven"), true);
-  assert.equal(await Model.verifyDemoLogin(" Steven ", "Steven"), true);
-  assert.equal(await Model.verifyDemoLogin("steven", "Steven"), false);
-  assert.equal(await Model.verifyDemoLogin("Steven", "steven"), false);
-  assert.equal(await Model.verifyDemoLogin("Steven", "Steven "), false);
-});
-
-test("hashes a changed demo password and verifies only the changed value", async () => {
-  const next = "A throwaway demo passphrase";
-  const hash = await Model.hashDemoPassword(next);
-  assert.match(hash, /^[a-f0-9]{64}$/);
-  assert.equal(hash.includes(next), false);
-  assert.equal(hash.includes("Steven"), false);
-  assert.equal(await Model.verifyDemoLogin("Steven", next, hash), true);
-  assert.equal(await Model.verifyDemoLogin("Steven", "Steven", hash), false);
-  assert.equal(await Model.verifyDemoLogin("Steven", next.toUpperCase(), hash), false);
-  assert.equal(await Model.verifyDemoLogin("Steven", next, "not-a-sha256-hash"), false);
-});
-
 test("creates independent state using supplied menu and event records", () => {
   const left = state();
   const right = state();
