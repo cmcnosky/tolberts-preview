@@ -402,3 +402,198 @@ test("keeps only the newest 100 activity records", () => {
   assert.equal(subject.activity[0].message, "Action 104");
   assert.equal(subject.activity.at(-1).message, "Action 5");
 });
+
+test("accepts legacy version-one state without newly optional workspace fields", () => {
+  const subject = state();
+  delete subject.shifts;
+  delete subject.settings.content;
+  delete subject.settings.images;
+  subject.inventory.forEach((item) => delete item.archived);
+  subject.menu.forEach((item) => {
+    delete item.image;
+    delete item.imageAlt;
+  });
+  assert.equal(Model.isUsableState(subject), true);
+});
+
+test("validates optional content, image, and menu-photo fields with bounded safe values", () => {
+  const subject = state();
+  subject.settings.content = {
+    "home.hero.heading": "Hot chili. Cold beer. Live music.",
+    visit_heading: "Come see us on Main Street"
+  };
+  subject.settings.images = { "home.hero": "assets/stage.webp" };
+  subject.menu[0].image = "";
+  assert.equal(Model.isUsableState(subject), true);
+  subject.menu[0].image = "data:image/webp;base64,AA==";
+  subject.menu[0].imageAlt = "A bowl of Tolbert's red chili";
+  assert.equal(Model.isUsableState(subject), true);
+
+  subject.settings.content.bad = 42;
+  assert.equal(Model.isUsableState(subject), false);
+  subject.settings.content.bad = "fixed";
+  subject.settings.images["home.hero"] = "https://example.com/unsafe.jpg";
+  assert.equal(Model.isUsableState(subject), false);
+  subject.settings.images["home.hero"] = "assets/stage.webp";
+  subject.menu[0].image = "javascript:alert(1)";
+  assert.equal(Model.isUsableState(subject), false);
+});
+
+test("creates, updates, removes, and measures same-day and overnight shifts", () => {
+  const subject = state();
+  subject.team.push({ id: "team-manager", name: "Demo Manager", role: "Manager", status: "Active" });
+  const created = Model.upsertShift(subject, {
+    memberId: "steven", date: "2026-11-06", start: "22:00", end: "02:00", role: "Owner", notes: "Close"
+  });
+  assert.equal(Model.shiftHours(created), 4);
+  assert.equal(subject.shifts.length, 1);
+  const originalId = created.id;
+
+  const updated = Model.upsertShift(subject, {
+    id: originalId, memberId: "steven", date: "2026-11-06", start: "21:00", end: "02:00", role: "Owner", notes: "Dinner and close"
+  });
+  assert.equal(updated.id, originalId);
+  assert.equal(Model.shiftHours(updated), 5);
+  assert.equal(subject.shifts.length, 1);
+
+  Model.upsertShift(subject, {
+    memberId: "team-manager", date: "2026-11-06", start: "21:00", end: "02:00", role: "Manager", notes: ""
+  });
+  assert.equal(subject.shifts.length, 2);
+  assert.equal(Model.isUsableState(subject), true);
+
+  const removed = Model.removeShift(subject, originalId);
+  assert.equal(removed.id, originalId);
+  removed.notes = "Changed outside state";
+  assert.equal(subject.shifts.length, 1);
+  assert.equal(subject.shifts[0].notes, "");
+});
+
+test("rejects missing teammates, malformed shifts, and same-member overnight overlaps atomically", () => {
+  const subject = state();
+  Model.upsertShift(subject, {
+    memberId: "steven", date: "2026-11-06", start: "22:00", end: "02:00", role: "Owner", notes: "Close"
+  });
+  const before = JSON.stringify(subject);
+  assert.throws(() => Model.upsertShift(subject, {
+    memberId: "steven", date: "2026-11-07", start: "01:30", end: "04:00", role: "Owner", notes: "Overlap"
+  }), /overlapping shifts/i);
+  assert.equal(JSON.stringify(subject), before);
+  assert.throws(() => Model.upsertShift(subject, {
+    memberId: "missing", date: "2026-11-07", start: "04:00", end: "08:00", role: "Manager", notes: ""
+  }), /current demo teammate/i);
+  assert.throws(() => Model.shiftHours({ date: "2026-11-07", start: "04:00", end: "04:00" }), /different start and end/i);
+
+  subject.shifts.push({ id: "bad-shift", memberId: "steven", date: "2026-02-30", start: "04:00", end: "08:00", role: "Owner", notes: "" });
+  assert.equal(Model.isUsableState(subject), false);
+});
+
+test("allows back-to-back shifts for one teammate", () => {
+  const subject = state();
+  Model.upsertShift(subject, { memberId: "steven", date: "2026-11-06", start: "22:00", end: "02:00", role: "Owner", notes: "" });
+  Model.upsertShift(subject, { memberId: "steven", date: "2026-11-07", start: "02:00", end: "05:00", role: "Owner", notes: "" });
+  assert.equal(subject.shifts.length, 2);
+  assert.equal(Model.isUsableState(subject), true);
+});
+
+test("exports and parses a validated backup without sharing mutable state", () => {
+  const subject = state();
+  subject.settings.content = { "home.hero.heading": "Tolbert's" };
+  const backup = Model.createBackup(subject);
+  assert.equal(backup.format, "tolberts-workspace");
+  assert.equal(backup.version, 1);
+  assert.match(backup.exportedAt, /^\d{4}-\d{2}-\d{2}T/);
+  backup.state.menu[0].name = "Changed in backup";
+  assert.equal(subject.menu[0].name, "Bowl of Red");
+
+  const parsed = Model.parseBackup(JSON.stringify(Model.createBackup(subject)));
+  assert.equal(parsed.menu[0].name, "Bowl of Red");
+  parsed.menu[0].name = "Changed after import";
+  assert.equal(subject.menu[0].name, "Bowl of Red");
+  assert.throws(() => Model.parseBackup("not json"), /not valid JSON/i);
+  assert.throws(() => Model.parseBackup(JSON.stringify({ ...backup, format: "another-app" })), /not a valid Tolbert's workspace backup/i);
+  const invalid = Model.createBackup(subject);
+  invalid.state.team = [];
+  assert.throws(() => Model.parseBackup(JSON.stringify(invalid)), /not a valid Tolbert's workspace backup/i);
+});
+
+test("updates only draft order details atomically while preserving order identity", () => {
+  const subject = state();
+  const items = subject.inventory.filter((item) => item.vendor === "Demo food supplier").slice(0, 2);
+  const order = Model.createOrder(subject, { vendor: items[0].vendor, lines: [{ itemId: items[0].id, quantity: 1 }], notes: "First" });
+  const identity = { id: order.id, number: order.number, createdAt: order.createdAt };
+  const updated = Model.updateDraftOrder(subject, order.id, {
+    vendor: items[0].vendor,
+    lines: [{ itemId: items[1].id, quantity: 4 }],
+    notes: "Revised"
+  });
+  assert.deepEqual({ id: updated.id, number: updated.number, createdAt: updated.createdAt }, identity);
+  assert.equal(updated.lines[0].itemId, items[1].id);
+  assert.equal(updated.lines[0].quantity, 4);
+  assert.equal(updated.notes, "Revised");
+
+  const beforeInvalid = JSON.stringify(subject.orders);
+  assert.throws(() => Model.updateDraftOrder(subject, order.id, {
+    vendor: items[0].vendor,
+    lines: [{ itemId: items[1].id, quantity: 1.5 }],
+    notes: "Invalid"
+  }), /whole numbers/i);
+  assert.equal(JSON.stringify(subject.orders), beforeInvalid);
+
+  Model.submitOrder(subject, order.id);
+  assert.throws(() => Model.updateDraftOrder(subject, order.id, {
+    vendor: items[0].vendor,
+    lines: [{ itemId: items[0].id, quantity: 1 }],
+    notes: "Too late"
+  }), /only draft/i);
+});
+
+test("archives stock without breaking existing orders or low-stock reporting", () => {
+  const subject = state();
+  const item = firstVendorItem(subject);
+  item.onHand = item.reorderAt;
+  const order = Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 2 }] });
+  assert.ok(Model.lowStock(subject).some((candidate) => candidate.id === item.id));
+
+  item.archived = true;
+  assert.equal(Model.isUsableState(subject), true);
+  assert.equal(Model.lowStock(subject).some((candidate) => candidate.id === item.id), false);
+  assert.throws(() => Model.createOrder(subject, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] }), /archived stock/i);
+  Model.submitOrder(subject, order.id);
+  Model.receiveOrder(subject, order.id);
+  assert.equal(order.status, "Received");
+  assert.equal(item.onHand, item.reorderAt + 2);
+  assert.equal(Model.isUsableState(subject), true);
+});
+
+test("lets an existing draft retain archived lines without allowing archived stock to be introduced", () => {
+  const subject = state();
+  const items = subject.inventory.filter((item) => item.vendor === "Demo food supplier").slice(0, 2);
+  const order = Model.createOrder(subject, {
+    vendor: items[0].vendor,
+    lines: [{ itemId: items[0].id, quantity: 2 }],
+    notes: "Before archive"
+  });
+  items[0].archived = true;
+
+  const updated = Model.updateDraftOrder(subject, order.id, {
+    vendor: items[0].vendor,
+    lines: [{ itemId: items[0].id, quantity: 3 }],
+    notes: "Changed after archive"
+  });
+  assert.equal(updated.lines[0].itemId, items[0].id);
+  assert.equal(updated.lines[0].quantity, 3);
+  assert.equal(updated.notes, "Changed after archive");
+
+  items[1].archived = true;
+  const beforeInvalid = JSON.stringify(subject.orders);
+  assert.throws(() => Model.updateDraftOrder(subject, order.id, {
+    vendor: items[0].vendor,
+    lines: [
+      { itemId: items[0].id, quantity: 3 },
+      { itemId: items[1].id, quantity: 1 }
+    ],
+    notes: "Should not save"
+  }), /archived stock/i);
+  assert.equal(JSON.stringify(subject.orders), beforeInvalid);
+});

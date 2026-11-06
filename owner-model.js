@@ -48,6 +48,13 @@
   const MAX_STOCK_VALUE = 100000;
   const MAX_UNIT_COST = 100000;
   const MAX_ORDER_QUANTITY = 10000;
+  const MAX_SHIFTS = 1000;
+  const MAX_CONTENT_FIELDS = 100;
+  const MAX_CONTENT_VALUE_LENGTH = 5000;
+  const MAX_CONTENT_TOTAL_LENGTH = 100000;
+  const MAX_IMAGE_FIELDS = 30;
+  const MAX_IMAGE_TOTAL_LENGTH = 2500000;
+  const SAFE_FIELD_KEY = /^[a-z][a-z0-9._-]{0,119}$/i;
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -76,6 +83,12 @@
 
   function isRecord(value) {
     return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+  }
+
+  function isPlainRecord(value) {
+    if (!isRecord(value)) return false;
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
   }
 
   function hasStrings(value, fields) {
@@ -114,6 +127,10 @@
       /^(?:0?[1-9]|1[0-2]):[0-5]\d\s*(?:am|pm)$/i.test(value);
   }
 
+  function is24HourClock(value) {
+    return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
+  }
+
   function isIsoTimestamp(value) {
     if (typeof value !== "string") return false;
     const parsed = new Date(value);
@@ -124,6 +141,57 @@
     if (typeof value !== "string") return false;
     if (/^assets\/[a-zA-Z0-9._-]+$/.test(value)) return true;
     return value.length <= 850000 && /^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/i.test(value);
+  }
+
+  function isBoundedStringMap(value, maximumFields, maximumValueLength, maximumTotalLength, valueValidator = null) {
+    if (!isPlainRecord(value)) return false;
+    const entries = Object.entries(value);
+    if (entries.length > maximumFields) return false;
+    let totalLength = 0;
+    return entries.every(([key, entry]) => {
+      if (!SAFE_FIELD_KEY.test(key) || typeof entry !== "string" || entry.length > maximumValueLength) return false;
+      totalLength += entry.length;
+      return totalLength <= maximumTotalLength && (!valueValidator || valueValidator(entry));
+    });
+  }
+
+  function clockMinutes(value) {
+    if (!is24HourClock(value)) return null;
+    const [hour, minute] = value.split(":").map(Number);
+    return hour * 60 + minute;
+  }
+
+  function shiftInterval(shift) {
+    if (!isRecord(shift) || !isCivilDate(shift.date)) return null;
+    const startMinutes = clockMinutes(shift.start);
+    const endMinutes = clockMinutes(shift.end);
+    if (startMinutes === null || endMinutes === null || startMinutes === endMinutes) return null;
+    const day = Date.parse(`${shift.date}T00:00:00Z`) / 60000;
+    const start = day + startMinutes;
+    const end = day + endMinutes + (endMinutes < startMinutes ? 1440 : 0);
+    return { start, end };
+  }
+
+  function shiftsAreValid(shifts, team) {
+    if (!Array.isArray(shifts) || shifts.length > MAX_SHIFTS || !hasUniqueSafeIds(shifts)) return false;
+    const memberIds = new Set(team.map((member) => member && member.id));
+    const intervals = [];
+    for (const shift of shifts) {
+      if (!hasStrings(shift, ["id", "memberId", "date", "start", "end", "role", "notes"]) ||
+          !SAFE_ID.test(shift.memberId) || !memberIds.has(shift.memberId) ||
+          !shift.role.trim() || shift.role.length > 100 || shift.notes.length > 1000) return false;
+      const interval = shiftInterval(shift);
+      if (!interval) return false;
+      intervals.push({ ...interval, id: shift.id, memberId: shift.memberId });
+    }
+    for (let left = 0; left < intervals.length; left += 1) {
+      for (let right = left + 1; right < intervals.length; right += 1) {
+        const first = intervals[left];
+        const second = intervals[right];
+        if (first.memberId === second.memberId && first.start < second.end && second.start < first.end) return false;
+      }
+    }
+    return true;
   }
 
   function owns(value, field) {
@@ -162,12 +230,22 @@
     if (!arrayFields.every((field) => Array.isArray(value[field]))) return false;
     if (!hasStrings(value.settings, ["phone", "address", "announcement"]) ||
         !value.settings.phone.trim() || !value.settings.address.trim()) return false;
+    if (owns(value.settings, "content") && !isBoundedStringMap(
+      value.settings.content, MAX_CONTENT_FIELDS, MAX_CONTENT_VALUE_LENGTH, MAX_CONTENT_TOTAL_LENGTH
+    )) return false;
+    if (owns(value.settings, "images") && !isBoundedStringMap(
+      value.settings.images, MAX_IMAGE_FIELDS, 850000, MAX_IMAGE_TOTAL_LENGTH, isStoredImage
+    )) return false;
+    const shifts = owns(value, "shifts") ? value.shifts : [];
+    if (!Array.isArray(shifts)) return false;
     const idCollections = ["menu", "events", "exceptions", "inventory", "orders", "team", "activity"];
     if (!idCollections.every((field) => hasUniqueSafeIds(value[field]))) return false;
 
     const menuValid = value.menu.every((item) =>
       hasStrings(item, ["id", "category", "name", "description", "price"]) &&
-      item.category.trim() && item.name.trim() && typeof item.available === "boolean"
+      item.category.trim() && item.name.trim() && typeof item.available === "boolean" &&
+      (!owns(item, "image") || (typeof item.image === "string" && (!item.image || isStoredImage(item.image)))) &&
+      (!owns(item, "imageAlt") || (typeof item.imageAlt === "string" && item.imageAlt.length <= 240))
     );
     const eventsValid = value.events.every((event) =>
       hasStrings(event, ["id", "name", "genre", "date", "start", "end", "image", "status"]) &&
@@ -193,11 +271,12 @@
       item.name.trim() && item.unit.trim() && item.vendor.trim() &&
       [item.onHand, item.par, item.reorderAt].every((value) => isNumberInRange(value, MAX_STOCK_VALUE)) &&
       isNumberInRange(item.cost, MAX_UNIT_COST) &&
+      (!owns(item, "archived") || typeof item.archived === "boolean") &&
       item.par >= item.reorderAt
     );
     const ordersValid = value.orders.every((order) =>
       hasStrings(order, ["id", "number", "vendor", "notes", "status", "createdAt"]) &&
-      /^PO-DEMO-\d+$/.test(order.number) && order.vendor.trim() && ORDER_STATUSES.has(order.status) &&
+      /^PO-DEMO-\d+$/.test(order.number) && order.vendor.trim() && order.notes.length <= 1000 && ORDER_STATUSES.has(order.status) &&
       isIsoTimestamp(order.createdAt) && order.sample === true && hasValidOrderLifecycle(order) &&
       Array.isArray(order.lines) && order.lines.length > 0 &&
       new Set(order.lines.map((line) => line && line.itemId)).size === order.lines.length &&
@@ -217,7 +296,8 @@
     const activityValid = value.activity.length <= 100 && value.activity.every((entry) =>
       hasNonBlankStrings(entry, ["id", "message", "createdAt"]) && isIsoTimestamp(entry.createdAt)
     );
-    return menuValid && eventsValid && hoursValid && exceptionsValid && inventoryValid && ordersValid && teamValid && activityValid;
+    const shiftsValid = shiftsAreValid(shifts, value.team);
+    return menuValid && eventsValid && hoursValid && exceptionsValid && inventoryValid && ordersValid && teamValid && activityValid && shiftsValid;
   }
 
   function id(prefix) {
@@ -258,11 +338,14 @@
       inventory: clone(SAMPLE_INVENTORY),
       orders: [],
       team: [{ id: "steven", name: "Steven Ryan", role: "Owner", status: "Active" }],
+      shifts: [],
       activity: [],
       settings: {
         phone: "(817) 421-4888",
         address: "423 South Main Street, Grapevine, Texas 76051",
-        announcement: ""
+        announcement: "",
+        content: {},
+        images: {}
       }
     };
   }
@@ -293,7 +376,7 @@
 
   function lowStock(state) {
     const inventory = state && Array.isArray(state.inventory) ? state.inventory : [];
-    return inventory.filter((item) => Number(item.onHand) <= Number(item.reorderAt));
+    return inventory.filter((item) => item && item.archived !== true && Number(item.onHand) <= Number(item.reorderAt));
   }
 
   function requireState(state) {
@@ -319,12 +402,88 @@
     return entry;
   }
 
-  function createOrder(state, input) {
-    requireState(state);
+  function shiftHours(shift) {
+    const interval = shiftInterval(shift);
+    if (!interval) throw new Error("A shift needs a real date and different start and end times in HH:MM format.");
+    return (interval.end - interval.start) / 60;
+  }
+
+  function upsertShift(state, input) {
+    if (!isUsableState(state)) throw new TypeError("A valid owner demo state is required.");
+    const memberId = String(input && input.memberId || "").trim();
+    const member = state.team.find((candidate) => candidate && candidate.id === memberId);
+    if (!member) throw new Error("Choose a current demo teammate for this shift.");
+    const requestedId = String(input && input.id || "").trim();
+    const shifts = Array.isArray(state.shifts) ? state.shifts : [];
+    const existingIndex = requestedId ? shifts.findIndex((shift) => shift.id === requestedId) : -1;
+    if (requestedId && existingIndex < 0) throw new Error("Shift not found.");
+    const shift = {
+      id: requestedId || id("shift"),
+      memberId,
+      date: String(input && input.date || "").trim(),
+      start: String(input && input.start || "").trim(),
+      end: String(input && input.end || "").trim(),
+      role: String(input && input.role !== undefined ? input.role : member.role).trim(),
+      notes: String(input && input.notes || "").trim()
+    };
+    const candidateShifts = shifts.map((entry) => clone(entry));
+    if (existingIndex >= 0) candidateShifts[existingIndex] = shift;
+    else candidateShifts.push(shift);
+    if (!shiftsAreValid(candidateShifts, state.team)) {
+      throw new Error("Check the teammate, date, times, role, and overlapping shifts.");
+    }
+    if (!Array.isArray(state.shifts)) state.shifts = [];
+    if (existingIndex >= 0) state.shifts[existingIndex] = shift;
+    else state.shifts.push(shift);
+    addActivity(state, `${existingIndex >= 0 ? "Updated" : "Added"} shift for ${member.name} on ${shift.date}.`);
+    return state.shifts[existingIndex >= 0 ? existingIndex : state.shifts.length - 1];
+  }
+
+  function removeShift(state, shiftId) {
+    if (!isUsableState(state)) throw new TypeError("A valid owner demo state is required.");
+    const shifts = Array.isArray(state.shifts) ? state.shifts : [];
+    const index = shifts.findIndex((shift) => shift.id === shiftId);
+    if (index < 0) throw new Error("Shift not found.");
+    const [removed] = shifts.splice(index, 1);
+    const member = state.team.find((candidate) => candidate.id === removed.memberId);
+    addActivity(state, `Removed shift for ${member ? member.name : "demo teammate"} on ${removed.date}.`);
+    return clone(removed);
+  }
+
+  function createBackup(state) {
+    if (!isUsableState(state)) throw new TypeError("Only valid owner demo data can be backed up.");
+    return {
+      format: "tolberts-workspace",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      state: clone(state)
+    };
+  }
+
+  function parseBackup(text) {
+    if (typeof text !== "string" || !text.trim() || text.length > 12000000) {
+      throw new Error("Choose a valid Tolbert's workspace backup file.");
+    }
+    let envelope;
+    try {
+      envelope = JSON.parse(text);
+    } catch {
+      throw new Error("The backup file is not valid JSON.");
+    }
+    if (!isPlainRecord(envelope) || envelope.format !== "tolberts-workspace" || envelope.version !== 1 ||
+        !isIsoTimestamp(envelope.exportedAt) || !isUsableState(envelope.state)) {
+      throw new Error("This is not a valid Tolbert's workspace backup.");
+    }
+    return clone(envelope.state);
+  }
+
+  function normalizeDraftOrderInput(state, input, allowedArchivedItemIds) {
     const vendor = String(input && input.vendor || "").trim();
     const requestedLines = input && Array.isArray(input.lines) ? input.lines : [];
+    const notes = String(input && input.notes || "").trim();
     if (!vendor) throw new Error("Choose a vendor.");
     if (!requestedLines.length) throw new Error("Add at least one item to the purchase order.");
+    if (notes.length > 1000) throw new Error("Order notes must be 1,000 characters or fewer.");
 
     const seen = new Set();
     const lines = requestedLines.map((requested) => {
@@ -338,6 +497,9 @@
       }
       const item = state.inventory.find((candidate) => candidate.id === itemId);
       if (!item) throw new Error("An order line references an unknown inventory item.");
+      if (item.archived === true && !(allowedArchivedItemIds instanceof Set && allowedArchivedItemIds.has(item.id))) {
+        throw new Error("Archived stock cannot be added to a new or edited draft order.");
+      }
       if (item.vendor !== vendor) throw new Error("Every item must belong to the selected demo vendor.");
       if (!Number.isFinite(Number(item.cost)) || Number(item.cost) < 0 || Number(item.cost) > MAX_UNIT_COST) {
         throw new Error("The inventory item has an invalid unit cost.");
@@ -351,6 +513,12 @@
         received: 0
       };
     });
+    return { vendor, lines, notes };
+  }
+
+  function createOrder(state, input) {
+    requireState(state);
+    const { vendor, lines, notes } = normalizeDraftOrderInput(state, input);
 
     const sequence = state.orders.reduce((highest, order) => {
       const match = String(order.number || "").match(/(\d+)$/);
@@ -361,13 +529,27 @@
       number: `PO-DEMO-${String(sequence).padStart(3, "0")}`,
       vendor,
       lines,
-      notes: String(input && input.notes || "").trim(),
+      notes,
       status: "Draft",
       createdAt: new Date().toISOString(),
       sample: true
     };
     state.orders.push(order);
     addActivity(state, `Created demo purchase order ${order.number}.`);
+    return order;
+  }
+
+  function updateDraftOrder(state, orderId, input) {
+    const order = findOrder(state, orderId);
+    if (order.status !== "Draft") throw new Error("Only draft purchase orders can be edited.");
+    const existingItemIds = new Set(order.lines.map((line) => line.itemId));
+    const normalized = normalizeDraftOrderInput(state, input, existingItemIds);
+    const candidateState = clone(state);
+    const candidateOrder = candidateState.orders.find((entry) => entry.id === order.id);
+    Object.assign(candidateOrder, normalized);
+    if (!isUsableState(candidateState)) throw new Error("The draft order update is not valid.");
+    Object.assign(order, normalized);
+    addActivity(state, `Updated demo purchase order ${order.number}.`);
     return order;
   }
 
@@ -437,7 +619,13 @@
     money,
     orderTotal,
     lowStock,
+    shiftHours,
+    upsertShift,
+    removeShift,
+    createBackup,
+    parseBackup,
     createOrder,
+    updateDraftOrder,
     submitOrder,
     receiveOrder,
     cancelOrder,

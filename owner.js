@@ -20,6 +20,7 @@
   const workspace = $('#workspace');
   const dialog = $('#editor-dialog');
   const form = $('#editor-form');
+  let extra;
   function read(key) { try { return localStorage.getItem(key); } catch { storageOK = false; return null; } }
   function write(key,value) { try { localStorage.setItem(key,value); return true; } catch { storageOK = false; return false; } }
   function removeLocal(key) { try { localStorage.removeItem(key); return true; } catch { storageOK = false; return false; } }
@@ -83,14 +84,32 @@
   function required(value,label) { const text = String(value || '').trim(); if(!text) throw new Error(`${label} is required.`); return text; }
   function numeric(value,label,min=0) { if(value === '' || !Number.isFinite(Number(value)) || Number(value) < min) throw new Error(`${label} must be a number of at least ${min}.`); return Number(value); }
   function requireCurrentState(expected) { if(state!==expected) throw new Error('The demo changed in another tab. Reopen this editor and try again.'); }
+  async function readPhoto(file) {
+    if(!file || !file.size)return null;
+    if(!['image/png','image/jpeg','image/webp'].includes(file.type) || file.size>15000000)throw new Error('Choose a PNG, JPEG, or WebP photograph up to 15 MB.');
+    const objectUrl=URL.createObjectURL(file);
+    try {
+      const photo=new Image();photo.src=objectUrl;await photo.decode();
+      const ratio=Math.min(1,1600/Math.max(photo.naturalWidth,photo.naturalHeight));
+      const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(photo.naturalWidth*ratio));canvas.height=Math.max(1,Math.round(photo.naturalHeight*ratio));
+      const context=canvas.getContext('2d');if(!context)throw new Error('The browser cannot prepare this photograph.');
+      context.drawImage(photo,0,0,canvas.width,canvas.height);
+      let value=canvas.toDataURL('image/webp',.86);
+      if(value.length>820000)value=canvas.toDataURL('image/webp',.65);
+      if(value.length>820000)throw new Error('This photograph is too detailed to store here. Choose a smaller image.');
+      return value;
+    } catch(error) { throw new Error(error.message || 'The photograph could not be read.'); }
+    finally { URL.revokeObjectURL(objectUrl); }
+  }
   function navigate(next) { if(!loggedIn) return; view = next; filter = ''; activeOrder = null; history.replaceState(null,'','#'+next); render(); workspace.focus({preventScroll:true}); window.scrollTo({top:0,behavior:'instant'}); }
   function render() {
     if(!state || !loggedIn) return;
     $$('[data-view]').forEach(b => { if(b.dataset.view === view) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
-    const screens = {overview:renderOverview,menu:renderMenu,music:renderMusic,hours:renderHours,inventory:renderInventory,purchases:renderPurchases,team:renderTeam,activity:renderActivity,settings:renderSettings};
+    const screens = {overview:renderOverview,menu:renderMenu,music:renderMusic,hours:renderHours,inventory:renderInventory,purchases:renderPurchases,team:renderTeam,activity:renderActivity,settings:renderSettings,website:renderWebsite,schedule:()=>extra.renderSchedule(),backups:()=>extra.renderBackups()};
     workspace.innerHTML = (screens[view] || renderOverview)();
-    if(!storageOK) workspace.insertAdjacentHTML('afterbegin','<p class="notice">Browser storage is unavailable. Keep this page open to retain your demo edits.</p>');
+    if(!storageOK) workspace.insertAdjacentHTML('afterbegin','<p class="notice">Browser storage is unavailable or full. Failed edits are rolled back. Download a backup of the last saved workspace before leaving.</p>');
     if($('#list-search')) applyFilter();
+    extra?.afterRender?.(view);
   }
   function renderOverview() {
     const low = M.lowStock(state); const future = state.events.filter(e => e.status !== 'Cancelled' && e.date >= dayKey()).sort((a,b)=>a.date.localeCompare(b.date));
@@ -106,9 +125,13 @@
     searchBar('Find a dish','Name, category, or ingredient') + `<div class="row-list panel">${state.menu.map(i=>`<article data-search="${esc([i.name,i.category,i.description].join(' ').toLowerCase())}" class="list-row"><div class="row-main"><p class="eyebrow">${esc(i.category)}</p><h3>${esc(i.name)}</h3><p>${esc(i.description)}</p><strong>${esc(i.price || 'Ask for current pricing')}</strong></div><div class="row-actions">${pill(i.available ? 'Available' : 'Unavailable',i.available ? 'good':'warning')}${button('Edit','edit-menu',i.id,'secondary',`Edit ${i.name}`)}<button class="button quiet" data-action="toggle-menu" data-id="${esc(i.id)}" aria-label="${i.available ? 'Mark unavailable' : 'Make available'}: ${esc(i.name)}">${i.available ? 'Mark unavailable' : 'Make available'}</button></div></article>`).join('')}</div><div id="search-empty" hidden>${empty('No dishes found.','Try another name or clear the search.')}</div>`;
   }
   function editMenu(id) {
+    const editState=state;
     const item = state.menu.find(i=>i.id===id); const categories = [...new Set(state.menu.map(i=>i.category))];
-    openEditor(item ? 'Edit menu item' : 'Add a dish',`<div class="field-grid">${field('name','Dish name',item?.name,'text','required maxlength="100"')}${select('category','Category',categories,item?.category || categories[0])}${field('price','Price / sizes',item?.price,'text','maxlength="180" placeholder="Bowl 11.99"')}${area('description','Description',item?.description)}${check('available','Available in the guest preview',item?.available ?? true)}</div>`,data=>{
-      const values = {name:required(data.name,'Dish name'),category:data.category,price:data.price.trim(),description:data.description.trim(),available:!!data.available};
+    openEditor(item ? 'Edit menu item' : 'Add a dish',`<div class="field-grid">${field('name','Dish name',item?.name,'text','required maxlength="100"')}${field('category','Category',item?.category || categories[0] || 'Specials','text','required maxlength="100" list="menu-categories"')}<datalist id="menu-categories">${categories.map(c=>`<option value="${esc(c)}"></option>`).join('')}</datalist>${field('price','Price / sizes',item?.price,'text','maxlength="180" placeholder="Bowl 11.99"')}${area('description','Description',item?.description)}${field('upload','Dish photograph','','file','accept="image/png,image/jpeg,image/webp"')}${field('imageAlt','Describe the photograph',item?.imageAlt,'text','maxlength="240"')}${item?.image?`<div class="field full"><img class="editor-photo" src="${esc(safeImage(item.image))}" alt="${esc(item.imageAlt || item.name)}">${check('removeImage','Remove this photograph',false)}</div>`:''}${check('available','Available in the guest preview',item?.available ?? true)}<p class="muted full">Choose an existing category or type a new one. Unavailable dishes stay here for later use. Photos are resized automatically and displayed without cropping.</p></div>`,async data=>{
+      const upload=$('input[name=upload]',form).files[0];
+      const image=upload?await readPhoto(upload):(data.removeImage?'':item?.image || '');
+      requireCurrentState(editState);
+      const values = {name:required(data.name,'Dish name'),category:required(data.category,'Category'),price:data.price.trim(),description:data.description.trim(),available:!!data.available,image,imageAlt:data.imageAlt.trim()};
       if(item) Object.assign(item,values); else state.menu.push({id:M.id('menu'),...values}); persist(`${item ? 'Updated' : 'Added'} ${values.name}`);
     });
   }
@@ -122,13 +145,10 @@
     const item = state.events.find(i=>i.id===id);
     const photos = [...new Map([...baseline.events,...state.events].map(e=>[e.image,[e.image,e.name]])).values()]; photos.unshift(['assets/stage.webp','Tolbert’s stage']);
     if(item?.image && !photos.some(p=>p[0]===item.image)) photos.unshift([item.image,'Current photo']);
-    openEditor(item ? 'Edit the show' : 'Add a show',`<div class="field-grid">${field('name','Artist / band name',item?.name,'text','required maxlength="120"')}${field('genre','Genre / short description',item?.genre,'text','maxlength="140"')}${field('date','Show date',item?.date || dayKey(),'date','required')}${select('status','Status',['Scheduled','Cancelled'],item?.status || 'Scheduled')}${field('start','Set starts',inputTime(item?.start),'time','required')}${field('end','Set ends',inputTime(item?.end || '22:00'),'time','required')}${select('image','Artist photograph',photos,item?.image || 'assets/stage.webp')}${field('upload','Or upload a photograph','','file','accept="image/png,image/jpeg,image/webp"')}<p class="field full muted">Use a photo of the actual artist. Images are shown in full, with dates and names outside the photograph. Uploaded demo images must be under 600 KB.</p></div>`,async data=>{
+    openEditor(item ? 'Edit the show' : 'Add a show',`<div class="field-grid">${field('name','Artist / band name',item?.name,'text','required maxlength="120"')}${field('genre','Genre / short description',item?.genre,'text','maxlength="140"')}${field('date','Show date',item?.date || dayKey(),'date','required')}${select('status','Status',['Scheduled','Cancelled'],item?.status || 'Scheduled')}${field('start','Set starts',inputTime(item?.start),'time','required')}${field('end','Set ends',inputTime(item?.end || '22:00'),'time','required')}${select('image','Artist photograph',photos,item?.image || 'assets/stage.webp')}${field('upload','Or upload a photograph','','file','accept="image/png,image/jpeg,image/webp"')}<p class="field full muted">Use a photo of the actual artist. Images are shown in full, with dates and names outside the photograph. Choose a PNG, JPEG, or WebP up to 15 MB; the workspace resizes it automatically.</p></div>`,async data=>{
       const name = required(data.name,'Artist name'); let image = data.image;
       const upload = $('input[name=upload]',form).files[0];
-      if(upload) {
-        if(!['image/png','image/jpeg','image/webp'].includes(upload.type) || upload.size > 600000) throw new Error('Choose a PNG, JPEG, or WebP image under 600 KB.');
-        image = await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(new Error('The photo could not be read.'));reader.readAsDataURL(upload);});
-      }
+      if(upload) image=await readPhoto(upload);
       requireCurrentState(editState);
       if(data.start === data.end) throw new Error('Start and end times must be different. A set ending earlier than it starts is treated as ending the next day.');
       const values = {name,genre:data.genre.trim(),date:data.date,start:data.start,end:data.end,image,status:data.status};
@@ -153,7 +173,7 @@
     return heading('Know what’s on the shelf.','Sample stock and costs let you try counting, reorder levels, and receiving.',button('Add stock item','new-stock','','')+button('Create purchase order','new-order')) +
       `<p class="notice">Illustrative inventory and suppliers. These are not Tolbert’s actual stock counts, vendors, or purchase prices.</p>` +
       searchBar('Find stock','Item name or supplier',`<button class="button quiet" data-action="low-stock">Show low stock</button><button class="button quiet" data-action="clear-search">Show all</button>`) +
-      `<div class="row-list panel">${state.inventory.map(i=>`<article class="list-row" data-search="${esc((i.name+' '+i.vendor+(i.onHand<=i.reorderAt?' low stock':'')).toLowerCase())}"><div class="row-main"><p class="eyebrow">${esc(i.vendor)}</p><h3>${esc(i.name)}</h3><p>${esc(i.unit)} · ${cash(i.cost)} per unit</p><p>Reorder at ${i.reorderAt} · target ${i.par}</p></div><div class="stock-count"><strong>${i.onHand}</strong><span>${esc(i.unit)} on hand</span></div><div class="row-actions">${pill(i.onHand<=i.reorderAt ? 'Low stock':'Stocked',i.onHand<=i.reorderAt ? 'warning':'good')}${button('Update stock','edit-stock',i.id,'secondary',`Update ${i.name} stock`)}</div></article>`).join('')}</div><div id="search-empty" hidden>${empty('No stock matches.','Clear the filter or search by item or supplier.')}</div>`;
+      `<div class="row-list panel">${state.inventory.map(i=>`<article class="list-row" data-search="${esc((i.name+' '+i.vendor+(!i.archived && i.onHand<=i.reorderAt?' low stock':'')).toLowerCase())}"><div class="row-main"><p class="eyebrow">${esc(i.vendor)}</p><h3>${esc(i.name)}</h3><p>${esc(i.unit)} · ${cash(i.cost)} per unit</p><p>Reorder at ${i.reorderAt} · target ${i.par}</p></div><div class="stock-count"><strong>${i.onHand}</strong><span>${esc(i.unit)} on hand</span></div><div class="row-actions">${pill(i.archived?'Archived':i.onHand<=i.reorderAt ? 'Low stock':'Stocked',i.archived?'':i.onHand<=i.reorderAt ? 'warning':'good')}${button('Update stock','edit-stock',i.id,'secondary',`Update ${i.name} stock`)}${button(i.archived?'Restore':'Archive','toggle-stock',i.id,'quiet',`${i.archived?'Restore':'Archive'} ${i.name}`)}</div></article>`).join('')}</div><div id="search-empty" hidden>${empty('No stock matches.','Clear the filter or search by item or supplier.')}</div>`;
   }
   function editStock(id) {
     const item = state.inventory.find(i=>i.id===id);
@@ -173,34 +193,37 @@
   function renderOrder(o) {
     if(!o){activeOrder=null;return renderPurchases();}
     let actions=button('All purchase orders','all-orders');
-    if(o.status==='Draft') actions+=button('Simulate submission','submit-order',o.id,'');
+    if(o.status==='Draft') actions+=button('Edit draft','edit-order',o.id)+button('Simulate submission','submit-order',o.id,'');
     if(o.status==='Submitted (demo)') actions+=button('Receive stock','receive-order',o.id,'');
     if(['Draft','Submitted (demo)'].includes(o.status)) actions+=button('Cancel order','cancel-order',o.id,'quiet');
     actions+=button('Download CSV','export-order',o.id,'quiet');
     return heading(esc(o.number),esc(o.vendor),actions)+`<p class="notice">Demo purchase order · nothing is sent to a supplier and no payment is taken.</p>`+
       panel('Order details.',`<div class="item-meta">${pill(o.status,o.status==='Received'?'good':'warning')}<span>${new Date(o.createdAt).toLocaleDateString('en-US')}</span></div><div class="order-lines">${o.lines.map(l=>`<div class="order-line"><div><h3>${esc(l.name)}</h3><p>${l.quantity} × ${esc(l.unit)} at ${cash(l.unitCost)}</p></div><strong>${cash(l.quantity*l.unitCost)}</strong></div>`).join('')}</div><div class="totals"><span>Items subtotal</span><strong>${cash(M.orderTotal(o))}</strong></div><p class="muted">Sample prices. Taxes, freight, and supplier terms are not included.</p>${o.notes ? `<p><strong>Notes</strong><br>${esc(o.notes)}</p>`:''}<div class="progress-steps"><span>1 · Draft</span><span>2 · Simulated submission</span><span>3 · Stock received</span></div>${o.status==='Received'?'<p class="notice">This order has been received into the demo inventory. It cannot be received twice.</p>':''}`);
   }
-  function newOrder() {
-    const vendors=[...new Set(state.inventory.map(i=>i.vendor))];
+  function newOrder(orderId) {
+    const existing=typeof orderId==='string'?state.orders.find(o=>o.id===orderId):null;
+    if(existing && existing.status!=='Draft')throw new Error('Only draft orders can be edited. Completed orders retain their original record.');
+    const stock=state.inventory.filter(i=>!i.archived || existing?.lines.some(l=>l.itemId===i.id));
+    const vendors=[...new Set(stock.map(i=>i.vendor))];
     if(!vendors.length){status('Add a stock item and supplier first.');navigate('inventory');return;}
-    openEditor('Build a purchase order',`<p class="notice">This is a demo order. No supplier will be contacted.</p>${select('vendor','Sample supplier',vendors,vendors[0])}<div id="purchase-items"></div>${area('notes','Order notes')}<div class="totals"><span>Items subtotal</span><strong id="draft-total">${cash(0)}</strong></div>`,data=>{
-      const lines=state.inventory.filter(i=>i.vendor===data.vendor).map(i=>({itemId:i.id,quantity:Number(data['qty-'+i.id])})).filter(l=>l.quantity!==0);
-      const order=M.createOrder(state,{vendor:data.vendor,lines,notes:data.notes.trim()}); activeOrder=order.id; view='purchases'; persist();
-    },'Create draft order');
-    function drawItems(){const vendor=$('select[name=vendor]',form).value; $('#purchase-items').innerHTML=`<div class="order-lines">${state.inventory.filter(i=>i.vendor===vendor).map(i=>`<div class="order-line"><div><h3>${esc(i.name)}</h3><p>${i.onHand} ${esc(i.unit)} on hand · target ${i.par}</p><span>${cash(i.cost)} / ${esc(i.unit)}</span></div>${field('qty-'+i.id,'Quantity',i.onHand<=i.reorderAt?Math.ceil(Math.max(0,i.par-i.onHand)):0,'number','min="0" step="1" max="10000" required')}</div>`).join('')}</div>`;total();}
+    openEditor(existing?'Edit purchase draft':'Build a purchase order',`<p class="notice">Nothing is sent to a supplier. Saving uses the current inventory unit costs shown below.</p>${select('vendor','Supplier',vendors,existing?.vendor || vendors[0])}<div id="purchase-items"></div>${area('notes','Order notes',existing?.notes)}<div class="totals"><span>Items subtotal</span><strong id="draft-total">${cash(0)}</strong></div>`,data=>{
+      const lines=stock.filter(i=>i.vendor===data.vendor).map(i=>({itemId:i.id,quantity:Number(data['qty-'+i.id])})).filter(l=>l.quantity!==0);
+      const input={vendor:data.vendor,lines,notes:data.notes.trim()};
+      const order=existing?M.updateDraftOrder(state,existing.id,input):M.createOrder(state,input); activeOrder=order.id; view='purchases'; persist();
+    },existing?'Save draft':'Create draft order');
+    function drawItems(){const vendor=$('select[name=vendor]',form).value; $('#purchase-items').innerHTML=`<div class="order-lines">${stock.filter(i=>i.vendor===vendor).map(i=>`<div class="order-line"><div><h3>${esc(i.name)}</h3><p>${i.onHand} ${esc(i.unit)} on hand · target ${i.par}</p><span>${cash(i.cost)} / ${esc(i.unit)}</span></div>${field('qty-'+i.id,'Quantity',existing?(existing.lines.find(l=>l.itemId===i.id)?.quantity || 0):(i.onHand<=i.reorderAt?Math.ceil(Math.max(0,i.par-i.onHand)):0),'number',`min="0" step="1" max="10000" required aria-label="Quantity of ${esc(i.name)}"`)}</div>`).join('')}</div>`;total();}
     function total(){let amount=0;state.inventory.forEach(i=>{const el=$(`[name="qty-${i.id}"]`,form);if(el)amount+=Math.round(i.cost*100)*(Number(el.value)||0);});$('#draft-total').textContent=cash(amount/100);}
     $('select[name=vendor]',form).addEventListener('change',drawItems); $('#purchase-items').addEventListener('input',total);drawItems();
   }
   function renderTeam() {
     return heading('The right hands on deck.','Explore how owner, manager, and editor roles would be organized.',button('Add demo teammate','new-teammate','',''))+
       `<p class="notice">Team entries illustrate permissions. They do not invite people or create working accounts; Steven is the only demo login.</p>`+
-      panel('People & roles.',`<div class="row-list">${state.team.map(t=>listRow(t.name,`${esc(t.role)} · ${t.role==='Owner'?'All demo controls':t.role==='Manager'?'Operations, stock, and purchase drafts':'Menu, music, and hours'}`,t.id==='steven'?pill('Your account','good'):button('Edit role','edit-teammate',t.id)+button('Remove','remove-teammate',t.id,'quiet'),pill(t.status))).join('')}</div>`)+
+      panel('People & roles.',`<div class="row-list">${state.team.map(t=>listRow(t.name,`${esc(t.role)} · ${t.role==='Owner'?'All demo controls':t.role==='Manager'?'Operations, stock, and purchase drafts':'Menu, music, and hours'}`,button(t.id==='steven'?'Edit profile':'Edit role','edit-teammate',t.id)+(t.id==='steven'?pill('Your account','good'):button('Remove','remove-teammate',t.id,'quiet')),pill(t.status))).join('')}</div>`)+
       `<div class="card-grid">${[['Owner','Website settings, team roles, all content, inventory, and purchase-order actions.'],['Manager','Menu, calendar, hours, stock counts, and purchase drafts.'],['Editor','Guest-facing content: menu, music, and hours.']].map(([title,copy])=>panel(title,`<p>${copy}</p>`)).join('')}</div>`;
   }
   function editTeammate(id) {
     const item=state.team.find(i=>i.id===id);
-    if(item?.id==='steven')return;
-    openEditor(item?'Edit demo teammate':'Add demo teammate',`<p class="notice">No invitation or account will be created.</p><div class="field-grid">${field('name','Name',item?.name,'text','required maxlength="100"')}${select('role','Role',['Manager','Editor'],item?.role || 'Editor')}${select('status','Status',['Active','Inactive'],item?.status || 'Active')}</div>`,data=>{const values={name:required(data.name,'Name'),role:data.role,status:data.status};if(item)Object.assign(item,values);else state.team.push({id:M.id('team'),...values});persist(`Updated demo teammate: ${values.name}`);});
+    openEditor(item?'Edit demo teammate':'Add demo teammate',`<p class="notice">No invitation or account will be created.</p><div class="field-grid">${field('name','Name',item?.name,'text','required maxlength="100"')}${item?.id==='steven'?'<p class="muted full">Steven keeps full owner access. This changes the display name; the login remains Steven.</p>':select('role','Role',['Owner','Manager','Editor'],item?.role || 'Editor')+select('status','Status',['Active','Inactive'],item?.status || 'Active')}</div>`,data=>{const values={name:required(data.name,'Name'),role:item?.id==='steven'?'Owner':data.role,status:item?.id==='steven'?'Active':data.status};if(item)Object.assign(item,values);else state.team.push({id:M.id('team'),...values});persist(`Updated demo teammate: ${values.name}`);});
   }
   function activityRows(limit=100) { return state.activity.length ? `<div class="row-list">${state.activity.slice(0,limit).map(a=>`<div class="activity-row"><span class="user-avatar" aria-hidden="true">S</span><div><strong>${esc(a.message)}</strong><p>Steven · ${new Date(a.at || a.timestamp || a.createdAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</p></div></div>`).join('')}</div>` : empty('A fresh start.','Saved edits and order actions will appear here.'); }
   function renderActivity() { return heading('A record of the changes.','Your latest 100 demo actions, saved in this browser.')+panel('Activity.',activityRows()); }
@@ -208,6 +231,51 @@
     return heading('Make it feel like your parlor.','Update contact details, a guest notice, and your demo sign-in.',preview())+
       `<div class="split">${panel('Guest-facing details.',`<form id="settings-form" class="field-grid">${field('phone','Phone number',state.settings.phone,'tel','required maxlength="40"')}${field('address','Address',state.settings.address,'text','required maxlength="200"')}${area('announcement','Homepage notice',state.settings.announcement,'placeholder="Optional: special hours, a private event, or an announcement."')}<p class="muted full">Leave the notice blank to hide it. Saved details appear in your guest preview.</p><button class="button" type="submit">Save details</button></form>`)}`+
       `${panel('Your demo login.',`<p><strong>Username: Steven</strong></p><p>You can change the demo password for this browser. Use a throwaway password; this public demonstration does not protect real information.</p>${button('Change demo password','change-password')}`)}${panel('Start fresh.',`<p>Reset menu edits, shows, stock, sample orders, team entries, and the demo password. This affects this browser only.</p>${button('Reset demo','reset-demo','','quiet')}`)}</div>`;
+  }
+  function renderWebsite() {
+    const catalog=window.OwnerContent;
+    if(!catalog)return heading('Website content.','The content editor could not load. Refresh this page.');
+    const groups=[...new Set(catalog.fields.map(f=>f.group || 'Website text'))];
+    return heading('Your words. Your photographs.','Edit the website here, then open the guest preview to see your saved version.',preview())+
+      `<p class="notice">Edit the website copy, links, and photographs below. Saves stay on this device until a publishing service is connected. Backups let you carry your work to another device.</p>`+
+      `<div class="card-grid">${groups.map(group=>panel(esc(group),`<p>${catalog.fields.filter(f=>(f.group || 'Website text')===group).map(f=>esc(f.label)).join(' · ')}</p>${button('Edit text','edit-content',group)}`)).join('')}</div>`+
+      `<section class="website-photo-section"><h2>Website photographs</h2><div class="card-grid">${catalog.images.map(image=>`<article class="item-card"><img class="editor-photo" src="${esc(safeImage(state.settings.images?.[image.key] || image.defaultValue))}" alt="${esc(image.label)}"><h3>${esc(image.label)}</h3>${button('Change photograph','edit-photo',image.key)}</article>`).join('')}</div></section>`;
+  }
+  function editContent(group) {
+    const fields=window.OwnerContent.fields.filter(f=>(f.group || 'Website text')===group);
+    openEditor(group,`<div class="field-grid">${fields.map(f=>{
+      const value=state.settings.content?.[f.key] ?? f.defaultValue ?? '';
+      return f.type==='textarea'?area(f.key,esc(f.label),value):field(f.key,esc(f.label),value,['url','email'].includes(f.type)?f.type:'text',`maxlength="${f.maxLength || 500}"`);
+    }).join('')}</div>`,data=>{
+      const content={...state.settings.content};
+      fields.forEach(f=>{
+        const value=String(data[f.key] || '').trim();
+        if(value.length>(f.maxLength || (f.type==='textarea'?1000:500)))throw new Error(`${f.label} is too long.`);
+        if(f.type==='email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))throw new Error('Enter a valid email address.');
+        if(f.type==='url') {
+          let url;try{url=new URL(value);}catch{throw new Error(`Enter a complete ${f.label.toLowerCase()}.`);}
+          if(!(f.allowedProtocols || ['https:']).includes(url.protocol))throw new Error(`${f.label} must start with ${(f.allowedProtocols || ['https:']).join(' or ')}.`);
+          if(url.protocol==='mailto:' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(decodeURIComponent(url.pathname)))throw new Error('Enter a valid contact email after mailto:.');
+        }
+        if(f.maxLines && value.split(/\n/).length>f.maxLines)throw new Error(`${f.label} supports ${f.maxLines} lines to preserve the layout.`);
+        content[f.key]=value;
+      });
+      state.settings.content=content;persist(`Updated website text: ${group}`);
+    });
+  }
+  function editPhoto(key) {
+    const item=window.OwnerContent.images.find(image=>image.key===key);if(!item)return;
+    const editState=state;
+    const alt=window.OwnerContent.fields.find(f=>f.key===item.altKey);
+    openEditor(item.label,`<img class="editor-photo" src="${esc(safeImage(state.settings.images?.[key] || item.defaultValue))}" alt="${esc(item.label)}"><div class="field-grid">${field('upload','Choose a photograph','','file','accept="image/png,image/jpeg,image/webp"')}${alt?field('alt','Describe the photograph',state.settings.content?.[alt.key] ?? alt.defaultValue,'text','maxlength="240"'):''}${check('restore','Restore the original photograph',false)}<p class="muted full">PNG, JPEG, or WebP up to 15 MB. The image is resized for storage. Check its presentation in the guest preview.</p></div>`,async data=>{
+      const upload=$('input[name=upload]',form).files[0];
+      const photo=upload?await readPhoto(upload):null;requireCurrentState(editState);
+      const images={...state.settings.images};
+      if(photo)images[key]=photo;else if(data.restore)delete images[key];
+      state.settings.images=images;
+      if(alt)state.settings.content={...state.settings.content,[alt.key]:String(data.alt || '').trim()};
+      persist(`Updated website photograph: ${item.label}`);
+    });
   }
   async function digest(value) { return M.hashDemoPassword(value); }
   async function matchesPassword(value, storedHash=read(AUTH)) { return M.verifyDemoLogin('Steven',value,storedHash); }
@@ -243,9 +311,10 @@
       'new-exception':()=>editException(), 'edit-exception':()=>editException(id),
       'remove-exception':()=>confirmation('Remove special hours?','<p>The weekly schedule will apply to this date again.</p>',()=>{state.exceptions=state.exceptions.filter(e=>e.id!==id);persist('Removed special hours');},'Remove special hours'),
       'new-stock':()=>editStock(), 'edit-stock':()=>editStock(id),
+      'toggle-stock':()=>{const item=state.inventory.find(i=>i.id===id);item.archived=!item.archived;persist(`${item.archived?'Archived':'Restored'} stock item: ${item.name}`);render();},
       'low-stock':()=>{filter='low stock';$('#list-search').value=filter;applyFilter();},
       'clear-search':()=>{filter='';$('#list-search').value='';applyFilter();},
-      'new-order':newOrder,
+      'new-order':()=>newOrder(), 'edit-order':()=>newOrder(id),
       'open-order':()=>{activeOrder=id;render();workspace.focus({preventScroll:true});},
       'all-orders':()=>{activeOrder=null;render();},
       'submit-order':()=>{const o=state.orders.find(o=>o.id===id);confirmation('Simulate this submission?',`<p><strong>${esc(o.number)}</strong> · ${esc(o.vendor)}</p><p>${o.lines.length} line items · <strong>${cash(M.orderTotal(o))}</strong> items subtotal</p><p class="notice">This only advances the demo order. No supplier receives it and no money is spent.</p>`,()=>{M.submitOrder(state,id);persist();},'Simulate submission');},
@@ -253,11 +322,12 @@
       'cancel-order':()=>confirmation('Cancel this demo order?','<p>No stock quantities will change. The cancelled order stays in your records.</p>',()=>{M.cancelOrder(state,id);persist();},'Cancel order'),
       'export-order':()=>exportOrder(state.orders.find(o=>o.id===id)),
       'new-teammate':()=>editTeammate(), 'edit-teammate':()=>editTeammate(id),
-      'remove-teammate':()=>confirmation('Remove demo teammate?','<p>This removes only the sample entry in this browser.</p>',()=>{state.team=state.team.filter(t=>t.id!==id);persist('Removed demo teammate');},'Remove teammate'),
+      'remove-teammate':()=>confirmation('Remove demo teammate?','<p>This removes only the sample entry in this browser.</p>',()=>{if((state.shifts || []).some(shift=>shift.memberId===id))throw new Error('This person has saved shifts. Mark them inactive to keep the schedule history, or remove their shifts first.');state.team=state.team.filter(t=>t.id!==id);persist('Removed demo teammate');},'Remove teammate'),
       'change-password':changePassword,
+      'edit-content':()=>editContent(id), 'edit-photo':()=>editPhoto(id),
       'reset-demo':()=>confirmation('Reset this browser’s demo?',`<p>All demo edits, sample orders, stock changes, and team entries will be cleared. The password will return to <strong>Steven</strong>.</p>${field('confirm','Type RESET to confirm','','text','required autocomplete="off"')}`,data=>{if(data.confirm!=='RESET')throw new Error('Type RESET to start fresh.');state=structuredClone(baseline);const passwordCleared=removeLocal(AUTH);const dataReset=persist('Reset the owner demo');if(!dataReset)status(passwordCleared?'The password returned to Steven, but browser storage could not reset the demo data.':'Browser storage blocked both the data and password reset.');else if(!passwordCleared)status('Demo data was reset, but browser storage blocked the password reset.');activeOrder=null;},'Reset demo')
     };
-    try{handlers[action]?.();}catch(error){status(error.message || 'That action could not be completed.');}
+    try{if(!handlers[action] && extra?.handle(action,id))return;handlers[action]?.();}catch(error){status(error.message || 'That action could not be completed.');}
   });
   function applyFilter(){let count=0;$$('[data-search]',workspace).forEach(row=>{row.hidden=!filter.toLowerCase().trim().split(/\s+/).filter(Boolean).every(t=>row.dataset.search.includes(t));if(!row.hidden)count++;});$('#result-count').textContent=`${count} ${view==='menu'?'dishes':'stock items'} shown`;$('#search-empty').hidden=count>0;}
   workspace.addEventListener('input',event=>{if(event.target.id==='list-search'){filter=event.target.value;applyFilter();}});
@@ -269,10 +339,10 @@
         const hours=state.hours.map((h,i)=>({...h,open:data['open-'+i],close:data['close-'+i],closed:!!data['closed-'+i]}));
         if(hours.some(h=>!h.closed && h.open===h.close))throw new Error('Opening and closing times must differ for each open day.');
         state.hours=hours;persist('Updated weekly hours');
-      }else{state.settings={phone:required(data.phone,'Phone'),address:required(data.address,'Address'),announcement:data.announcement.trim()};persist('Updated guest-facing details');}
+      }else{state.settings={...state.settings,phone:required(data.phone,'Phone'),address:required(data.address,'Address'),announcement:data.announcement.trim()};persist('Updated guest-facing details');}
     }catch(error){status(error.message);}
   });
-  function showOwner(){loggedIn=true;$('#login-view').hidden=true;$('#owner-shell').hidden=false;syncSkipLink(true);view=['overview','menu','music','hours','inventory','purchases','team','activity','settings'].includes(location.hash.slice(1))?location.hash.slice(1):'overview';render();workspace.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
+  function showOwner(){loggedIn=true;$('#login-view').hidden=true;$('#owner-shell').hidden=false;syncSkipLink(true);view=['overview','menu','music','hours','inventory','purchases','team','activity','settings','website','schedule','backups'].includes(location.hash.slice(1))?location.hash.slice(1):'overview';render();workspace.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
   function showLogin(message=''){loggedIn=false;$('#owner-shell').hidden=true;$('#login-view').hidden=false;syncSkipLink(false);if(dialog.open)dialog.close();$('#login-form').reset();$('#login-error').textContent=message;syncDemoKey();$('#owner-username').focus();window.scrollTo({top:0,behavior:'instant'});}
   $('#logout').addEventListener('click',()=>{removeSession(SESSION);window.location.assign('index.html?logged-out=1');});
   function syncDemoKey(){const ticket=$('.demo-ticket');if(read(AUTH)){ticket.innerHTML='<span>YOUR DEMO KEY</span><p>Username: <strong>Steven</strong><br>Use the demo password set in this browser.</p>';}else ticket.innerHTML='<span>YOUR DEMO KEY</span><dl><div><dt>Username</dt><dd>Steven</dd></div><div><dt>Password</dt><dd>Steven</dd></div></dl>';}
@@ -299,9 +369,11 @@
       const [menu,events]=await Promise.all(responses.map(r=>r.json())); baseline=M.createState(menu,events);
       const raw=read(KEY);let saved=null;let malformed=false;
       if(raw){try{saved=JSON.parse(raw);}catch{malformed=true;}}
-      if(Array.isArray(saved?.hours))saved.hours.forEach(h=>{if(h && h.close==='24:00')h.close='00:00';});
+      let migrated=false;
+      if(Array.isArray(saved?.hours))saved.hours.forEach(h=>{if(h && h.close==='24:00'){h.close='00:00';migrated=true;}});
       const valid=M.isUsableState(saved);
       state=valid?saved:structuredClone(baseline);
+      if(valid && migrated)write(KEY,JSON.stringify(state));
       if(!valid){write(KEY,JSON.stringify(state));if(raw)$('#login-error').textContent=malformed?'Saved demo data could not be read, so a fresh copy was loaded.':'Saved demo data was incomplete, so a fresh copy was loaded.';}
       savedState=structuredClone(state);
       if(readSession(SESSION)==='Steven')showOwner();
@@ -317,5 +389,6 @@
     const editorWasOpen=dialog.open;state=incoming;if(editorWasOpen)dialog.close();render();
     status(editorWasOpen?'Another tab changed the demo. The latest saved version was loaded and the open editor was closed.':'Another tab changed the demo. The latest saved version is now loaded.');
   });
+  extra=window.OwnerTools?.create({getState:()=>state,replaceState:next=>{state=next;},persist,status,openEditor,confirmation,esc,button,field,area,select,check,heading,panel,empty,dateLabel,dayKey,requireCurrentState,render,navigate});
   initialize();
 })();

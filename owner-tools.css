@@ -1,0 +1,93 @@
+.owner-tools .owner-tools-disclosure {
+  margin-bottom: 21px;
+}
+
+.owner-tools .schedule-toolbar {
+  justify-content: space-between;
+  margin-bottom: 21px;
+}
+
+.owner-tools .schedule-total {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.owner-tools .schedule-total strong {
+  color: var(--ink);
+  font-size: 16px;
+}
+
+.owner-tools .schedule-row .status-pill {
+  margin-top: 10px;
+}
+
+.owner-tools .backup-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0 0 18px;
+  border: 1px solid var(--line-dark);
+  background: var(--line-dark);
+}
+
+.owner-tools .backup-summary div {
+  min-width: 0;
+  padding: 12px 13px;
+  background: var(--paper);
+}
+
+.owner-tools .backup-summary dt {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.owner-tools .backup-summary dd {
+  margin: 3px 0 0;
+  color: var(--ink);
+  font-family: var(--cond);
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.owner-tools .backup-boundaries {
+  margin: 0 0 18px;
+  padding-left: 20px;
+  color: var(--ink);
+}
+
+.owner-tools .backup-boundaries li {
+  margin-bottom: 8px;
+  line-height: 1.45;
+}
+
+@media (max-width: 620px) {
+  .owner-tools .schedule-toolbar,
+  .owner-tools .schedule-total {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .owner-tools .schedule-total .button {
+    width: 100%;
+  }
+
+  .owner-tools .backup-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  .owner-tools .owner-tools-disclosure,
+  .owner-tools .schedule-toolbar,
+  .owner-tools .backup-tools .row-actions,
+  .owner-tools .owner-tools-file {
+    display: none !important;
+  }
+}

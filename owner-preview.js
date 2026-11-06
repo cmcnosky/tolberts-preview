@@ -7,6 +7,7 @@
   const GUEST_PAGES = new Set(['index.html', 'menu.html', 'music.html']);
   const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const active = new URL(location.href).searchParams.get(PREVIEW_PARAM) === '1';
+  const contentContract = window.OwnerContent || null;
 
   const text = (value, limit = 1000) => String(value ?? '').trim().slice(0, limit);
   const validDate = value => {
@@ -36,6 +37,8 @@
       name: text(item?.name || 'Untitled item', 150),
       description: text(item?.description, 1200),
       price: text(item?.price, 240),
+      image: item?.image ? safeImage(item.image) : '',
+      imageAlt: text(item?.imageAlt || (item?.image ? `${item?.name || 'Menu item'} — menu photograph` : ''), 240),
       available: item?.available !== false
     }));
     const events = value.events.map((event, index) => ({
@@ -52,7 +55,7 @@
     const hours = value.hours.map(hour => ({
       day: text(hour?.day, 20),
       open: text(hour?.open, 10),
-      close: text(hour?.close, 10),
+      close: text(hour?.close === '24:00' ? '00:00' : hour?.close, 10),
       closed: Boolean(hour?.closed)
     })).filter(hour => DAYS.includes(hour.day) && (hour.closed || (validTime(hour.open) && validTime(hour.close))));
     const exceptions = value.exceptions.map(exception => ({
@@ -73,7 +76,9 @@
       settings: {
         phone: text(value.settings.phone || '(817) 421-4888', 40),
         address: text(value.settings.address || '423 South Main Street, Grapevine, Texas 76051', 220),
-        announcement: text(value.settings.announcement, 1200)
+        announcement: text(value.settings.announcement, 1200),
+        content: contentContract ? contentContract.normalizeContent(value.settings.content) : {},
+        images: contentContract ? contentContract.normalizeImages(value.settings.images) : {}
       }
     };
   }
@@ -140,10 +145,12 @@
       .owner-preview-banner a{min-height:30px;display:inline-flex;align-items:center;border-bottom:1px solid #e9b852;color:#f3e9d2;text-decoration:none}
       .owner-preview-banner a:hover{text-decoration:none;border-bottom-width:2px}
       .owner-preview-active .header{top:var(--owner-preview-banner-height)!important}
+      .owner-preview-active h1,.owner-preview-active h2,.owner-preview-active h3,.owner-preview-active p,.owner-preview-active figcaption{overflow-wrap:anywhere}
       .owner-preview-active .skip:focus{top:calc(var(--owner-preview-banner-height) + 10px);z-index:2100}
       .owner-preview-active.menu-page .menu-tools{top:calc(78px + var(--owner-preview-banner-height))}
       .owner-preview-active.menu-page .menu-sidebar{top:calc(98px + var(--owner-preview-banner-height))}
       .owner-preview-active .food-pick .price{max-width:min(42vw,180px);white-space:normal;overflow-wrap:anywhere;text-align:right}
+      .owner-preview-active .owner-preview-menu-image{display:block;width:100%;height:auto;max-height:240px;margin:0 0 14px;border:1px solid rgba(40,38,31,.2);object-fit:contain;object-position:center;background:#efe4ca}
       .owner-preview-announcement{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 18px;align-items:center;padding:14px max(20px,6%);border-bottom:1px solid #6f2118;color:#f3e9d2;background:#922e20;font:600 15px/1.5 'DM Sans',Arial,sans-serif}
       .owner-preview-announcement strong{color:#e9b852;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
       .owner-preview-exception{margin:14px 0 0;padding:12px 14px;border-left:4px solid #922e20;background:#e8dbbc;font-weight:700}
@@ -215,6 +222,14 @@
         const article = document.createElement('article');
         article.className = 'menu-item';
         article.dataset.category = category;
+        if (item.image) {
+          const photo = document.createElement('img');
+          photo.className = 'owner-preview-menu-image';
+          photo.src = item.image;
+          photo.alt = item.imageAlt || `${item.name} — menu photograph`;
+          photo.loading = 'lazy';
+          article.append(photo);
+        }
         const name = document.createElement('h3');
         name.textContent = item.name;
         article.append(name);
@@ -413,6 +428,57 @@
     main.prepend(notice);
   }
 
+  function renderStructuredLines(node, value, definition) {
+    const lines = String(value || '').split(/\n+/).map(line => line.trim()).filter(Boolean).slice(0, definition.maxLines || 3);
+    node.replaceChildren();
+    if (!lines.length) return;
+    lines.forEach((line, index) => {
+      if (index) node.append(document.createElement('br'));
+      if (index === definition.emphasisLine) {
+        const emphasis = document.createElement('em');
+        emphasis.textContent = line;
+        node.append(emphasis);
+      } else {
+        node.append(document.createTextNode(line));
+      }
+    });
+  }
+
+  function applyContentOverrides() {
+    if (!api.state || !contentContract) return;
+    const content = api.state.settings.content || {};
+    const images = api.state.settings.images || {};
+    contentContract.fields.forEach(definition => {
+      if (!Object.prototype.hasOwnProperty.call(content, definition.key)) return;
+      const value = contentContract.normalizeFieldValue(definition.key, content[definition.key]);
+      const nodes = definition.all
+        ? [...document.querySelectorAll(definition.selector)]
+        : [document.querySelector(definition.selector)].filter(Boolean);
+      nodes.forEach(node => {
+        if (definition.target === 'alt') node.alt = value;
+        else if (definition.target === 'attribute') node.setAttribute(definition.attribute, `${definition.attributePrefix || ''}${value}`);
+        else if (definition.render === 'lines') renderStructuredLines(node, value, definition);
+        else node.textContent = value;
+      });
+      if (definition.textSelector) {
+        document.querySelectorAll(definition.textSelector).forEach(node => {
+          node.textContent = `${value}${definition.textSuffix || ''}`;
+        });
+      }
+    });
+    contentContract.images.forEach(definition => {
+      if (!Object.prototype.hasOwnProperty.call(images, definition.key)) return;
+      const node = document.querySelector(definition.selector);
+      if (!(node instanceof HTMLImageElement)) return;
+      const value = contentContract.normalizeImageValue(definition.key, images[definition.key]);
+      node.addEventListener('error', () => {
+        if (node.getAttribute('src') !== definition.defaultValue) node.src = definition.defaultValue;
+      }, {once: true});
+      node.src = value;
+      node.style.objectFit = 'contain';
+    });
+  }
+
   function decorateLink(link) {
     if (!(link instanceof HTMLAnchorElement) || !link.hasAttribute('href')) return;
     const decorated = guestUrl(link.getAttribute('href'));
@@ -431,6 +497,7 @@
   renderHours();
   updateSettings();
   addAnnouncement();
+  applyContentOverrides();
   decorateLinks();
 
   new MutationObserver(records => {

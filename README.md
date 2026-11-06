@@ -19,7 +19,7 @@ Edit approved data in menu-data.json, then run `python3 scripts/build-menu.py`. 
 - `node tests/menu-search.cjs`
 - `node tests/calendar-audit.cjs`
 - `node tests/music-model.cjs`
-- `node --test tests/owner-model.test.cjs`
+- `node --test tests/owner-model.test.cjs tests/owner-content.test.cjs`
 - `python3 scripts/check-site.py`
 
 Also check the home, menu, music finder, show links, contact draft, and owner proposal in a browser at mobile and desktop sizes. Verify the live calendar and its clearly labeled fallback behavior.
@@ -35,19 +35,19 @@ The current integration reads Tolbert’s public WordPress event feed in the vis
 `guest-finish.css` aligns the menu/music navigation and type with the retained homepage aesthetic. `music.js` provides filter reset and preserves show-link keyboard focus when the live list refreshes. `proposal.html` and `operations.html` are the current owner-review materials; the November 2 PDF and comparison captures remain dated evidence. Header/navigation text is present in all three guest-page shells, so check those together when changing destinations.
 
 
-## Interactive owner demo — November 5, 2026
+## Interactive owner demo — updated November 6, 2026
 
 Start at the main GitHub Pages website and choose **More → Login** at any screen width. The homepage, menu, and music pages share the same in-site sign-in dialog. Initial demo username and password are both `Steven` (case-sensitive). This is a public, browser-local UI demonstration, not authentication or authorization for production systems. Do not enter private business records or reuse a real password.
 
-The owner room supports menu editing/availability, show editing/photos, weekly and special hours, sample stock counts, a draft → simulated submission → received purchase-order lifecycle, illustrative team roles, activity, settings, and a browser-local password change. Only the Steven demo login works; team entries do not create accounts. No vendor, POS, CMS, payment, or email connection is used by owner actions.
+The owner room supports new and existing dishes, free-form categories, prices, dish photographs, availability, shows and artist photographs, weekly and special hours, sample stock counts and archives, editable purchase drafts, a draft → simulated submission → received purchase-order lifecycle, an editable Steven profile and illustrative team roles, staff scheduling, activity, settings, 40 website text/link fields, seven website photographs, and a browser-local password change. Only the Steven demo login works; team entries do not create accounts. No vendor, POS, CMS, payment, payroll, staff-notification, or email connection is used by owner actions.
 
-State is stored under `tolberts-owner-demo-v1` in this browser. The demo session uses sessionStorage; a changed demo password is stored as a SHA-256 digest, which is not a production password scheme or security boundary. Settings → Reset demo restores the starting records and `Steven` password. Clearing browser site data does the same.
+State is stored under `tolberts-owner-demo-v1` in this browser. The demo session uses sessionStorage; a changed demo password is stored as a SHA-256 digest, which is not a production password scheme or security boundary. The Backups section can download and validate a portable JSON copy of the demo workspace; it does not include or replace the demo password, and the restore flow initiates a recovery download of the current workspace before replacement. Settings → Reset demo restores the starting records and `Steven` password. Clearing browser site data does the same.
 
 Successful sign-in opens the owner workspace in the same tab. **Guest website** returns to the restaurant site, where **More → Login** returns to the signed-in workspace; **Guest preview** shows local edits. Logging out returns to the homepage with a signed-out confirmation. Direct `owner.html` bookmarks retain a fallback sign-in and a visible way back to the restaurant.
 
-Guest preview links use `?owner-preview=1` to render this browser's edited menu, events, hours, and contact details. Normal guest URLs continue using the public menu and official calendar integration. The preview flag and local edits do not travel to another person's browser.
+Guest preview links use `?owner-preview=1` to render this browser's edited menu, dish photographs, events, hours, contact details, website words, links, and photographs. Normal guest URLs continue using the packaged public menu and official calendar integration. The preview URL itself does not carry edits to another browser; moving the demo state requires a manual backup export and restore.
 
-Validation: `node --test tests/owner-model.test.cjs` plus the existing site checks above. Stock and supplier prices in this demo are fictional examples. Published event/menu records are only starting content; demo edits are never published as restaurant facts.
+Validation: `node --test tests/owner-model.test.cjs tests/owner-content.test.cjs` plus the existing site checks above. Stock and supplier prices in this demo are fictional examples. Published event/menu records are only starting content; demo edits are never published as restaurant facts.
 
 ## End-to-end audit — November 5, 2026
 
@@ -73,6 +73,6 @@ The browser pass covered all eight pages and all nine owner sections at 320/390/
 
 The guest appearance is retained. The current saved calendar contains 12 shows checked against the official feed on November 6, with packaged artist artwork. Same-day records with malformed set times no longer break Playing Today. Calendar descriptions avoid duplicate punctuation.
 
-Management writes now restore the last saved state when storage rejects an edit. Saved orders require consistent suppliers and valid lifecycle timestamps; receipts validate before changing stock. Asynchronous editors detect replacement state from another tab. The More → Login flow and browser-local simulated purchasing remain as before.
+Management writes now restore the last saved state when storage rejects an edit. Saved orders require consistent suppliers and valid lifecycle timestamps; receipts validate before changing stock. Asynchronous editors detect replacement state from another tab. The expanded workspace adds new dishes and categories, per-dish photographs, editable website copy and images, inventory archives, draft-order revision, staff scheduling with overlap checks, and portable backup/restore. The More → Login flow and browser-local simulated purchasing remain as before.
 
-The public business case now opens with five concrete guest benefits and the production deliverables. Earlier audit notes are collapsed and retain their original dates. The release model suites pass 63 named cases (21 music, 13 feed, 7 menu, 22 owner). Browser evidence covers all eight pages at 320/768/1280px and all nine management sections at 320/1280px, menu recovery, weekend filtering, complete poster display, share/calendar feedback, inquiry drafts, login, persisted price edits, and sample stock receipt. This remains a preview, not production integration or a real-device/security certification.
+The public business case now opens with five concrete guest benefits and the production deliverables. Earlier audit notes are collapsed and retain their original dates. The release suites pass 77 named cases: 21 music, 13 feed, 7 menu, 31 owner-model, and 5 owner-content cases. All 12 management sections were checked at actual inner widths of 320, 768, and 1280 CSS pixels—36 recorded layout checks—without horizontal page overflow or broken loaded images. Exercised workflows include a new dish with a new category, price, and fully contained photograph surviving save/reload into Guest preview; an edited homepage introduction surviving preview reload; a saved shift and rejected overlap; real backup and pre-restore recovery downloads; and a sample purchase draft revised from two units/$108 to three units/$162. These remain browser-local demonstrations: they do not publish to the public site, provide secure staff accounts, or connect vendors, payments, real inventory, payroll, or notifications. The checks are not physical-device, screen-reader, security, or production certification.
