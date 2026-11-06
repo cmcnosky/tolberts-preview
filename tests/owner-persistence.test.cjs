@@ -2,153 +2,75 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const vm = require('node:vm');
 
-const ownerSource = fs.readFileSync(path.join(__dirname, '..', 'owner.js'), 'utf8');
-const start = ownerSource.indexOf('function saveWorkspaceSnapshot');
-const end = ownerSource.indexOf('\n  function persist', start);
-assert.ok(start >= 0 && end > start, 'owner.js exposes the storage helper used by persist');
-const persistStart = ownerSource.indexOf('function persist', end);
-const persistEnd = ownerSource.indexOf('\n  const button', persistStart);
-assert.ok(persistStart >= 0 && persistEnd > persistStart, 'owner.js exposes the persist function under test');
+const owner = fs.readFileSync(path.join(__dirname, '..', 'owner.js'), 'utf8');
+const tools = fs.readFileSync(path.join(__dirname, '..', 'owner-tools.js'), 'utf8');
+const access = fs.readFileSync(path.join(__dirname, '..', 'owner-access.js'), 'utf8');
+const html = fs.readFileSync(path.join(__dirname, '..', 'owner.html'), 'utf8');
 
-const context = {};
-vm.runInNewContext(`${ownerSource.slice(start, end)};this.saveWorkspaceSnapshot=saveWorkspaceSnapshot;`, context);
-const saveWorkspaceSnapshot = context.saveWorkspaceSnapshot;
-const usable = value => Boolean(value && value.version === 1 && typeof value.name === 'string');
-
-function runPersist({observed, stored, active, saved, failRead = false, failWrite = false}) {
-  const target = storage(stored, {failRead, failWrite});
-  const harness = {target, structuredClone};
-  vm.runInNewContext(`
-    const KEY='workspace';
-    const localStorage=target;
-    const M={addActivity(){},isUsableState:value=>Boolean(value&&value.version===1&&typeof value.name==='string')};
-    let observedRaw=${JSON.stringify(observed)};
-    let state=${JSON.stringify(active)};
-    let savedState=${JSON.stringify(saved)};
-    let storageOK=true;
-    let message='';
-    function status(value){message=value;}
-    ${ownerSource.slice(start, end)}
-    ${ownerSource.slice(persistStart, persistEnd)}
-    this.result=persist('Edited workspace');
-    this.out={result,state,savedState,observedRaw,storageOK,message};
-  `, harness);
-  return {out: harness.out, target};
-}
-
-function storage(initialRaw = null, {failRead = false, failWrite = false} = {}) {
-  let raw = initialRaw;
-  let writes = 0;
-  return {
-    getItem() {
-      if (failRead) throw new Error('read blocked');
-      return raw;
-    },
-    setItem(_key, value) {
-      if (failWrite) throw new Error('quota');
-      raw = value;
-      writes += 1;
-    },
-    inspect: () => ({raw, writes})
-  };
-}
-
-test('saves a valid workspace when storage still matches the last observed snapshot', () => {
-  const original = JSON.stringify({version: 1, name: 'Original'});
-  const target = storage(original);
-  const result = saveWorkspaceSnapshot(() => target, 'workspace', original, {version: 1, name: 'Edited'}, usable);
-
-  assert.equal(result.ok, true);
-  assert.equal(result.raw, JSON.stringify({version: 1, name: 'Edited'}));
-  assert.deepEqual(target.inspect(), {raw: result.raw, writes: 1});
+test('owner page loads the shared API before the owner controller', () => {
+  const api = html.indexOf('shared-api.js');
+  const controller = html.indexOf('owner.js');
+  assert.ok(api >= 0, 'shared-api.js is loaded');
+  assert.ok(controller > api, 'shared-api.js loads before owner.js');
 });
 
-test('rejects a delayed storage-event overwrite and returns the valid newer workspace', () => {
-  const observed = JSON.stringify({version: 1, name: 'Observed'});
-  const newer = JSON.stringify({version: 1, name: 'Saved in another tab'});
-  const target = storage(newer);
-  const result = saveWorkspaceSnapshot(() => target, 'workspace', observed, {version: 1, name: 'Stale edit'}, usable);
-
-  assert.equal(result.ok, false);
-  assert.equal(result.reason, 'stale');
-  assert.equal(result.raw, newer);
-  assert.equal(result.state.name, 'Saved in another tab');
-  assert.deepEqual(target.inspect(), {raw: newer, writes: 0});
+test('the owner controller uses awaited revisioned persistence and server state', () => {
+  assert.match(owner, /async function persist\(/);
+  assert.match(owner, /await API\.saveWorkspace\(revision, candidate\)/);
+  assert.match(owner, /applyWorkspace\(response\)/);
+  assert.match(owner, /error\.payload\?\.error\?\.details \|\| error\.payload/);
+  assert.match(owner, /await API\.getWorkspace\(\)/);
+  assert.match(owner, /setSaving\(true\)/);
+  assert.match(owner, /setSaving\(false\)/);
+  assert.match(owner, /payload\.revision < 1/);
+  assert.doesNotMatch(owner, /localStorage/);
+  assert.doesNotMatch(owner, /saveWorkspaceSnapshot/);
 });
 
-test('does not overwrite changed storage when the newer value is invalid', () => {
-  const observed = JSON.stringify({version: 1, name: 'Observed'});
-  const target = storage('{broken');
-  const result = saveWorkspaceSnapshot(() => target, 'workspace', observed, {version: 1, name: 'Stale edit'}, usable);
-
-  assert.equal(result.ok, false);
-  assert.equal(result.reason, 'stale-invalid');
-  assert.deepEqual(target.inspect(), {raw: '{broken', writes: 0});
+test('background refresh cannot discard a dirty inline form or overlap a save', () => {
+  assert.match(owner, /function hasDirtyInlineForm\(\)/);
+  assert.match(owner, /if\(hasDirtyInlineForm\(\)&&!discardDirty\)/);
+  assert.match(owner, /if\(quiet\)return false/);
+  assert.match(owner, /Discard entries and reload/);
+  assert.match(owner, /if \(refreshing\)/);
+  assert.match(owner, /setBusy\(true\)/);
+  assert.match(owner, /setBusy\(false\)/);
+  assert.match(owner, /window\.addEventListener\('focus'/);
 });
 
-test('reports blocked reads and writes without claiming a save', () => {
-  const raw = JSON.stringify({version: 1, name: 'Original'});
-  const readFailure = saveWorkspaceSnapshot(() => storage(raw, {failRead: true}), 'workspace', raw, {version: 1, name: 'Edit'}, usable);
-  const writeTarget = storage(raw, {failWrite: true});
-  const writeFailure = saveWorkspaceSnapshot(() => writeTarget, 'workspace', raw, {version: 1, name: 'Edit'}, usable);
-
-  assert.equal(readFailure.ok, false);
-  assert.equal(readFailure.reason, 'storage');
-  assert.equal(writeFailure.ok, false);
-  assert.equal(writeFailure.reason, 'storage');
-  assert.deepEqual(writeTarget.inspect(), {raw, writes: 0});
-});
-
-test('reports an inaccessible localStorage getter without escaping the save guard', () => {
-  const result = saveWorkspaceSnapshot(() => { throw new Error('storage getter blocked'); }, 'workspace', null, {version: 1, name: 'Edit'}, usable);
-  assert.equal(result.ok, false);
-  assert.equal(result.reason, 'storage');
-});
-
-test('an explicit reset may replace a changed snapshot after storage remains accessible', () => {
-  const observed = JSON.stringify({version: 1, name: 'Observed'});
-  const target = storage(JSON.stringify({version: 1, name: 'Newer'}));
-  const result = saveWorkspaceSnapshot(() => target, 'workspace', observed, {version: 1, name: 'Fresh demo'}, usable, {allowOverwrite: true});
-
-  assert.equal(result.ok, true);
-  assert.equal(JSON.parse(target.inspect().raw).name, 'Fresh demo');
-  assert.equal(target.inspect().writes, 1);
-});
-
-test('actual persist restores its last saved state after a failed storage commit', () => {
-  const raw = JSON.stringify({version: 1, name: 'Last saved'});
-  const {out, target} = runPersist({
-    observed: raw,
-    stored: raw,
-    active: {version: 1, name: 'Unsaved edit'},
-    saved: {version: 1, name: 'Last saved'},
-    failWrite: true
+test('all direct persistence callers await the asynchronous save', () => {
+  const ownerCalls = [...owner.matchAll(/(?<!function )(?<!\.)\bpersist\(/g)];
+  assert.ok(ownerCalls.length >= 10, 'owner controller has meaningful save coverage');
+  ownerCalls.forEach((match) => {
+    const prefix = owner.slice(Math.max(0, match.index - 16), match.index);
+    assert.match(prefix, /await\s+$/, `persist call at offset ${match.index} is awaited`);
   });
 
-  assert.equal(out.result, false);
-  assert.equal(out.state.name, 'Last saved');
-  assert.equal(out.savedState.name, 'Last saved');
-  assert.equal(out.storageOK, false);
-  assert.match(out.message, /not saved and has been undone/i);
-  assert.deepEqual(target.inspect(), {raw, writes: 0});
+  const toolCalls = [...tools.matchAll(/adapter\.persist\(/g)];
+  assert.ok(toolCalls.length >= 3, 'schedule and restore tools save through the adapter');
+  toolCalls.forEach((match) => {
+    const prefix = tools.slice(Math.max(0, match.index - 16), match.index);
+    assert.match(prefix, /await\s+$/, `tool persist call at offset ${match.index} is awaited`);
+  });
 });
 
-test('actual persist loads a valid newer state instead of overwriting it', () => {
-  const observed = JSON.stringify({version: 1, name: 'Observed'});
-  const newer = JSON.stringify({version: 1, name: 'Saved elsewhere'});
-  const {out, target} = runPersist({
-    observed,
-    stored: newer,
-    active: {version: 1, name: 'Stale edit'},
-    saved: {version: 1, name: 'Observed'}
-  });
+test('public navigation contains no credential dialog, default password, or reset route', () => {
+  assert.match(access, /owner\.html#overview/);
+  assert.doesNotMatch(access, /verifyDemoLogin|owner-login-dialog|localStorage|sessionStorage|password/i);
+  assert.doesNotMatch(html, /YOUR DEMO KEY|Password<\/dt>|Start a fresh demo|login-reset/);
+  assert.doesNotMatch(owner, /reset-demo|tolberts-owner-demo-password|matchesPassword|hashDemoPassword/);
+});
 
-  assert.equal(out.result, false);
-  assert.equal(out.state.name, 'Saved elsewhere');
-  assert.equal(out.savedState.name, 'Saved elsewhere');
-  assert.equal(out.observedRaw, newer);
-  assert.match(out.message, /current saved version/i);
-  assert.deepEqual(target.inspect(), {raw: newer, writes: 0});
+test('password changes use the private server endpoint contract with a 12-character minimum', () => {
+  assert.match(owner, /await API\.changePassword\(data\.current,data\.next\)/);
+  assert.match(owner, /minlength="12"/);
+  assert.doesNotMatch(owner, /write\(AUTH|removeLocal\(AUTH/);
+});
+
+test('owner copy keeps operational simulations distinct from shared website publishing', () => {
+  assert.match(html, /Successful saves sync across devices/);
+  assert.match(html, /Purchase orders, payments, payroll, supplier connections, and staff notifications remain simulated/);
+  assert.match(owner, /No supplier receives it and no money is spent/);
+  assert.match(tools, /It does not notify anyone/);
 });

@@ -26,10 +26,11 @@
   <link rel="stylesheet" href="fonts.css?v=2">
   <link rel="stylesheet" href="owner.css?v=10">
   <link rel="stylesheet" href="owner-tools.css?v=1">
-  <script src="owner-model.js?v=7" defer></script>
-  <script src="owner-content.js?v=1" defer></script>
-  <script src="owner-tools.js?v=1" defer></script>
-  <script src="owner.js?v=9" defer></script>
+  <script src="owner-model.js?v=9" defer></script>
+  <script src="owner-content.js?v=2" defer></script>
+  <script src="owner-tools.js?v=3" defer></script>
+  <script src="shared-api.js?v=1" defer></script>
+  <script src="owner.js?v=11" defer></script>
 </head>
 <body class="owner-page">
   <a class="skip-link" id="owner-skip-link" href="#login-title">Skip to sign-in</a>
@@ -63,7 +64,7 @@
 
           <div class="label-line">
             <label for="owner-password">Password</label>
-            <span>Demo access</span>
+            <span>Private account</span>
           </div>
           <input id="owner-password" name="password" type="password" autocomplete="current-password" required>
 
@@ -71,17 +72,8 @@
           <button class="button login-submit" type="submit">Log in <span aria-hidden="true">↗</span></button>
         </form>
 
-        <div class="demo-ticket" role="group" aria-label="Demo sign-in details">
-          <span>YOUR DEMO KEY</span>
-          <dl>
-            <div><dt>Username</dt><dd>Steven</dd></div>
-            <div><dt>Password</dt><dd>Steven</dd></div>
-          </dl>
-        </div>
-
-        <p class="demo-disclosure">Interactive owner demo. Changes stay in this browser; purchase orders are simulated.</p>
-        <button class="button quiet" type="button" id="login-reset">Start a fresh demo</button>
-        <noscript><p class="login-noscript">Turn on JavaScript to use the interactive owner demo.</p></noscript>
+        <p class="demo-disclosure">Authorized changes are saved to the shared preview workspace. Purchase orders, payments, payroll, supplier connections, and staff notifications remain simulated until their services are connected.</p>
+        <noscript><p class="login-noscript">Turn on JavaScript to use the owner workspace.</p></noscript>
       </div>
     </div>
   </section>
@@ -114,8 +106,8 @@
       </nav>
 
       <div class="sidebar-foot">
-        <span>OWNER DEMO</span>
-        <p>Edit, save, and preview freely. Supplier orders, payments, and staff notifications need connected services.</p>
+        <span>OWNER WORKSPACE</span>
+        <p>Successful saves sync across devices and update the guest preview. Supplier orders, payments, payroll, and staff notifications still need connected services.</p>
       </div>
     </aside>
 
@@ -138,7 +130,7 @@
 
       <div class="demo-ribbon" role="note">
         <strong>Full owner access</strong>
-        <span>Saved on this device · Guest preview shows your edits · Backups can move your work</span>
+        <span>Shared across devices · Guest preview reflects confirmed saves · Backups provide recovery copies</span>
       </div>
 
       <main class="workspace" id="workspace" tabindex="-1">

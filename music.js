@@ -1,6 +1,7 @@
 'use strict';
 
-(() => {
+(async () => {
+  await (window.OwnerPreview?.ready || Promise.resolve());
   const grid = $('#show-grid');
   if (!grid || typeof MusicModel === 'undefined') return;
 
@@ -15,14 +16,16 @@
   const fullPage = document.body.dataset.musicPage === 'full';
   const savedChecked = 'November 6, 2026';
   const officialCalendar = 'https://tolbertsrestaurant.com/calendar/';
-  const previewState = window.OwnerPreview?.active ? window.OwnerPreview.state : null;
-  const previewMode = Boolean(previewState && Array.isArray(previewState.events));
-  const previewLink = value => previewMode ? window.OwnerPreview.guestUrl(value) : value;
+  const previewState = window.OwnerPreview?.state || null;
+  const stateMode = Boolean(previewState && Array.isArray(previewState.events));
+  const ownerViewMode = Boolean(stateMode && window.OwnerPreview?.active);
+  const publishedMode = Boolean(stateMode && window.OwnerPreview?.published);
+  const previewLink = value => ownerViewMode ? window.OwnerPreview.guestUrl(value) : value;
   const previewPhone = previewState?.settings?.phone || '(817) 421-4888';
   const previewPhoneHref = `tel:${previewPhone.replace(/[^\d+]/g, '') || '+18174214888'}`;
   const previewAddress = previewState?.settings?.address || '423 S. Main Street, Grapevine, Texas 76051';
-  const detailAddress = previewMode ? previewAddress : '423 S. Main Street · Grapevine, Texas';
-  const directions = previewMode
+  const detailAddress = stateMode ? previewAddress : '423 S. Main Street · Grapevine, Texas';
+  const directions = stateMode
     ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(previewAddress)}`
     : 'https://www.google.com/maps/dir/?api=1&destination=Tolbert%27s+Restaurant+423+S+Main+St+Grapevine+TX+76051';
 
@@ -45,7 +48,7 @@
   let lastTodaySignature = '';
 
   function ownerPreviewEvents() {
-    if (!previewMode) return [];
+    if (!stateMode) return [];
     return previewState.events
       .filter(event => String(event.status || '').toLowerCase() !== 'cancelled')
       .map(event => ({
@@ -171,12 +174,12 @@
     const sourceText = source?.textContent || 'Times are Central. Confirm the schedule before heading over.';
     if (status) {
       if (status.textContent !== sourceText) status.textContent = sourceText;
-      status.hidden = !previewMode && Boolean(liveChecked) && !/unavailable/i.test(sourceText);
+      status.hidden = !stateMode && Boolean(liveChecked) && !/unavailable/i.test(sourceText);
     }
     if (!artists.length) {
       lastTodaySignature = '';
-      const message = previewMode
-        ? 'No artist is scheduled for today in this browser’s owner preview. Explore the calendar for another night.'
+      const message = stateMode
+        ? 'No artist is scheduled for today in the current published lineup. Explore the calendar for another night.'
         : !liveResolved
         ? 'Checking today’s artists and set times…'
         : liveChecked
@@ -295,12 +298,12 @@
       event.genre || '',
       event.image || '',
       event.imageAlt || '',
-      previewMode ? 'owner-preview' : liveChecked ? 'live' : 'saved'
+      publishedMode ? 'published' : liveChecked ? 'live' : 'saved'
     ]);
   }
 
   function downloadCalendar(event) {
-    const calendarText = MusicModel.buildIcs(event, {live: Boolean(liveChecked) && !previewMode, preview: previewMode});
+    const calendarText = MusicModel.buildIcs(event, {live: Boolean(liveChecked) && !stateMode});
     const blob = new Blob([calendarText], {type: 'text/calendar;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -312,9 +315,7 @@
     anchor.click();
     anchor.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    actionStatus(previewMode
-      ? 'Owner-preview calendar downloaded. This is not an official listing.'
-      : 'Calendar download requested. Confirm the schedule before you go.');
+    actionStatus('Calendar download requested. Confirm the schedule before you go.');
   }
 
   async function copyShowLink(input) {
@@ -337,8 +338,8 @@
     const share = previewLink(MusicModel.shareUrl(event, location.href));
     const image = event.image || 'assets/stage.webp';
     const imageAlt = event.imageAlt || `${event.name} — promotional image`;
-    const sourceNote = previewMode
-      ? 'From this browser’s owner preview; not the official calendar.'
+    const sourceNote = publishedMode
+      ? 'From Tolbert’s shared published workspace.'
       : liveChecked
       ? 'From the restaurant’s live calendar.'
       : `From saved listings checked ${savedChecked}.`;
@@ -411,8 +412,8 @@
     lastOpenedKey = requested;
     if (matching) {
       setLinkStatus('This shared show has ended. The current upcoming lineup appears below.');
-    } else if (previewMode) {
-      setLinkStatus('This shared show is not in this browser’s current owner preview. The preview lineup appears below.');
+    } else if (stateMode) {
+      setLinkStatus('This shared show is not in the current published lineup. The upcoming lineup appears below.');
     } else if (liveChecked) {
       setLinkStatus('This shared show was not found in the last successful live-calendar check. The current upcoming lineup appears below.');
     } else {
@@ -516,7 +517,7 @@
 
   function refreshTimeSensitiveContent() {
     renderShows();
-    if (!previewMode && !document.hidden && Date.now() - lastFetch > 300000) refreshCalendar();
+    if (!stateMode && !document.hidden && Date.now() - lastFetch > 300000) refreshCalendar();
   }
 
   setInterval(refreshTimeSensitiveContent, 60000);
@@ -525,12 +526,12 @@
   });
 
   readUrlState();
-  if (previewMode) {
+  if (stateMode) {
     savedLoaded = true;
     savedEvents = ownerPreviewEvents();
     events = savedEvents;
     liveResolved = true;
-    setSource('Owner preview · lineup changes from this browser. This is not the official calendar. Times are Central.');
+    setSource('Current lineup published by Tolbert’s · Times are Central. Confirm details before heading over.');
     renderShows();
     return;
   }

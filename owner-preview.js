@@ -1,8 +1,8 @@
-/* Browser-local bridge from the interactive owner demo to the guest preview. */
+/* Validated bridge from the shared public workspace to guest pages. */
 (() => {
   'use strict';
 
-  const STORE_KEY = 'tolberts-owner-demo-v1';
+  const API_BASE = 'https://tolberts-main-street-reimagined.cmcnosky.chatgpt.site';
   const PREVIEW_PARAM = 'owner-preview';
   const GUEST_PAGES = new Set(['index.html', 'menu.html', 'music.html']);
   const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -18,10 +18,15 @@
   };
   const validTime = value => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(value || '')) ||
     /^(?:1[0-2]|[1-9]):[0-5]\d\s*(?:am|pm)$/i.test(String(value || '').trim());
+  const assetUrl = value => {
+    const match = /^shared:([a-f0-9]{64}\.(?:webp|png|jpg))$/.exec(String(value || ''));
+    return match ? `${API_BASE}/api/v1/images/${match[1]}` : '';
+  };
   const safeImage = value => {
     const source = String(value || '');
     if (/^assets\/[a-zA-Z0-9._-]+$/.test(source)) return source;
-    if (source.length <= 850000 && /^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/i.test(source)) return source;
+    const shared = assetUrl(source);
+    if (shared) return shared;
     return 'assets/stage.webp';
   };
 
@@ -67,8 +72,17 @@
       closed: Boolean(exception?.closed)
     })).filter(exception => validDate(exception.date) && (exception.closed || (validTime(exception.open) && validTime(exception.close))));
 
+    const version = Number(value.version);
+    const uniqueHours = new Set(hours.map(hour => hour.day));
+    const uniqueMenuIds = new Set(menu.map(item => item.id));
+    const uniqueEventIds = new Set(events.map(event => event.id));
+    const uniqueExceptionIds = new Set(exceptions.map(exception => exception.id));
+    if (version !== 1 || uniqueMenuIds.size !== menu.length || uniqueEventIds.size !== events.length ||
+        uniqueExceptionIds.size !== exceptions.length ||
+        hours.length !== DAYS.length || uniqueHours.size !== DAYS.length ||
+        DAYS.some(day => !uniqueHours.has(day))) return null;
     return {
-      version: Number(value.version) || 1,
+      version,
       menu,
       events,
       hours,
@@ -83,11 +97,78 @@
     };
   }
 
-  function readState() {
+  function normalizePublishedEnvelope(response) {
+    if (!response || typeof response !== 'object' || Array.isArray(response)) return null;
+    const allowed = new Set(['version', 'revision', 'updatedAt', 'menu', 'events', 'hours', 'exceptions', 'settings']);
+    if (Object.keys(response).length !== allowed.size || Object.keys(response).some(key => !allowed.has(key))) return null;
+    const settingKeys = new Set(['phone', 'address', 'announcement', 'content', 'images']);
+    if (!response.settings || typeof response.settings !== 'object' || Array.isArray(response.settings) ||
+        Object.keys(response.settings).length !== settingKeys.size ||
+        Object.keys(response.settings).some(key => !settingKeys.has(key))) return null;
+    const updatedAt = String(response.updatedAt || '');
+    if (!Number.isInteger(response.revision) || response.revision < 1 ||
+        typeof response.updatedAt !== 'string' || updatedAt.length > 40 || !Number.isFinite(Date.parse(updatedAt))) return null;
+    const plainObject = value => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+    const exactRecord = (value, required, optional = new Set()) => plainObject(value) &&
+      [...required].every(key => Object.prototype.hasOwnProperty.call(value, key)) &&
+      Object.keys(value).every(key => required.has(key) || optional.has(key));
+    const stringFields = (value, keys) => [...keys].every(key => typeof value[key] === 'string');
+    const publicImage = value => typeof value === 'string' &&
+      (!value || /^assets\/[a-zA-Z0-9._-]+$/.test(value) || /^shared:[a-f0-9]{64}\.(?:webp|png|jpg)$/.test(value));
+    const menuRequired = new Set(['id', 'category', 'name', 'description', 'price', 'available']);
+    const menuOptional = new Set(['image', 'imageAlt']);
+    const menuStrings = new Set(['id', 'category', 'name', 'description', 'price']);
+    const eventRequired = new Set(['id', 'name', 'genre', 'date', 'start', 'end', 'image', 'status']);
+    const eventStrings = new Set(eventRequired);
+    const hoursRequired = new Set(['day', 'open', 'close', 'closed']);
+    const hoursStrings = new Set(['day', 'open', 'close']);
+    const exceptionRequired = new Set(['id', 'date', 'label', 'open', 'close', 'closed']);
+    const exceptionStrings = new Set(['id', 'date', 'label', 'open', 'close']);
+    const {content, images} = response.settings;
+    const contentKeys = new Set(contentContract?.fieldKeys || []);
+    const imageKeys = new Set(contentContract?.imageKeys || []);
+    if (!contentContract || !Array.isArray(contentContract.fieldKeys) || !Array.isArray(contentContract.imageKeys) ||
+        typeof response.settings.phone !== 'string' || typeof response.settings.address !== 'string' ||
+        typeof response.settings.announcement !== 'string' ||
+        !Array.isArray(response.menu) || response.menu.some(item =>
+          !exactRecord(item, menuRequired, menuOptional) || !stringFields(item, menuStrings) ||
+          typeof item.available !== 'boolean' || (item.image !== undefined && !publicImage(item.image)) ||
+          (item.imageAlt !== undefined && typeof item.imageAlt !== 'string')) ||
+        !Array.isArray(response.events) || response.events.some(event =>
+          !exactRecord(event, eventRequired) || !stringFields(event, eventStrings) || !publicImage(event.image)) ||
+        !Array.isArray(response.hours) || response.hours.some(hour =>
+          !exactRecord(hour, hoursRequired) || !stringFields(hour, hoursStrings) || typeof hour.closed !== 'boolean') ||
+        !Array.isArray(response.exceptions) || response.exceptions.some(exception =>
+          !exactRecord(exception, exceptionRequired) || !stringFields(exception, exceptionStrings) || typeof exception.closed !== 'boolean') ||
+        !plainObject(content) || !plainObject(images) ||
+        Object.keys(content).some(key => !contentKeys.has(key)) ||
+        Object.values(content).some(value => typeof value !== 'string') ||
+        Object.keys(images).some(key => !imageKeys.has(key)) ||
+        Object.values(images).some(image => !publicImage(image))) return null;
+    if (response.menu.some(item => !item.id.trim() || !item.category.trim() || !item.name.trim()) ||
+        response.events.some(event => !event.id.trim() || !event.name.trim() || !event.date.trim() || !event.start.trim() || !event.end.trim()) ||
+        response.hours.some(hour => !hour.day.trim()) ||
+        response.exceptions.some(exception => !exception.id.trim() || !exception.date.trim()) ||
+        !response.settings.phone.trim() || !response.settings.address.trim()) return null;
+    const normalized = normalizeState(response);
+    return normalized ? {...normalized, revision: response.revision, updatedAt: response.updatedAt} : null;
+  }
+
+  async function readPublishedState() {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 4500);
     try {
-      return normalizeState(JSON.parse(localStorage.getItem(STORE_KEY)));
+      const response = window.TolbertsAPI?.getPublic
+        ? await window.TolbertsAPI.getPublic({signal: controller.signal})
+        : await fetch(`${API_BASE}/api/v1/public`, {cache: 'no-store', signal: controller.signal, headers: {Accept: 'application/json'}}).then(async result => {
+            if (!result.ok) throw new Error('Published content is unavailable.');
+            return result.json();
+          });
+      return normalizePublishedEnvelope(response);
     } catch {
       return null;
+    } finally {
+      window.clearTimeout(timeout);
     }
   }
 
@@ -122,17 +203,18 @@
 
   const api = {
     active,
-    state: active ? readState() : null,
+    published: false,
+    state: null,
+    revision: null,
     eventTime,
     displayTime,
     guestUrl,
-    safeImage
+    safeImage,
+    normalizeState,
+    normalizePublishedEnvelope,
+    readPublishedState
   };
   window.OwnerPreview = api;
-  if (!active) return;
-
-  document.documentElement.classList.add('owner-preview-page');
-  document.body.classList.add('owner-preview-active');
 
   function addStyles() {
     const style = document.createElement('style');
@@ -145,12 +227,12 @@
       .owner-preview-banner a{min-height:30px;display:inline-flex;align-items:center;border-bottom:1px solid #e9b852;color:#f3e9d2;text-decoration:none}
       .owner-preview-banner a:hover{text-decoration:none;border-bottom-width:2px}
       .owner-preview-active .header{top:var(--owner-preview-banner-height)!important}
-      .owner-preview-active h1,.owner-preview-active h2,.owner-preview-active h3,.owner-preview-active p,.owner-preview-active figcaption{overflow-wrap:anywhere}
+      .owner-shared-content h1,.owner-shared-content h2,.owner-shared-content h3,.owner-shared-content p,.owner-shared-content figcaption,.owner-shared-content .address,.owner-shared-content .price,.owner-shared-content .item-price,.owner-preview-announcement span{overflow-wrap:anywhere}
       .owner-preview-active .skip:focus{top:calc(var(--owner-preview-banner-height) + 10px);z-index:2100}
       .owner-preview-active.menu-page .menu-tools{top:calc(78px + var(--owner-preview-banner-height))}
       .owner-preview-active.menu-page .menu-sidebar{top:calc(98px + var(--owner-preview-banner-height))}
-      .owner-preview-active .food-pick .price{max-width:min(42vw,180px);white-space:normal;overflow-wrap:anywhere;text-align:right}
-      .owner-preview-active .owner-preview-menu-image{display:block;width:100%;height:auto;max-height:240px;margin:0 0 14px;border:1px solid rgba(40,38,31,.2);object-fit:contain;object-position:center;background:#efe4ca}
+      .owner-shared-content .food-pick .price{max-width:min(42vw,180px);white-space:normal;text-align:right}
+      .owner-preview-menu-image{display:block;width:100%;height:auto;max-height:240px;margin:0 0 14px;border:1px solid rgba(40,38,31,.2);object-fit:contain;object-position:center;background:#efe4ca}
       .owner-preview-announcement{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px 18px;align-items:center;padding:14px max(20px,6%);border-bottom:1px solid #6f2118;color:#f3e9d2;background:#922e20;font:600 15px/1.5 'DM Sans',Arial,sans-serif}
       .owner-preview-announcement strong{color:#e9b852;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
       .owner-preview-exception{margin:14px 0 0;padding:12px 14px;border-left:4px solid #922e20;background:#e8dbbc;font-weight:700}
@@ -165,11 +247,11 @@
     banner.className = 'owner-preview-banner';
     banner.setAttribute('role', 'note');
     const title = document.createElement('strong');
-    title.textContent = 'Owner preview';
+    title.textContent = 'Owner view';
     const detail = document.createElement('span');
     detail.textContent = api.state
-      ? 'Changes from this browser'
-      : 'No saved owner changes found · showing the published preview';
+      ? 'Showing the shared published website'
+      : 'Shared content is unavailable · showing the built-in website content';
     const back = document.createElement('a');
     back.href = 'owner.html';
     back.textContent = 'Return to owner room →';
@@ -182,7 +264,7 @@
   }
 
   function makeMenuUrl(category = '') {
-    const url = new URL(guestUrl('menu.html'));
+    const url = new URL(guestUrl('menu.html'), location.href);
     if (category && category !== 'All dishes') url.searchParams.set('category', category);
     return url.href;
   }
@@ -202,8 +284,8 @@
       const title = emptyState?.querySelector('h2');
       const detail = emptyState?.querySelector('p');
       const reset = emptyState?.querySelector('#reset-menu');
-      if (title) title.textContent = 'No dishes are marked available.';
-      if (detail) detail.textContent = 'Return to the owner room and make at least one dish available to populate this preview.';
+      if (title) title.textContent = 'No menu items are currently marked available.';
+      if (detail) detail.textContent = 'Call Tolbert’s for current availability and pricing.';
       if (reset) reset.hidden = true;
     }
 
@@ -277,7 +359,9 @@
       });
     }
     const dateNote = document.querySelector('.menu-date');
-    if (dateNote) dateNote.textContent = 'Owner preview · available dishes and prices from this browser · Prices in USD.';
+    if (dateNote) dateNote.textContent = active
+      ? 'Owner view · current published dishes and prices · Prices in USD.'
+      : 'Current menu and prices published by Tolbert’s · Prices in USD.';
   }
 
   function renderHomeMenu() {
@@ -302,13 +386,15 @@
       const description = slot.querySelector('p');
       const price = slot.querySelector('.price');
       if (name) name.textContent = item.name;
-      if (description) description.textContent = item.description || 'Available on the owner-preview menu.';
+      if (description) description.textContent = item.description || 'Available on the current menu.';
       if (price) price.textContent = item.price || 'Ask for price';
     });
     const range = document.querySelector('.pick-heading span:last-child');
     if (range) range.textContent = featured.length ? `01—${String(Math.min(featured.length, slots.length)).padStart(2, '0')}` : 'NO ITEMS';
     const footnote = document.querySelector('.menu-footnote span');
-    if (footnote) footnote.textContent = 'Availability and prices from this browser’s owner preview.';
+    if (footnote) footnote.textContent = active
+      ? 'Owner view of the restaurant’s shared published menu.'
+      : 'Availability and prices from the restaurant’s published workspace.';
   }
 
   function chicagoParts(now = new Date()) {
@@ -347,7 +433,7 @@
       const oneOpening = new Set(openDays.map(item => item.open));
       title.textContent = openDays.length === 7 && oneOpening.size === 1
         ? `OPEN AT ${displayTime(openDays[0].open).toUpperCase()}, EVERY DAY`
-        : 'OWNER PREVIEW WEEKLY HOURS';
+        : active ? 'PUBLISHED WEEKLY HOURS' : 'CURRENT WEEKLY HOURS';
     }
     const today = api.getTodaySchedule();
     document.querySelector('.owner-preview-exception')?.remove();
@@ -470,7 +556,7 @@
       if (!Object.prototype.hasOwnProperty.call(images, definition.key)) return;
       const node = document.querySelector(definition.selector);
       if (!(node instanceof HTMLImageElement)) return;
-      const value = contentContract.normalizeImageValue(definition.key, images[definition.key]);
+      const value = safeImage(contentContract.normalizeImageValue(definition.key, images[definition.key]));
       node.addEventListener('error', () => {
         if (node.getAttribute('src') !== definition.defaultValue) node.src = definition.defaultValue;
       }, {once: true});
@@ -490,30 +576,61 @@
     root.querySelectorAll?.('a[href]').forEach(decorateLink);
   }
 
-  addStyles();
-  addBanner();
-  renderMenuPage();
-  renderHomeMenu();
-  renderHours();
-  updateSettings();
-  addAnnouncement();
-  applyContentOverrides();
-  decorateLinks();
+  function applyState() {
+    if (!api.state) return;
+    renderMenuPage();
+    renderHomeMenu();
+    renderHours();
+    updateSettings();
+    addAnnouncement();
+    applyContentOverrides();
+    if (active) decorateLinks();
+  }
 
-  new MutationObserver(records => {
-    records.forEach(record => record.addedNodes.forEach(node => {
-      if (!(node instanceof Element)) return;
-      decorateLinks(node);
-      updateSettings(node);
-    }));
-  }).observe(document.body, {childList: true, subtree: true});
+  function pageIsBusy() {
+    if (document.querySelector('dialog[open]')) return true;
+    const focused = document.activeElement;
+    return focused instanceof HTMLInputElement || focused instanceof HTMLTextAreaElement || focused instanceof HTMLSelectElement;
+  }
 
-  document.addEventListener('click', event => {
-    const link = event.target.closest?.('a[href]');
-    if (link) decorateLink(link);
-  }, true);
+  async function checkForPublishedChange() {
+    if (document.hidden || pageIsBusy()) return;
+    const latest = await readPublishedState();
+    if (latest && latest.revision !== api.revision && !pageIsBusy()) location.reload();
+  }
 
-  window.addEventListener('storage', event => {
-    if (event.key === STORE_KEY) location.reload();
-  });
+  api.ready = (async () => {
+    api.state = await readPublishedState();
+    api.published = Boolean(api.state);
+    api.revision = api.state?.revision || null;
+    addStyles();
+    if (api.state) document.body.classList.add('owner-shared-content');
+    if (active) {
+      document.documentElement.classList.add('owner-preview-page');
+      document.body.classList.add('owner-preview-active');
+      addBanner();
+    }
+    applyState();
+
+    new MutationObserver(records => {
+      records.forEach(record => record.addedNodes.forEach(node => {
+        if (!(node instanceof Element)) return;
+        if (active) decorateLinks(node);
+        updateSettings(node);
+      }));
+    }).observe(document.body, {childList: true, subtree: true});
+
+    if (active) {
+      document.addEventListener('click', event => {
+        const link = event.target.closest?.('a[href]');
+        if (link) decorateLink(link);
+      }, true);
+    }
+    window.setInterval(checkForPublishedChange, 30000);
+    window.addEventListener('focus', checkForPublishedChange);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) checkForPublishedChange();
+    });
+    return api;
+  })();
 })();

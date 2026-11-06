@@ -1,4 +1,4 @@
-/* Shared, browser-local content contract for the Tolbert's owner demonstration. */
+/* Shared content contract for Tolbert's owner workspace and guest website. */
 ((root) => {
   'use strict';
 
@@ -105,6 +105,7 @@
     if (!definition) return '';
     const source = String(value || '');
     if (/^assets\/[a-zA-Z0-9._-]+$/.test(source)) return source;
+    if (/^shared:[a-f0-9]{64}\.(?:webp|png|jpg)$/.test(source)) return source;
     if (source.length <= 850000 && /^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/i.test(source)) return source;
     return definition.defaultValue;
   };

@@ -1,4 +1,6 @@
+(async () => {
 'use strict';
+await (window.OwnerPreview?.ready || Promise.resolve());
 const search = $('#dish-search'), categorySelect = $('#category-select');
 const dishes = $$('.menu-item'), groups = $$('.menu-group');
 const categories = new Set(['All dishes', ...dishes.map(dish => dish.dataset.category)]);
@@ -43,3 +45,4 @@ function resetMenu() {search.value = ''; category = 'All dishes'; renderMenu(tru
 $('#clear-menu').addEventListener('click',resetMenu); $('#reset-menu').addEventListener('click',resetMenu);
 window.addEventListener('popstate',readLocation);
 readLocation();
+})();

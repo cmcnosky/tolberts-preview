@@ -1,10 +1,10 @@
 /*
- * Tolbert's owner-workspace demo model.
+ * Tolbert's owner-workspace data model.
  *
- * This module deliberately has no network or storage access. It mutates the
- * state object supplied by the browser UI; the UI may persist that sample state
- * in localStorage. "Submitted" purchase orders are simulations and never reach
- * a vendor, payment method, or restaurant system.
+ * This module deliberately has no network or storage access. It validates and
+ * mutates the state object supplied by the browser UI; the authenticated UI is
+ * responsible for revisioned persistence. "Submitted" purchase orders are
+ * simulations and never reach a vendor, payment method, or restaurant system.
  */
 (function (root, factory) {
   const model = factory();
@@ -58,27 +58,6 @@
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
-  }
-
-  /*
-   * This SHA-256 value only keeps a changed demo password out of plaintext
-   * localStorage. The page and its default credentials are public, so this is
-   * not a production password store or an authentication security boundary.
-   */
-  async function hashDemoPassword(value, cryptoProvider = (typeof globalThis !== "undefined" ? globalThis.crypto : null)) {
-    if (!cryptoProvider || !cryptoProvider.subtle || typeof cryptoProvider.subtle.digest !== "function") {
-      throw new Error("Demo password changes require Web Crypto.");
-    }
-    const bytes = new TextEncoder().encode(String(value));
-    const digest = await cryptoProvider.subtle.digest("SHA-256", bytes);
-    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-  }
-
-  async function verifyDemoLogin(username, password, storedHash = null, cryptoProvider = (typeof globalThis !== "undefined" ? globalThis.crypto : null)) {
-    if (String(username || "").trim() !== "Steven") return false;
-    if (storedHash === null || storedHash === undefined) return String(password) === "Steven";
-    if (!/^[a-f0-9]{64}$/.test(String(storedHash))) return false;
-    return await hashDemoPassword(password, cryptoProvider) === storedHash;
   }
 
   function isRecord(value) {
@@ -140,6 +119,7 @@
   function isStoredImage(value) {
     if (typeof value !== "string") return false;
     if (/^assets\/[a-zA-Z0-9._-]+$/.test(value)) return true;
+    if (/^shared:[a-f0-9]{64}\.(?:webp|png|jpg)$/.test(value)) return true;
     return value.length <= 850000 && /^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/i.test(value);
   }
 
@@ -613,8 +593,6 @@
 
   return {
     createState,
-    hashDemoPassword,
-    verifyDemoLogin,
     isUsableState,
     money,
     orderTotal,

@@ -1,4 +1,4 @@
-/* Browser-local scheduling and backup tools for the Tolbert's owner demo. */
+/* Scheduling and backup tools for the shared Tolbert's owner workspace. */
 (function (root, factory) {
   const api = factory(root);
   if (typeof module === "object" && module.exports) module.exports = api;
@@ -120,9 +120,9 @@
         ? `<div class="row-list schedule-list">${rows}</div>`
         : adapter.empty(
             allShifts.length ? "No shifts for this person." : "No shifts scheduled.",
-            team.length ? "Add a shift to build a browser-local sample schedule." : "Add a team member before creating a shift."
+            team.length ? "Add a shift to build the shared sample schedule." : "Add a team member before creating a shift."
           );
-      const disclosure = `<p class="notice owner-tools-disclosure"><strong>Browser-local demonstration.</strong> Times are Central; an earlier end time means the following day. Hours are planned clock hours. Staff notifications and payroll require connected services.</p>`;
+      const disclosure = `<p class="notice owner-tools-disclosure"><strong>Shared sample schedule.</strong> Times are Central; an earlier end time means the following day. Hours are planned clock hours. Staff notifications, time clocks, and payroll require connected services.</p>`;
       return `<div class="owner-tools schedule-tools">${heading}${disclosure}${toolbar}${adapter.panel("Scheduled shifts.", body)}</div>`;
     }
 
@@ -150,7 +150,7 @@
         adapter.field("role", "Shift role", existing?.role || team.find((member) => member.id === defaultMember)?.role || "Floor", "text", 'required maxlength="100"')
       }${adapter.area("notes", "Notes", existing?.notes || "", 'maxlength="1000" placeholder="Optional handoff or station note"')}</div><p class="field full muted">Overnight shifts are supported. A team member cannot have overlapping shifts; back-to-back shifts are allowed.</p>`;
 
-      adapter.openEditor(existing ? "Edit shift" : "Add a shift", fields, (data) => {
+      adapter.openEditor(existing ? "Edit shift" : "Add a shift", fields, async (data) => {
         adapter.requireCurrentState(expected);
         const current = adapter.getState();
         const input = {
@@ -163,8 +163,8 @@
         };
         if (existing) input.id = existing.id;
         M.upsertShift(current, input);
-        if (adapter.persist()) {
-          adapter.status(`${existing ? "Updated" : "Added"} shift for ${memberName(current, input.memberId)} · saved in this browser.`);
+        if (await adapter.persist(`${existing ? "Updated" : "Added"} sample shift for ${memberName(current, input.memberId)}`)) {
+          adapter.status(`${existing ? "Updated" : "Added"} shift for ${memberName(adapter.getState(), input.memberId)} · saved to the shared workspace.`);
         }
       }, existing ? "Save shift" : "Add shift");
     }
@@ -177,11 +177,11 @@
       const name = memberName(expected, shift.memberId);
       adapter.confirmation(
         "Remove this shift?",
-        `<p><strong>${adapter.esc(name)}</strong><br>${adapter.esc(adapter.dateLabel(shift.date))} · ${adapter.esc(shift.start)}–${adapter.esc(shift.end)}</p><p>This removes the browser-local schedule entry. It does not notify anyone.</p>`,
-        () => {
+        `<p><strong>${adapter.esc(name)}</strong><br>${adapter.esc(adapter.dateLabel(shift.date))} · ${adapter.esc(shift.start)}–${adapter.esc(shift.end)}</p><p>This removes the sample schedule entry. It does not notify anyone.</p>`,
+        async () => {
           adapter.requireCurrentState(expected);
           M.removeShift(adapter.getState(), shift.id);
-          if (adapter.persist()) adapter.status(`Removed shift for ${name} · saved in this browser.`);
+          if (await adapter.persist(`Removed sample shift for ${name}`)) adapter.status(`Removed shift for ${name} · saved to the shared workspace.`);
         },
         "Remove shift"
       );
@@ -209,7 +209,7 @@
       ];
       const csv = `\uFEFF${rows.map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
       downloadText(`tolberts-demo-schedule-${adapter.dayKey()}.csv`, csv, "text/csv;charset=utf-8");
-      adapter.status(`Downloaded ${shifts.length} browser-local ${shifts.length === 1 ? "shift" : "shifts"} as CSV. No staff member was notified.`);
+      adapter.status(`Downloaded ${shifts.length} sample ${shifts.length === 1 ? "shift" : "shifts"} as CSV. No staff member was notified.`);
     }
 
     function stateSummary(state) {
@@ -233,19 +233,19 @@
       requireModelMethods(["createBackup", "parseBackup"]);
       const heading = adapter.heading(
         "Backup and restore.",
-        "Move this browser-local demonstration manually or save a recovery copy before making more changes.",
+        "Download a private recovery copy or review a backup before replacing the shared workspace.",
         adapter.button("Download backup", "backup-export", "", "")
       );
       const current = adapter.panel(
         "What this copy contains.",
-        `${summaryGrid(state)}<p class="muted">The JSON file contains this demo workspace: menu edits, shows, hours, special dates, sample inventory and orders, team entries, activity, settings, and schedules. It does not contain the demo password.</p>`,
+        `${summaryGrid(state)}<p class="muted">The JSON file contains this preview workspace: menu edits, shows, hours, special dates, sample inventory and orders, team entries, activity, settings, and schedules. It does not contain the owner password or session token.</p>`,
         adapter.button("Choose backup file", "backup-import", "", "secondary")
       );
       const boundary = adapter.panel(
         "What remains outside this demo.",
-        `<ul class="backup-boundaries"><li>Tolbert’s official domain, CMS, analytics, and live publishing</li><li>SpotOn orders and customer transactions</li><li>Supplier, POS, payment, and real inventory systems</li><li>Shared staff accounts, permissions, and cloud synchronization</li><li>Time clocks, payroll, messaging, and notifications</li></ul><p class="muted">A backup restores only this demonstration’s data. It does not connect or update any system listed above.</p>`
+        `<ul class="backup-boundaries"><li>Tolbert’s official domain, CMS, analytics, and live publishing</li><li>SpotOn orders and customer transactions</li><li>Supplier, POS, payment, and real inventory systems</li><li>Staff invitations and role-enforced accounts</li><li>Time clocks, payroll, messaging, and notifications</li></ul><p class="muted">A backup restores only this preview workspace’s data. It does not connect or update any system listed above.</p>`
       );
-      const importControl = `<input id="owner-backup-file" class="owner-tools-file" type="file" accept="application/json,.json" hidden><p class="notice owner-tools-disclosure"><strong>Stored in this browser.</strong> Changes do not sync automatically. Download a backup to move them to another browser or device. Treat exported files as private if you enter real business-style notes.</p>`;
+      const importControl = `<input id="owner-backup-file" class="owner-tools-file" type="file" accept="application/json,.json" hidden><p class="notice owner-tools-disclosure"><strong>Shared preview workspace.</strong> Successful saves sync across devices. Downloaded backups stay on the device where you save them; treat those files as private if they contain business-style notes.</p>`;
       return `<div class="owner-tools backup-tools">${heading}${importControl}<div class="split">${current}${boundary}</div></div>`;
     }
 
@@ -290,18 +290,18 @@
         const next = M.parseBackup(text);
         const envelope = JSON.parse(text);
         const exported = formatExportedAt(envelope.exportedAt);
-        const confirmField = adapter.field("confirm", "Type RESTORE to replace this browser’s demo data", "", "text", 'required autocomplete="off"');
+        const confirmField = adapter.field("confirm", "Type RESTORE to replace the shared preview workspace", "", "text", 'required autocomplete="off"');
         adapter.confirmation(
           "Review backup before restore",
-          `<p><strong>Exported ${adapter.esc(exported)}</strong></p>${summaryGrid(next)}<p class="notice">Restoring replaces the demo data saved by this site in this browser. Before replacement, the current workspace will download as a separate recovery backup. Your demo password will not change.</p>${confirmField}`,
-          (data) => {
+          `<p><strong>Exported ${adapter.esc(exported)}</strong></p>${summaryGrid(next)}<p class="notice">Restoring replaces the shared preview workspace for every device. Before replacement, the current workspace will download as a separate recovery backup. Your password will not change.</p>${confirmField}`,
+          async (data) => {
             if (String(data.confirm || "") !== "RESTORE") throw new Error("Type RESTORE to confirm the replacement.");
             adapter.requireCurrentState(expected);
             const current = adapter.getState();
             exportBackup(current, "tolberts-before-restore");
             adapter.replaceState(next);
-            if (adapter.persist("Restored a browser-local demo backup")) {
-              adapter.status("Backup restored in this browser. A recovery copy of the previous workspace was downloaded first. The demo password was not changed.");
+            if (await adapter.persist("Restored a shared workspace backup")) {
+              adapter.status("Backup restored to the shared workspace. A recovery copy of the previous workspace was downloaded first. The password was not changed.");
             }
           },
           "Download current copy and restore"
@@ -326,7 +326,7 @@
         "schedule-export": exportSchedule,
         "backup-export": () => {
           exportBackup();
-          adapter.status("Demo backup downloaded. It does not contain the demo password and nothing was sent online.");
+          adapter.status("Workspace backup downloaded to this device. It does not contain the owner password.");
         },
         "backup-import": chooseBackupFile
       };

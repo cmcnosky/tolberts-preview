@@ -1,10 +1,10 @@
+(async () => {
 'use strict';
+await (window.OwnerPreview?.ready || Promise.resolve());
 const chicagoDate = () => new Intl.DateTimeFormat('en-CA', {timeZone:'America/Chicago', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
 const closing = {Monday:'9 pm',Tuesday:'10 pm',Wednesday:'11 pm',Thursday:'11 pm',Friday:'midnight',Saturday:'midnight',Sunday:'9 pm'};
 function inquiryEmail() {
-  const configured = window.OwnerPreview?.active
-    ? window.OwnerPreview.state?.settings?.content?.['links.contactEmail']
-    : '';
+  const configured = window.OwnerPreview?.state?.settings?.content?.['links.contactEmail'] || '';
   if (configured) {
     const source = String(configured).trim();
     const address = source.startsWith('mailto:') ? source.slice(7) : source;
@@ -14,7 +14,7 @@ function inquiryEmail() {
 }
 function updateHours() {
   const day = new Intl.DateTimeFormat('en-US', {timeZone:'America/Chicago',weekday:'long'}).format(new Date());
-  const ownerSchedule = window.OwnerPreview?.active ? window.OwnerPreview.getTodaySchedule?.() : null;
+  const ownerSchedule = window.OwnerPreview?.state ? window.OwnerPreview.getTodaySchedule?.() : null;
   if (ownerSchedule) {
     const label = ownerSchedule.exception && ownerSchedule.label ? ` · ${ownerSchedule.label}` : '';
     $('#today-hours').textContent = ownerSchedule.closed
@@ -48,3 +48,4 @@ let toastTimer;
 function toast(message) {$('#toast').textContent = message; $('#toast').classList.add('visible'); clearTimeout(toastTimer); toastTimer = setTimeout(() => {$('#toast').classList.remove('visible');$('#toast').textContent='';}, 4500);}
 
 setInterval(updateHours,60000);
+})();
