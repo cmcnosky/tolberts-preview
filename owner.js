@@ -16,7 +16,7 @@
   const dateLabel = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '') ? new Intl.DateTimeFormat('en-US', {month:'short', day:'numeric', year:'numeric',timeZone:'UTC'}).format(new Date(value + 'T12:00:00Z')) : String(value || '');
   const timeLabel = v => /^\d{2}:\d{2}$/.test(v || '') ? new Intl.DateTimeFormat('en-US', {hour:'numeric',minute:'2-digit',timeZone:'UTC'}).format(new Date(`2000-01-01T${v}:00Z`)).toLowerCase() : v;
   const inputTime = v => { if (/^\d{2}:\d{2}$/.test(v || '')) return v; const m = /^(\d{1,2}):(\d{2})\s*(am|pm)$/i.exec(v || ''); return m ? String(Number(m[1]) % 12 + (m[3].toLowerCase() === 'pm' ? 12 : 0)).padStart(2,'0') + ':' + m[2] : '20:00'; };
-  let state, baseline, savedState, view = 'overview', filter = '', activeOrder = null, editorSubmit = null, editorOpener = null, loggedIn = false, storageOK = true, toastTimer;
+  let state, baseline, savedState, observedRaw, view = 'overview', filter = '', activeOrder = null, editorSubmit = null, editorOpener = null, loggedIn = false, storageOK = true, toastTimer;
   const workspace = $('#workspace');
   const dialog = $('#editor-dialog');
   const form = $('#editor-form');
@@ -29,20 +29,49 @@
   function removeSession(key) { try { sessionStorage.removeItem(key); return true; } catch { return false; } }
   function syncSkipLink(ownerVisible) { const skip=$('#owner-skip-link'); if(!skip)return; skip.href=ownerVisible?'#workspace':'#login-title'; skip.textContent=ownerVisible?'Skip to owner workspace':'Skip to sign-in'; }
   function status(message) { const el = $('#owner-status'); el.textContent = message; el.classList.add('visible'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('visible'),6000); }
-  function persist(message) {
+  // Best-effort protection for a delayed storage event. localStorage does not
+  // provide an atomic compare-and-swap across independently running tabs.
+  function saveWorkspaceSnapshot(getStorage,key,lastObservedRaw,nextState,isUsable,{allowOverwrite=false}={}) {
+    let storage,currentRaw;
+    try { storage=getStorage();currentRaw=storage.getItem(key); }
+    catch { return {ok:false,reason:'storage'}; }
+    if(!allowOverwrite && currentRaw!==lastObservedRaw){
+      let incoming=null;
+      try { incoming=JSON.parse(currentRaw); } catch {}
+      return isUsable(incoming)
+        ? {ok:false,reason:'stale',raw:currentRaw,state:incoming}
+        : {ok:false,reason:'stale-invalid',raw:currentRaw};
+    }
+    if(!isUsable(nextState))return {ok:false,reason:'invalid'};
+    let raw;
+    try { raw=JSON.stringify(nextState);storage.setItem(key,raw); }
+    catch { return {ok:false,reason:'storage'}; }
+    return {ok:true,raw};
+  }
+  function persist(message,options={}) {
     const previous = savedState ? structuredClone(savedState) : null;
     if (message) M.addActivity(state,message);
-    const valid = M.isUsableState(state);
-    const saved = valid && write(KEY,JSON.stringify(state));
-    if (saved) {
+    const result=saveWorkspaceSnapshot(()=>localStorage,KEY,observedRaw,state,M.isUsableState,{allowOverwrite:options.allowOverwrite===true});
+    if (result.ok) {
+      observedRaw=result.raw;
       savedState = structuredClone(state);
       status(message ? message + ' · saved in this browser.' : 'Demo saved in this browser.');
       return true;
     }
-    if (previous) state = previous;
-    status(valid
-      ? 'Browser storage is unavailable or full. That change was not saved and has been undone.'
-      : 'That change would leave the demo in an invalid state, so it was undone.');
+    if(result.reason==='stale'){
+      observedRaw=result.raw;savedState=structuredClone(result.state);state=result.state;
+      status('Another tab changed the saved workspace before this change. Your change was not saved; the current saved version is now loaded.');
+      return false;
+    }
+    if(previous)state=previous;
+    if(result.reason==='storage'){
+      storageOK=false;
+      status('Browser storage is unavailable or full. That change was not saved and has been undone.');
+    }else if(result.reason==='stale-invalid'){
+      status('Saved browser data changed before this edit, but the newer data could not be loaded. Your change was not saved.');
+    }else{
+      status('That change would leave the demo in an invalid state, so it was undone.');
+    }
     return false;
   }
   const button = (label,action,id='',kind='secondary',ariaLabel='') => `<button type="button" class="button ${kind}" data-action="${action}"${id ? ` data-id="${esc(id)}"` : ''}${ariaLabel ? ` aria-label="${esc(ariaLabel)}"` : ''}>${label}</button>`;
@@ -325,7 +354,7 @@
       'remove-teammate':()=>confirmation('Remove demo teammate?','<p>This removes only the sample entry in this browser.</p>',()=>{if((state.shifts || []).some(shift=>shift.memberId===id))throw new Error('This person has saved shifts. Mark them inactive to keep the schedule history, or remove their shifts first.');state.team=state.team.filter(t=>t.id!==id);persist('Removed demo teammate');},'Remove teammate'),
       'change-password':changePassword,
       'edit-content':()=>editContent(id), 'edit-photo':()=>editPhoto(id),
-      'reset-demo':()=>confirmation('Reset this browser’s demo?',`<p>All demo edits, sample orders, stock changes, and team entries will be cleared. The password will return to <strong>Steven</strong>.</p>${field('confirm','Type RESET to confirm','','text','required autocomplete="off"')}`,data=>{if(data.confirm!=='RESET')throw new Error('Type RESET to start fresh.');state=structuredClone(baseline);const passwordCleared=removeLocal(AUTH);const dataReset=persist('Reset the owner demo');if(!dataReset)status(passwordCleared?'The password returned to Steven, but browser storage could not reset the demo data.':'Browser storage blocked both the data and password reset.');else if(!passwordCleared)status('Demo data was reset, but browser storage blocked the password reset.');activeOrder=null;},'Reset demo')
+      'reset-demo':()=>confirmation('Reset this browser’s demo?',`<p>All demo edits, sample orders, stock changes, and team entries will be cleared. The password will return to <strong>Steven</strong>.</p>${field('confirm','Type RESET to confirm','','text','required autocomplete="off"')}`,data=>{if(data.confirm!=='RESET')throw new Error('Type RESET to start fresh.');state=structuredClone(baseline);const passwordCleared=removeLocal(AUTH);const dataReset=persist('Reset the owner demo',{allowOverwrite:true});if(!dataReset)status(passwordCleared?'The password returned to Steven, but browser storage could not reset the demo data.':'Browser storage blocked both the data and password reset.');else if(!passwordCleared)status('Demo data was reset, but browser storage blocked the password reset.');activeOrder=null;},'Reset demo')
     };
     try{if(!handlers[action] && extra?.handle(action,id))return;handlers[action]?.();}catch(error){status(error.message || 'That action could not be completed.');}
   });
@@ -351,7 +380,7 @@
     confirmation('Start a fresh demo?',`<p>This clears demo edits and sample orders in this browser and restores the password <strong>Steven</strong>.</p>${field('confirm','Type RESET to confirm','','text','required autocomplete="off"')}`,data=>{
       if(data.confirm!=='RESET')throw new Error('Type RESET to start fresh.');
       state=structuredClone(baseline);const passwordCleared=removeLocal(AUTH);removeSession(SESSION);
-      const dataReset=persist('Reset the owner demo');syncDemoKey();$('#login-error').textContent=dataReset?(passwordCleared?'Fresh demo ready. Sign in with Steven / Steven.':'Fresh demo data is ready, but browser storage blocked the password reset.'):(passwordCleared?'The password returned to Steven, but browser storage could not reset the demo data.':'Browser storage blocked both the data and password reset.');
+      const dataReset=persist('Reset the owner demo',{allowOverwrite:true});syncDemoKey();$('#login-error').textContent=dataReset?(passwordCleared?'Fresh demo ready. Sign in with Steven / Steven.':'Fresh demo data is ready, but browser storage blocked the password reset.'):(passwordCleared?'The password returned to Steven, but browser storage could not reset the demo data.':'Browser storage blocked both the data and password reset.');
     },'Reset demo');
   });
   $('#login-form').addEventListener('submit',async event=>{
@@ -367,14 +396,14 @@
       const responses=await Promise.all([fetch('menu-data.json', {cache:'no-store'}),fetch('events.json', {cache:'no-store'})]);
       if(responses.some(r=>!r.ok))throw new Error('Demo data could not load. Check your connection and refresh this page.');
       const [menu,events]=await Promise.all(responses.map(r=>r.json())); baseline=M.createState(menu,events);
-      const raw=read(KEY);let saved=null;let malformed=false;
+      const raw=read(KEY);observedRaw=raw;let saved=null;let malformed=false;
       if(raw){try{saved=JSON.parse(raw);}catch{malformed=true;}}
       let migrated=false;
       if(Array.isArray(saved?.hours))saved.hours.forEach(h=>{if(h && h.close==='24:00'){h.close='00:00';migrated=true;}});
       const valid=M.isUsableState(saved);
       state=valid?saved:structuredClone(baseline);
-      if(valid && migrated)write(KEY,JSON.stringify(state));
-      if(!valid){write(KEY,JSON.stringify(state));if(raw)$('#login-error').textContent=malformed?'Saved demo data could not be read, so a fresh copy was loaded.':'Saved demo data was incomplete, so a fresh copy was loaded.';}
+      if(valid && migrated){const migratedRaw=JSON.stringify(state);if(write(KEY,migratedRaw))observedRaw=migratedRaw;}
+      if(!valid){const baselineRaw=JSON.stringify(state);if(write(KEY,baselineRaw))observedRaw=baselineRaw;if(raw)$('#login-error').textContent=malformed?'Saved demo data could not be read, so a fresh copy was loaded.':'Saved demo data was incomplete, so a fresh copy was loaded.';}
       savedState=structuredClone(state);
       if(readSession(SESSION)==='Steven')showOwner();
     }catch(error){$('#login-error').textContent=error.message;}
@@ -382,9 +411,9 @@
   window.addEventListener('storage',event=>{
     if(event.key===AUTH){syncDemoKey();if(loggedIn){removeSession(SESSION);showLogin('The demo password changed in another tab. Sign in again.');}return;}
     if(event.key!==KEY)return;
-    let incoming=null;try{incoming=JSON.parse(event.newValue);}catch{}
+    const currentRaw=read(KEY);let incoming=null;try{incoming=JSON.parse(currentRaw);}catch{}
     if(!M.isUsableState(incoming)){if(loggedIn)status('Another tab changed the demo, but its saved data could not be loaded.');return;}
-    savedState=structuredClone(incoming);
+    observedRaw=currentRaw;savedState=structuredClone(incoming);
     if(!loggedIn){state=incoming;return;}
     const editorWasOpen=dialog.open;state=incoming;if(editorWasOpen)dialog.close();render();
     status(editorWasOpen?'Another tab changed the demo. The latest saved version was loaded and the open editor was closed.':'Another tab changed the demo. The latest saved version is now loaded.');
