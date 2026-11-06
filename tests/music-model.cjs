@@ -206,6 +206,28 @@ test('saved calendar output states its dated fallback rather than implying a liv
   assert.match(text.replace(/\r\n /g, ''), /Saved schedule checked November 6\\, 2026\./);
 });
 
+test('published edited shows identify the shared preview schedule without a stale checked date', () => {
+  const text = Music.buildIcs(show({id: 'owner-created-show', name: 'Steven’s New Show'}), {published: true});
+  const unfolded = text.replace(/\r\n /g, '');
+  assert.match(unfolded, /From the shared Tolbert’s preview schedule\./);
+  assert.doesNotMatch(unfolded, /Saved schedule checked November 6|From the restaurant’s live calendar|Owner preview from this browser/);
+  assert.doesNotMatch(unfolded, /SUMMARY:DEMO:/);
+});
+
+test('calendar output uses custom contact details and escapes CRLF and TEXT punctuation safely', () => {
+  const text = Music.buildIcs(show(), {
+    published: true,
+    address: 'Tolbert’s, Main; Room A\r\nSecond line',
+    phone: '(817) 555-0100\r\nDo not inject',
+    url: 'https://example.com/shows?names=one,two;all\r\nX-FAKE:yes'
+  });
+  const unfolded = text.replace(/\r\n /g, '');
+  assert.match(unfolded, /LOCATION:Tolbert’s\\, Main\\; Room A\\nSecond line/);
+  assert.match(unfolded, /Confirm details with Tolbert’s: \(817\) 555-0100\\nDo not inject\./);
+  assert.match(unfolded, /URL:https:\/\/example\.com\/shows\?names=one\\,two\\;all\\nX-FAKE:yes/);
+  assert.doesNotMatch(text, /\r\n(?:Second line|Do not inject|X-FAKE:yes)/);
+});
+
 test('owner-preview calendar downloads have a demo title, distinct identity, and correctly escaped disclosure', () => {
   const event = show({genre: 'A long genre ' + 'music '.repeat(30)});
   const text = Music.buildIcs(event, {preview: true, live: true});

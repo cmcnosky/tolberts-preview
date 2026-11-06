@@ -174,7 +174,7 @@
     const sourceText = source?.textContent || 'Times are Central. Confirm the schedule before heading over.';
     if (status) {
       if (status.textContent !== sourceText) status.textContent = sourceText;
-      status.hidden = !stateMode && Boolean(liveChecked) && !/unavailable/i.test(sourceText);
+      status.hidden = (publishedMode || (!stateMode && Boolean(liveChecked))) && !/unavailable/i.test(sourceText);
     }
     if (!artists.length) {
       lastTodaySignature = '';
@@ -303,7 +303,7 @@
   }
 
   function downloadCalendar(event) {
-    const calendarText = MusicModel.buildIcs(event, {live: Boolean(liveChecked) && !stateMode});
+    const calendarText = MusicModel.buildIcs(event, {live: Boolean(liveChecked) && !stateMode, published: publishedMode, ...(stateMode ? {address: previewAddress, phone: previewPhone, url: MusicModel.shareUrl(event, location.href)} : {})});
     const blob = new Blob([calendarText], {type: 'text/calendar;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');

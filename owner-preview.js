@@ -483,13 +483,14 @@
       const pieces = address.split(',').map(piece => piece.trim()).filter(Boolean);
       const label = quickVisit.querySelector('span');
       const value = quickVisit.querySelector('strong');
-      const locationLabel = pieces[1]?.toUpperCase();
-      const locationValue = pieces[0] || address;
+      const locationLabel = pieces[1] ? `${pieces[1]}${/^Texas(?:\s|$)/i.test(pieces[2] || '') ? ', TX' : ''}`.toUpperCase() : '';
+      const locationValue = pieces[0] === '423 South Main Street' ? '423 S. Main St.' : pieces[0] || address;
       if (label && locationLabel && label.textContent !== locationLabel) label.textContent = locationLabel;
       if (value && value.textContent !== locationValue) value.textContent = locationValue;
     }
     const quickPhone = document.querySelector('.visit-summary a[href^="tel:"] strong');
-    if (quickPhone && quickPhone.textContent !== phone) quickPhone.textContent = phone;
+    const compactPhone = phone.replace(/(\d{3})-(\d{4})$/, '$1‑$2');
+    if (quickPhone && quickPhone.textContent !== compactPhone) quickPhone.textContent = compactPhone;
     const visitAddress = document.querySelector('.visit-copy .address');
     if (visitAddress && visitAddress.textContent !== address) visitAddress.textContent = address;
     const compactFooterAddress = document.querySelector('.footer-main > div:first-child p');
