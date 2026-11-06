@@ -1767,3 +1767,6 @@ details > :not(summary) {
 .website-photo-section .item-card .button { margin-top:auto; }
 
 .workspace > .card-grid > .panel + .panel { margin-top:0; }
+
+.login-panel .button.quiet { color:var(--cream); border-color:rgba(243,233,210,.7); }
+.login-panel .button.quiet:hover { color:var(--ink); background:var(--cream); }
