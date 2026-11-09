@@ -1,13 +1,13 @@
 :root {
-  --cream: #f4ecdd;
+  --cream: #f3e9d2;
   --paper: #fffaf0;
-  --ink: #211f19;
+  --ink: #24211c;
   --muted: #675f52;
-  --red: #8a241e;
+  --red: #922e20;
   --red-dark: #5e1714;
-  --gold: #e3b85e;
-  --sage: #32433b;
-  --line: #cbbda4;
+  --gold: #e9b852;
+  --sage: #263f34;
+  --line: #b6a68a;
   --serif: 'DM Serif Display', Georgia, serif;
   --sans: 'DM Sans', Arial, sans-serif;
   --cond: 'Barlow Condensed', 'Arial Narrow', sans-serif;

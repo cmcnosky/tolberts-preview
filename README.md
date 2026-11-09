@@ -6,6 +6,14 @@ Owner-facing comparison: https://cmcnosky.github.io/tolberts-preview/proposal.ht
 
 This is an independent preview, not the restaurant’s official website. The official domain and systems have not been modified. The preview is public and marked noindex. Source provenance and limits are in research.html, operations.html, and audit.html.
 
+## Current visual release — November 9, 2026
+
+The adopted editorial homepage is now `index.html`. The `home-editorial.html` URL remains a compatible copy; `home-classic.html` preserves the previous design, and `compare-homepages.html` labels the archive and current design explicitly. The white logo, cream/chili-red/gold/deep-green palette, and editorial typography extend through guest pages, account management, and review documents. Existing application scripts, account permissions, backend code, and shared business records are unchanged by this release.
+
+All 11 root pages were checked at 320, 768, and 1280 CSS pixels without horizontal page overflow after the narrow-screen story-heading repair. Browser checks exercised menu and music filters, empty states, show details, copyable links, calendar download, keyboard focus return, and inquiry-draft preparation. Small-text contrast and the visible login action were repaired. See `audit.html` for this release and separately dated earlier live-write evidence.
+
+The frontend Node runner passes 63 tests, including three legacy wrappers. The individually invoked menu/feed/music suites contain 7/13/24 assertions; do not add those to the combined runner count. The unchanged backend separately passes 14 isolated API tests, and its clean rebuild matches the delivered bundle. These checks are not proof of physical-device compatibility, service uptime, or third-party fulfillment.
+
 ## Preview locally
 
 Run `python3 -m http.server 4175` in this folder and open http://localhost:4175/.

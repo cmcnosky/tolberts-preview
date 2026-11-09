@@ -139,6 +139,8 @@ body.editorial-home{
 .editorial-home .happy-hour>span{display:none}
 .editorial-home .happy-hour small{font-size:13px}
 .editorial-home .story-section{background:transparent;gap:7%;align-items:center}
+.editorial-home .story-section>*{min-width:0}
+.editorial-home .story-copy h2{overflow-wrap:anywhere}
 .editorial-home .story-image{padding:0;margin:0;transform:none;border:0;box-shadow:none;background:transparent}
 .editorial-home .story-image>img{width:100%;height:auto;aspect-ratio:auto;object-fit:contain}
 .editorial-home .photo-note{padding:14px 0;border-bottom:1px solid var(--line);margin:0;font:400 italic 19px/1.4 var(--serif);color:#675f52;text-align:left}
@@ -241,6 +243,7 @@ body.editorial-home{
 .editorial-home .header .brand img{flex-shrink:0}
 @media(max-width:760px){.editorial-home .header .brand span{font-size:9px;max-width:42px}}
 @media(max-width:400px){.editorial-home .header .brand span{display:none}}
+@media(max-width:400px){.editorial-home .story-copy h2{font-size:36px}}
 /* Keep multi-size prices readable without squeezing the dish description. */
 @media(max-width:760px){
  .editorial-home #menu .food-pick{grid-template-columns:minmax(0,1fr) 20px;gap:10px 16px}

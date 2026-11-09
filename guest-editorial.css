@@ -1,0 +1,293 @@
+/* Guest utility pages in the approved Tolbert's editorial system. */
+:is(.menu-page,.music-page){
+  --cream:#f3e9d2;
+  --paper:#e8dbbc;
+  --ink:#24211c;
+  --red:#922e20;
+  --gold:#e9b852;
+  --green:#263f34;
+  --line:#b6a68a;
+  background:
+    linear-gradient(90deg,rgba(146,46,32,.022) 1px,transparent 1px) 0 0/38px 38px,
+    linear-gradient(rgba(36,33,28,.018) 1px,transparent 1px) 0 0/38px 38px,
+    var(--cream);
+  color:var(--ink);
+}
+
+/* Masthead and navigation retain the new white wordmark. */
+:is(.menu-page,.music-page) .header{
+  height:86px;
+  padding:10px 4%;
+  gap:26px;
+  color:var(--cream);
+  background:#211f19;
+  border:0;
+  border-bottom:4px solid var(--red);
+  box-shadow:none;
+}
+:is(.menu-page,.music-page) .header .brand{
+  width:178px;
+  height:auto;
+  display:flex;
+  flex-direction:row;
+  align-items:center;
+  justify-content:flex-start;
+  gap:10px;
+  padding:0;
+  background:none;
+  border:0;
+}
+:is(.menu-page,.music-page) .header .brand img{
+  width:112px;
+  height:60px;
+  margin:0;
+  object-fit:contain;
+  filter:none;
+  flex:0 0 auto;
+}
+:is(.menu-page,.music-page) .header .brand span{
+  position:static;
+  display:block;
+  max-width:62px;
+  margin:0;
+  color:#d7cbb8;
+  font:700 11px/1.1 var(--cond);
+  letter-spacing:1px;
+  text-align:left;
+  white-space:normal;
+  transform:none;
+}
+:is(.menu-page,.music-page) .desktop-nav{
+  gap:25px;
+  color:var(--cream);
+  font:700 14px/1.2 var(--cond);
+  letter-spacing:.07em;
+  text-transform:uppercase;
+}
+:is(.menu-page,.music-page) .desktop-nav a[aria-current=page]{
+  color:var(--gold);
+  text-decoration-color:var(--gold);
+}
+:is(.menu-page,.music-page) .header .order-link{
+  min-height:46px;
+  padding:13px 18px;
+  color:var(--ink);
+  background:var(--gold);
+  border:0;
+  box-shadow:none;
+  font:700 15px/1 var(--cond);
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+:is(.menu-page,.music-page) .nav-toggle{
+  width:48px;
+  height:48px;
+  min-width:48px;
+  padding:8px;
+  color:var(--cream);
+  background:transparent;
+  border:1px solid #f3e9d299;
+}
+:is(.menu-page,.music-page) .nav-toggle span{background:var(--cream)}
+:is(.menu-page,.music-page) .nav-toggle b{color:var(--cream);font-size:11px}
+:is(.menu-page,.music-page) .mobile-nav{
+  color:var(--ink);
+  background:var(--cream);
+  border-bottom:3px solid var(--red);
+}
+:is(.menu-page,.music-page) .mobile-nav a{
+  color:var(--ink);
+  font:400 25px/1.25 var(--serif);
+  letter-spacing:0;
+  text-transform:none;
+}
+:is(.menu-page,.music-page) .mobile-nav a:hover,
+:is(.menu-page,.music-page) .mobile-nav a[aria-current=page]{color:var(--red)}
+
+/* Menu introduction and search. */
+.menu-page .menu-page-heading{
+  padding-top:40px;
+  padding-bottom:34px;
+  color:var(--cream);
+  background:var(--red);
+  border:0;
+}
+.menu-page .breadcrumb,.music-page .breadcrumb{color:var(--cream);font-weight:700}
+.menu-page .menu-title-row{border-bottom:1px solid #f3e9d280}
+.menu-page .menu-title-row .eyebrow{color:var(--cream)}
+.menu-page .menu-title-row h1{
+  color:var(--cream);
+  font:400 clamp(54px,6.4vw,88px)/1.02 var(--serif);
+  letter-spacing:-.035em;
+  text-transform:none;
+}
+.menu-page .menu-title-row p{color:var(--cream);line-height:1.75}
+.menu-page .menu-title-row>.text-link{color:var(--cream);font-family:var(--cond);text-transform:uppercase}
+.menu-page .menu-date{color:#f3e9d2cc}
+.menu-page .menu-search-form>label{color:var(--cream)}
+.menu-page .search-box{background:var(--cream);border:1px solid var(--cream)}
+.menu-page .search-box .button{
+  color:var(--cream);
+  background:var(--green);
+  border-color:var(--green);
+  box-shadow:none;
+  font-family:var(--cond);
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+
+/* Menu browsing stays dense, but reads like the editorial homepage. */
+.menu-page .menu-page-layout{padding-top:38px;background:var(--cream)}
+.menu-page .menu-sidebar{border-top:4px solid var(--green)}
+.menu-page .menu-sidebar nav>a{font-size:14px}
+.menu-page .menu-sidebar [aria-current]{color:var(--cream);background:var(--red)}
+.menu-page .sidebar-order{color:var(--red);font-weight:700}
+.menu-page .menu-tools{top:86px;background:var(--cream);border-color:var(--ink)}
+.menu-page .menu-group>h2{
+  color:var(--red);
+  border-bottom:1px solid var(--ink);
+  font:400 42px/1.08 var(--serif);
+  letter-spacing:-.02em;
+  text-transform:none;
+}
+.menu-page .menu-item h3{
+  font:400 28px/1.13 var(--serif);
+  letter-spacing:-.015em;
+}
+.menu-page .menu-item p{color:#675f52}
+.menu-page .item-price{color:var(--red)}
+.menu-page .menu-page-policy{
+  color:var(--ink);
+  background:var(--gold);
+  border:0;
+  border-top:4px solid var(--red);
+}
+.menu-page .menu-page-policy h2{
+  font:400 38px/1.08 var(--serif);
+  letter-spacing:-.02em;
+  text-transform:none;
+}
+
+/* The full calendar opens with the same red/cream editorial statement. */
+.music-page .music-page-head{
+  padding-top:46px;
+  padding-bottom:48px;
+  color:var(--cream);
+  background:var(--red);
+  border:0;
+}
+.music-page .music-page-head .eyebrow{color:var(--cream)}
+.music-page .music-page-head h1{
+  color:var(--cream);
+  font:400 clamp(58px,7vw,94px)/1.02 var(--serif);
+  letter-spacing:-.035em;
+  text-transform:none;
+}
+.music-page .music-page-head>p:last-child{color:var(--cream)}
+.music-page .music-section{
+  color:var(--cream);
+  background:var(--green);
+  border-top:4px solid var(--gold);
+}
+.music-page .filter-group button{border-color:#f3e9d280;color:var(--cream)}
+.music-page .filter-group button.active,
+.music-page .filter-group button[aria-pressed=true]{color:var(--ink);background:var(--gold);border-color:var(--gold)}
+.music-page .finder-fields input,.music-page .finder-fields select{
+  color:var(--ink);
+  background:var(--cream);
+  border-color:var(--cream);
+}
+.music-page .music-results-bar .show-count,.music-page .source-note{color:#f3e9d2cc}
+.music-page #show-grid{border-top-color:#f3e9d255}
+.music-page #show-grid .show-card{border-bottom-color:#f3e9d255}
+.music-page #show-grid .show-image{background:#1b2d26}
+.music-page #show-grid .show-date{color:var(--gold);border-color:#e9b85299}
+.music-page #show-grid .genre{color:var(--gold)}
+.music-page #show-grid h3{
+  color:var(--cream);
+  font:400 34px/1.08 var(--serif);
+  letter-spacing:-.02em;
+  text-transform:none;
+}
+.music-page #show-grid .show-time{color:#f3e9d2d9}
+.music-page #show-grid .show-detail{
+  color:var(--gold);
+  background:transparent;
+  border:0;
+  border-bottom:1px solid var(--gold);
+  font-family:var(--cond);
+  letter-spacing:.05em;
+  text-transform:uppercase;
+}
+.music-page #show-grid .show-detail:hover{color:var(--ink);background:var(--gold)}
+.music-page .music-help{border-color:#f3e9d266}
+.music-page .music-help h2{
+  color:var(--cream);
+  font:400 44px/1.08 var(--serif);
+  letter-spacing:-.02em;
+  text-transform:none;
+}
+.music-page .music-help p{color:#f3e9d2d9}
+
+/* Show details follow the same type and palette without changing dialog behavior. */
+.music-page #show-dialog{background:var(--cream)}
+.music-page #show-dialog .show-dialog-bar{background:var(--green)}
+.music-page #show-dialog .show-dialog-bar>span{color:var(--gold)}
+.music-page #show-dialog .close-dialog{color:var(--cream)}
+.music-page #show-dialog .close-dialog:hover{color:var(--ink);background:var(--gold)}
+.music-page #show-dialog #show-title{
+  font:400 46px/1.02 var(--serif);
+  letter-spacing:-.025em;
+  text-transform:none;
+}
+
+/* Shared finish: green footer, white logo, and green mobile actions. */
+:is(.menu-page,.music-page) footer{
+  color:var(--cream);
+  background:var(--green);
+  border-top:4px solid var(--red);
+}
+:is(.menu-page,.music-page) .footer-wordmark{display:inline-flex;min-height:64px;align-items:center}
+:is(.menu-page,.music-page) .footer-wordmark img{width:140px;height:62px;object-fit:contain;filter:none}
+:is(.menu-page,.music-page) .footer-main p:not(.eyebrow),
+:is(.menu-page,.music-page) .footer-bottom{color:#f3e9d2c7}
+:is(.menu-page,.music-page) .footer-main .eyebrow{color:var(--gold)}
+:is(.menu-page,.music-page) .mobile-bottom{
+  color:var(--cream);
+  background:var(--green);
+  border-top:2px solid var(--red);
+}
+:is(.menu-page,.music-page) .mobile-bottom a{color:var(--cream)}
+:is(.menu-page,.music-page) .mobile-bottom a[aria-current=page]{color:var(--ink);background:var(--gold)}
+
+@media(max-width:1100px){
+  :is(.menu-page,.music-page) .header{gap:17px}
+  :is(.menu-page,.music-page) .header .brand{width:165px}
+}
+@media(max-width:760px){
+  :is(.menu-page,.music-page) .header{height:76px;padding:7px 20px;gap:14px}
+  :is(.menu-page,.music-page) .header .brand{width:140px;height:auto;padding:0}
+  :is(.menu-page,.music-page) .header .brand img{width:96px;height:52px}
+  :is(.menu-page,.music-page) .header .brand span{display:block;max-width:42px;color:#d7cbb8;font-size:9px;line-height:1.2;letter-spacing:.06em}
+  .menu-page .menu-tools{top:76px}
+  .menu-page .menu-page-heading,.music-page .music-page-head{padding-block:34px}
+  .menu-page .menu-title-row h1{font-size:50px}
+  .menu-page .menu-page-layout{padding-top:20px}
+  .music-page #show-grid h3{font-size:29px}
+  .music-page #show-dialog #show-title{font-size:34px}
+}
+@media(max-width:400px){
+  :is(.menu-page,.music-page) .header{padding-inline:14px;gap:10px}
+  :is(.menu-page,.music-page) .header .brand{width:102px}
+  :is(.menu-page,.music-page) .header .brand img{width:98px}
+  :is(.menu-page,.music-page) .header .brand span{display:none}
+  :is(.menu-page,.music-page) .header .order-link{font-size:13px;gap:9px;padding:11px}
+  .menu-page .menu-page-heading,.music-page .music-page-head{padding-inline:20px}
+  .menu-page .menu-title-row h1{font-size:45px}
+}
+
+@media print{
+  :is(.menu-page,.music-page) .header,
+  :is(.menu-page,.music-page) .mobile-bottom{display:none}
+  .menu-page .menu-page-heading,.music-page .music-page-head{color:#000;background:#fff}
+}

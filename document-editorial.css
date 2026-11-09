@@ -1,0 +1,19 @@
+/* Shared identity for the supporting review documents. */
+body.editorial-document{--cream:#f3e9d2;--paper:#fff8e9;--ink:#24211c;--red:#922e20;--gold:#e9b852;--sage:#263f34;--line:#b6a68a;margin:0;padding:0;background:var(--cream);color:var(--ink);font:16px/1.75 'DM Sans',Arial,sans-serif}
+.editorial-document .document-masthead{display:flex;align-items:center;justify-content:space-between;gap:28px;padding:12px 4%;background:var(--ink);color:var(--cream);border-bottom:4px solid var(--red)}
+.editorial-document .document-brand{display:flex;align-items:center;gap:12px;color:var(--cream);text-decoration:none;flex-shrink:0}
+.editorial-document .document-brand img{width:112px;height:60px;object-fit:contain;filter:none}
+.editorial-document .document-brand span{font:700 12px/1.25 'Barlow Condensed',sans-serif;letter-spacing:.07em}
+.editorial-document .document-masthead nav{display:flex;align-items:center;gap:25px;flex-wrap:wrap}
+.editorial-document .document-masthead nav a{color:var(--gold);font:700 16px/1.4 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:.05em;text-underline-offset:5px;min-height:44px;display:inline-flex;align-items:center}
+.editorial-document .document-skip{position:fixed;left:16px;top:-90px;z-index:100;padding:14px 20px;background:var(--ink);color:var(--cream)}
+.editorial-document .document-skip:focus{top:12px}
+.editorial-document main{width:100%;max-width:1080px;margin:auto;padding:40px 35px 70px}
+.editorial-document h1{font:800 clamp(44px,6vw,82px)/1.02 'Barlow Condensed',sans-serif;text-transform:uppercase;letter-spacing:-.02em}
+.editorial-document h2{font:400 36px/1.15 'DM Serif Display',Georgia,serif;color:var(--red);text-transform:none;letter-spacing:-.02em}
+.editorial-document h3{font-family:'DM Serif Display',Georgia,serif;font-size:26px;font-weight:400;text-transform:none}
+.editorial-document .eyebrow,.editorial-document .meta{font-size:14px;line-height:1.6}
+.editorial-document .note{background:#e8dbbc;border-color:var(--red);border-radius:0;box-shadow:none}
+.editorial-document a:focus-visible{outline:3px solid var(--gold);outline-offset:4px;box-shadow:0 0 0 6px var(--ink)}
+@media(max-width:620px){.editorial-document .document-masthead{padding:12px 20px;gap:15px;flex-wrap:wrap}.editorial-document .document-masthead nav{gap:20px}.editorial-document main{padding:28px 22px 55px}.editorial-document h2{font-size:30px}}
+@media print{.editorial-document .document-masthead,.editorial-document .document-skip{display:none}.editorial-document main{padding:0;max-width:none}.editorial-document{background:white;color:black}}
