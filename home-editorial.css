@@ -40,7 +40,7 @@ body.editorial-home{
 .editorial-home .parlor-hero:before,.editorial-home .parlor-hero:after{display:none}
 .editorial-rail{display:flex;justify-content:space-between;align-items:center;writing-mode:vertical-rl;transform:rotate(180deg);background:var(--red);color:var(--paper);padding:26px 0;font:700 11px/1 var(--cond);letter-spacing:.15em}
 .editorial-home .parlor-hero .hero-copy{padding:60px clamp(32px,5.2vw,90px);justify-content:center;min-width:0;color:var(--ink);position:static}
-.editorial-home .parlor-hero .hero-copy>.eyebrow{font:800 12px/1.4 var(--cond);letter-spacing:.13em;color:var(--red)}
+.editorial-home .parlor-hero .hero-copy>.eyebrow{font:800 24px/1.35 var(--cond);letter-spacing:.06em;color:var(--red)}
 .editorial-home .parlor-hero h1{font:800 clamp(68px,7.4vw,122px)/.87 var(--cond);letter-spacing:-.035em;text-transform:uppercase;color:var(--ink);margin:28px 0 28px;text-shadow:none}
 .editorial-home .parlor-hero h1 em{display:inline;font-family:var(--serif);font-size:.77em;line-height:1.1;font-weight:400;letter-spacing:-.04em;text-transform:none;color:var(--red)}
 .editorial-home .parlor-hero .hero-copy>p{color:#675f52;font-size:17px;line-height:1.75;max-width:440px;margin:0 0 27px}
@@ -202,7 +202,7 @@ body.editorial-home{
  .editorial-rail{grid-row:1/3;grid-column:1;font-size:10px;padding:25px 0}
  .editorial-home .parlor-hero .hero-copy{grid-column:2;padding:45px 28px}
  .editorial-home .parlor-hero h1{font-size:clamp(66px,12vw,90px);margin:22px 0}.editorial-home .parlor-hero .hero-copy>p{font-size:16px;max-width:440px}
- .editorial-home .parlor-hero .hero-copy>.eyebrow{font-size:11px}.editorial-home .parlor-collage{grid-column:2;min-height:430px}
+ .editorial-home .parlor-hero .hero-copy>.eyebrow{font-size:20px;letter-spacing:.05em}.editorial-home .parlor-collage{grid-column:2;min-height:430px}
  .editorial-home .sign-print img{object-position:center 47%}.editorial-home .sign-print figcaption{padding:35px 24px 24px}
  .editorial-home .section-pad{padding:58px 24px}.editorial-home .section-heading{display:block;margin-bottom:30px;padding-bottom:26px}.editorial-home .heading-aside{max-width:520px;margin-top:24px}
  .editorial-home .section-heading h2,.editorial-home .visit-copy h2,.editorial-home .story-copy h2,.editorial-home .gather-content h2,.editorial-home .faq-section h2{font-size:46px;line-height:1.06}
