@@ -1,5 +1,41 @@
 (async () => {
 'use strict';
+const earlySearch = $('#dish-search'), earlyCategory = $('#category-select'), earlyForm = $('.menu-search-form');
+const initialParams = new URLSearchParams(location.search);
+const pendingChoice = {
+  query: initialParams.get('q') || earlySearch.value || '',
+  category: initialParams.get('category') || earlyCategory.value || 'All dishes',
+  queryTouched: false,
+  categoryTouched: false,
+  ready: false
+};
+earlySearch.value = pendingChoice.query;
+if ([...earlyCategory.options].some(option => option.value === pendingChoice.category)) earlyCategory.value = pendingChoice.category;
+earlySearch.addEventListener('input', () => {
+  if (pendingChoice.ready) return;
+  pendingChoice.query = earlySearch.value;
+  pendingChoice.queryTouched = true;
+});
+earlyCategory.addEventListener('change', () => {
+  if (pendingChoice.ready) return;
+  pendingChoice.category = earlyCategory.value;
+  pendingChoice.categoryTouched = true;
+});
+earlyForm.addEventListener('submit', event => {
+  if (pendingChoice.ready) return;
+  event.preventDefault();
+  pendingChoice.query = earlySearch.value;
+  pendingChoice.queryTouched = true;
+});
+document.addEventListener('click', event => {
+  if (pendingChoice.ready) return;
+  const link = event.target.closest?.('.menu-sidebar [data-category]');
+  if (!link || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+  event.preventDefault();
+  pendingChoice.category = link.dataset.category;
+  pendingChoice.categoryTouched = true;
+  if ([...earlyCategory.options].some(option => option.value === pendingChoice.category)) earlyCategory.value = pendingChoice.category;
+});
 await (window.OwnerPreview?.ready || Promise.resolve());
 const search = $('#dish-search'), categorySelect = $('#category-select');
 const dishes = $$('.menu-item'), groups = $$('.menu-group');
@@ -44,5 +80,10 @@ $$('.menu-sidebar [data-category]').forEach(link => link.addEventListener('click
 function resetMenu() {search.value = ''; category = 'All dishes'; renderMenu(true,true); search.focus();}
 $('#clear-menu').addEventListener('click',resetMenu); $('#reset-menu').addEventListener('click',resetMenu);
 window.addEventListener('popstate',readLocation);
-readLocation();
+const interactedBeforeReady = pendingChoice.queryTouched || pendingChoice.categoryTouched;
+search.value = pendingChoice.queryTouched ? pendingChoice.query : (initialParams.get('q') || '');
+const initialCategory = pendingChoice.categoryTouched ? pendingChoice.category : initialParams.get('category');
+category = categories.has(initialCategory) ? initialCategory : 'All dishes';
+pendingChoice.ready = true;
+renderMenu(interactedBeforeReady);
 })();

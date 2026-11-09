@@ -251,3 +251,23 @@ body.editorial-home{
  .editorial-home #menu .food-pick .price{grid-column:1;grid-row:2;max-width:none;text-align:left;font-size:17px;line-height:1.5}
  .editorial-home #menu .food-pick .pick-arrow{display:block;grid-column:2;grid-row:1/3;align-self:center}
 }
+
+/* Keep the key visit information readable in the narrow three-column strip. */
+@media (max-width: 760px) {
+  .editorial-home .visit-summary.with-today span,
+  .editorial-home .visit-summary.with-today>a:last-child span { font-size: 12px; letter-spacing: .03em; }
+  .editorial-home .visit-summary.with-today small { font-size: 14px; }
+  .editorial-home .today-card-label { font-size: 12px; }
+  .editorial-home .today-artist-state { font-size: 14px; }
+}
+@media (max-width: 360px) {
+  .editorial-home .parlor-hero h1 { font-size: 59px; }
+}
+@media (max-width: 760px) {
+  .editorial-home .mobile-bottom>a { font-size: 13px; line-height: 1.25; }
+}
+@media (max-width: 360px) {
+  .editorial-home .visit-summary.with-today { padding-inline: 12px; gap: 8px; }
+  .editorial-home .visit-summary.with-today>a { padding-right: 6px; }
+  .editorial-home .visit-summary.with-today small { font-size: 13px; white-space: nowrap; }
+}

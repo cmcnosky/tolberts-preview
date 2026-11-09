@@ -6,7 +6,15 @@ Owner-facing comparison: https://cmcnosky.github.io/tolberts-preview/proposal.ht
 
 This is an independent preview, not the restaurant’s official website. The official domain and systems have not been modified. The preview is public and marked noindex. Source provenance and limits are in research.html, operations.html, and audit.html.
 
-## Current visual release — November 9, 2026
+## Mobile and editing refinement — November 9, 2026
+
+The editorial identity is retained. Mobile visit links and quick actions are more readable, narrow headlines avoid an unnecessary split, and account controls use 16px text. The mobile account sidebar becomes a compact sticky section selector with the same 12 destinations.
+
+Unsaved Hours/Settings edits are guarded during section and page exits; edited modal fields receive browser-exit protection. Modal operations lock controls while pending. Failed or unconfirmed saves retain copyable entries and prevent stale retries, including session expiry, which defers sign-in until the editor closes. A failed refresh does not silently discard a dirty form. Menu choices made before shared-content readiness are preserved. Targeted tests exercise these failure and timing paths without live business writes.
+
+The new versioned `social-preview-20261109-editorial-v2.jpg` matches the main homepage and is referenced by current guest/account/review metadata. Third-party preview caches are outside the website's direct control. Current verification and earlier dated evidence are separated in `audit.html`.
+
+## Earlier visual release — November 9, 2026
 
 The adopted editorial homepage is now `index.html`. The `home-editorial.html` URL remains a compatible copy; `home-classic.html` preserves the previous design, and `compare-homepages.html` labels the archive and current design explicitly. The white logo, cream/chili-red/gold/deep-green palette, and editorial typography extend through guest pages, account management, and review documents. Existing application scripts, account permissions, backend code, and shared business records are unchanged by this release.
 

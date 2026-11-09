@@ -14,10 +14,15 @@
   const dateLabel = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '') ? new Intl.DateTimeFormat('en-US', {month:'short', day:'numeric', year:'numeric',timeZone:'UTC'}).format(new Date(value + 'T12:00:00Z')) : String(value || '');
   const timeLabel = v => /^\d{2}:\d{2}$/.test(v || '') ? new Intl.DateTimeFormat('en-US', {hour:'numeric',minute:'2-digit',timeZone:'UTC'}).format(new Date(`2000-01-01T${v}:00Z`)).toLowerCase() : v;
   const inputTime = v => { if (/^\d{2}:\d{2}$/.test(v || '')) return v; const m = /^(\d{1,2}):(\d{2})\s*(am|pm)$/i.exec(v || ''); return m ? String(Number(m[1]) % 12 + (m[3].toLowerCase() === 'pm' ? 12 : 0)).padStart(2,'0') + ':' + m[2] : '20:00'; };
-  let state, baseline = {events: []}, savedState, revision = null, updatedAt = '', view = 'overview', filter = '', activeOrder = null, editorSubmit = null, editorOpener = null, loggedIn = false, saving = false, refreshing = false, needsRefresh = false, toastTimer;
+  let state, baseline = {events: []}, savedState, revision = null, updatedAt = '', view = 'overview', filter = '', activeOrder = null, editorSubmit = null, editorOpener = null, editorPending = false, editorDirty = false, editorInvalidated = false, editorFailureMessage = '', deferredLoginMessage = '', loggedIn = false, saving = false, refreshing = false, needsRefresh = false, allowPageLeave = false, toastTimer;
   const workspace = $('#workspace');
   const dialog = $('#editor-dialog');
   const form = $('#editor-form');
+  const ownerSidebar = $('.owner-sidebar');
+  const ownerNavigation = $('#owner-navigation') || $('.owner-nav');
+  const ownerNavToggle = $('#owner-nav-toggle');
+  const ownerNavCurrent = $('#owner-nav-current');
+  const ownerViews = ['overview','menu','music','hours','inventory','purchases','team','activity','settings','website','schedule','backups'];
   let extra;
   function syncSkipLink(ownerVisible) { const skip=$('#owner-skip-link'); if(!skip)return; skip.href=ownerVisible?'#workspace':'#login-title'; skip.textContent=ownerVisible?'Skip to owner workspace':'Skip to sign-in'; }
   function status(message) { const el = $('#owner-status'); el.textContent = message; el.classList.add('visible'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('visible'),6000); }
@@ -38,6 +43,26 @@
     }
   }
   function setSaving(active) { saving = active; setBusy(active); }
+  function editorPersistenceFailed() {
+    if (editorPending) editorInvalidated = true;
+    return false;
+  }
+  function deferOrShowLogin(loginMessage, editorMessage) {
+    if (editorPending && dialog.open) {
+      deferredLoginMessage = loginMessage;
+      editorFailureMessage = editorMessage;
+      return true;
+    }
+    showLogin(loginMessage);
+    return false;
+  }
+  function showDeferredLogin() {
+    const message = deferredLoginMessage;
+    deferredLoginMessage = '';
+    if (!message) return false;
+    showLogin(message);
+    return true;
+  }
   function workspacePayload(payload) {
     if (!payload || !Number.isInteger(payload.revision) || payload.revision < 1 || !M.isUsableState(payload.state)) {
       throw new Error('The shared workspace returned incomplete data. Refresh and try again.');
@@ -55,19 +80,19 @@
   async function persist(message = '') {
     if (saving) {
       status('A save is already in progress. Wait for it to finish, then try again.');
-      return false;
+      return editorPersistenceFailed();
     }
     if (refreshing) {
       if (savedState) state = structuredClone(savedState);
       status('The shared workspace is refreshing. Wait for it to finish, then make the change again.');
       render();
-      return false;
+      return editorPersistenceFailed();
     }
     if (needsRefresh) {
       if (savedState) state = structuredClone(savedState);
       status('Reload the shared workspace before making another change.');
       render();
-      return false;
+      return editorPersistenceFailed();
     }
     const previous = savedState ? structuredClone(savedState) : null;
     const candidate = structuredClone(state);
@@ -76,7 +101,7 @@
       if (previous) state = previous;
       status('That change would leave the workspace in an invalid state, so it was undone.');
       render();
-      return false;
+      return editorPersistenceFailed();
     }
     setSaving(true);
     try {
@@ -102,19 +127,25 @@
         } catch (refreshError) {
           if (previous) state = previous;
           needsRefresh = true;
-          if (refreshError?.status === 401) showLogin('Your owner session expired. Sign in again; the last save could not be confirmed.');
+          if (refreshError?.status === 401) deferOrShowLogin(
+            'Your owner session expired. Sign in again; the last save could not be confirmed.',
+            'Your owner session expired, and the save result could not be confirmed. Copy anything you need from this form, then close the editor, sign in again, and review the latest saved details.'
+          );
           else status('Could not confirm whether the save reached the server. Reload the shared workspace before editing again.');
         }
       } else {
         if (previous) state = previous;
         if (error?.status === 401) {
-          showLogin('Your owner session expired. Sign in again; the unsaved change was undone.');
+          deferOrShowLogin(
+            'Your owner session expired. Sign in again; the unsaved change was undone.',
+            'Your owner session expired, so this edit was not saved. Copy anything you need from this form, then close the editor and sign in again.'
+          );
         } else {
           status(`${error?.message || 'The shared workspace rejected that change.'} The local change was undone.`);
         }
       }
       render();
-      return false;
+      return editorPersistenceFailed();
     } finally {
       setSaving(false);
     }
@@ -138,7 +169,36 @@
     return allowed ? resolved : 'assets/stage.webp';
   }
   function searchBar(label,placeholder,extra='') { return `<div class="toolbar"><label class="field">${label}<input id="list-search" type="search" value="${esc(filter)}" placeholder="${placeholder}" autocomplete="off"></label>${extra}</div><p id="result-count" class="result-count" role="status"></p>`; }
+  function setEditorPending(active) {
+    editorPending = active;
+    dialog.setAttribute('aria-busy', active ? 'true' : 'false');
+    const save = $('#editor-save');
+    if (active) {
+      save.dataset.idleLabel = save.textContent;
+      save.textContent = 'Working…';
+    } else if (save.dataset.idleLabel) {
+      save.textContent = save.dataset.idleLabel;
+      delete save.dataset.idleLabel;
+    }
+    if (active) {
+      $$('button, input, select, textarea', dialog).forEach(control => {
+        if (!control.disabled) {
+          control.disabled = true;
+          control.dataset.editorSubmitDisabled = 'true';
+        }
+      });
+    } else {
+      $$('[data-editor-submit-disabled="true"]', dialog).forEach(control => {
+        control.disabled = false;
+        delete control.dataset.editorSubmitDisabled;
+      });
+    }
+  }
   function openEditor(title,fields,callback,saveText='Save changes') {
+    setEditorPending(false);
+    editorDirty = false;
+    editorInvalidated = false;
+    editorFailureMessage = '';
     editorOpener = document.activeElement; editorSubmit = callback;
     $('#editor-title').textContent = title; $('#editor-fields').innerHTML = `<p id="editor-error" role="alert" class="login-error"></p>${fields}`;
     $('#editor-save').textContent = saveText; $('#editor-save').disabled = false;
@@ -146,20 +206,46 @@
   }
   function confirmation(title,body,callback,label) { openEditor(title,body,callback,label); }
   dialog.addEventListener('close', () => {
+    setEditorPending(false);
+    editorDirty = false;
+    editorInvalidated = false;
+    editorFailureMessage = '';
     document.body.classList.remove('dialog-open');
+    if (showDeferredLogin()) return;
     const replacement = editorOpener?.dataset.action ? $$('[data-action]').find(el=>el.dataset.action===editorOpener.dataset.action && el.dataset.id===editorOpener.dataset.id) : null;
     if(editorOpener?.isConnected) editorOpener.focus({preventScroll:true});
     else if(replacement) replacement.focus({preventScroll:true});
     else if(loggedIn) workspace.focus({preventScroll:true});
     else $('#owner-username').focus({preventScroll:true});
   });
-  $$('[data-close-dialog]').forEach(b => b.addEventListener('click', () => dialog.close()));
+  dialog.addEventListener('cancel', event => { if(editorPending) event.preventDefault(); });
+  $$('[data-close-dialog]').forEach(b => b.addEventListener('click', () => { if(!editorPending) dialog.close(); }));
+  form.addEventListener('input', () => { if (dialog.open) editorDirty = true; });
+  form.addEventListener('change', () => { if (dialog.open) editorDirty = true; });
   form.addEventListener('submit',async event => {
     event.preventDefault(); const submit = $('#editor-save'); if(submit.disabled) return;
-    submit.disabled = true;
-    try { await editorSubmit(Object.fromEntries(new FormData(form))); if(dialog.open)dialog.close(); render(); }
+    const data = Object.fromEntries(new FormData(form));
+    editorInvalidated = false;
+    editorFailureMessage = '';
+    setEditorPending(true);
+    try {
+      await editorSubmit(data);
+      if (editorInvalidated && dialog.open) {
+        $('#editor-error').textContent = editorFailureMessage || 'This save could not be confirmed. Copy anything you need from this form, then close and reopen the editor to review the latest saved details before making another change.';
+        $('#editor-error').scrollIntoView({block:'nearest'});
+      } else {
+        if(dialog.open)dialog.close();
+        render();
+      }
+    }
     catch(error) { $('#editor-error').textContent = error.message || 'Please check the details and try again.'; $('#editor-error').scrollIntoView({block:'nearest'}); }
-    finally { submit.disabled = false; }
+    finally {
+      setEditorPending(false);
+      if (editorInvalidated && dialog.open) {
+        $('#editor-save').disabled = true;
+        $('#editor-save').textContent = 'Review required';
+      }
+    }
   });
   function required(value,label) { const text = String(value || '').trim(); if(!text) throw new Error(`${label} is required.`); return text; }
   function numeric(value,label,min=0) { if(value === '' || !Number.isFinite(Number(value)) || Number(value) < min) throw new Error(`${label} must be a number of at least ${min}.`); return Number(value); }
@@ -186,10 +272,88 @@
     } catch(error) { throw new Error(error.message || 'The photograph could not be read.'); }
     finally { URL.revokeObjectURL(objectUrl); }
   }
-  function navigate(next) { if(!loggedIn||saving||refreshing) return; view = next; filter = ''; activeOrder = null; history.replaceState(null,'','#'+next); render(); workspace.focus({preventScroll:true}); window.scrollTo({top:0,behavior:'instant'}); }
+  function currentViewLabel() {
+    const selected = ownerNavigation?.querySelector(`[data-view="${view}"]`);
+    return selected?.querySelector('span:last-child')?.textContent?.trim() || selected?.textContent?.trim() || 'Today';
+  }
+  function syncOwnerNavigation() {
+    const label = currentViewLabel();
+    if (ownerNavCurrent) ownerNavCurrent.textContent = label;
+    if (ownerNavToggle) {
+      const open = Boolean(ownerSidebar?.classList.contains('navigation-open'));
+      ownerNavToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      ownerNavToggle.setAttribute('aria-label', `${open ? 'Close' : 'Open'} owner sections. Current section: ${label}.`);
+    }
+  }
+  function setOwnerNavigationOpen(open, returnFocus = false) {
+    if (!ownerSidebar || !ownerNavToggle) return;
+    ownerSidebar.classList.toggle('navigation-open', Boolean(open));
+    syncOwnerNavigation();
+    if (!open && returnFocus && ownerNavToggle.offsetParent !== null) ownerNavToggle.focus({preventScroll:true});
+  }
+  function initializeOwnerNavigation() {
+    if (!ownerSidebar || !ownerNavigation || !ownerNavToggle || !ownerNavCurrent) return;
+    ownerSidebar.classList.add('navigation-ready');
+    ownerNavToggle.addEventListener('click', () => {
+      setOwnerNavigationOpen(!ownerSidebar.classList.contains('navigation-open'));
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !dialog.open && ownerSidebar.classList.contains('navigation-open')) {
+        event.preventDefault();
+        setOwnerNavigationOpen(false, true);
+      }
+    });
+    syncOwnerNavigation();
+  }
+  function performNavigation(next) {
+    view = ownerViews.includes(next) ? next : 'overview';
+    filter = '';
+    activeOrder = null;
+    history.replaceState(null,'','#'+view);
+    setOwnerNavigationOpen(false);
+    render();
+    workspace.focus({preventScroll:true});
+    window.scrollTo({top:0,behavior:'instant'});
+    return true;
+  }
+  function navigate(next) {
+    if(!loggedIn||saving||refreshing||editorPending) return false;
+    if (!ownerViews.includes(next)) next = 'overview';
+    if (next === view) {
+      setOwnerNavigationOpen(false, true);
+      return true;
+    }
+    if (hasDirtyInlineForm()) {
+      const focusToggle = ownerNavToggle && ownerNavToggle.offsetParent !== null ? ownerNavToggle : null;
+      confirmation('Leave without saving?',`<p>You have changes in this section that have not been saved.</p><p>Continue to <strong>${esc(currentViewButtonLabel(next))}</strong> and discard those entries?</p>`,async()=>{
+        performNavigation(next);
+        if (focusToggle) editorOpener = focusToggle;
+      },'Discard entries and continue');
+      return false;
+    }
+    return performNavigation(next);
+  }
+  function currentViewButtonLabel(next) {
+    const button = ownerNavigation?.querySelector(`[data-view="${next}"]`);
+    return button?.querySelector('span:last-child')?.textContent?.trim() || button?.textContent?.trim() || 'the selected section';
+  }
+  function confirmPageLeave(href,label='that page') {
+    confirmation('Leave without saving?',`<p>You have changes in this section that have not been saved.</p><p>Continue to <strong>${esc(label)}</strong> and discard those entries?</p>`,async()=>{
+      allowPageLeave = true;
+      window.location.assign(href);
+    },'Discard entries and leave');
+  }
+  function isSameDocumentAnchor(link) {
+    try {
+      const current = new URL(window.location.href);
+      const target = new URL(link.href, current);
+      return Boolean(target.hash) && target.origin === current.origin && target.pathname === current.pathname && target.search === current.search;
+    } catch { return false; }
+  }
   function render() {
     if(!state || !loggedIn) return;
     $$('[data-view]').forEach(b => { if(b.dataset.view === view) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+    syncOwnerNavigation();
     const screens = {overview:renderOverview,menu:renderMenu,music:renderMusic,hours:renderHours,inventory:renderInventory,purchases:renderPurchases,team:renderTeam,activity:renderActivity,settings:renderSettings,website:renderWebsite,schedule:()=>extra.renderSchedule(),backups:()=>extra.renderBackups()};
     workspace.innerHTML = (screens[view] || renderOverview)();
     if(needsRefresh) workspace.insertAdjacentHTML('afterbegin',`<p class="notice"><strong>Shared state needs to be reloaded.</strong> The last save response could not be confirmed. ${button('Reload workspace','refresh-workspace','','secondary')}</p>`);
@@ -383,6 +547,12 @@
     const a=document.createElement('a');a.href=url;a.download=o.number+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);status('Demo order CSV downloaded. No supplier was contacted.');
   }
   document.addEventListener('click',async event=>{
+    const link=event.target.closest('a[href]');
+    if(link&&loggedIn&&hasDirtyInlineForm()&&!isSameDocumentAnchor(link)&&!link.hasAttribute('download')&&link.target!=='_blank'){
+      event.preventDefault();
+      confirmPageLeave(link.href,link.textContent.trim() || 'that page');
+      return;
+    }
     const nav=event.target.closest('[data-view]');if(nav){navigate(nav.dataset.view);return;}
     const control=event.target.closest('[data-action]');if(!control||!loggedIn)return;
     const action=control.dataset.action,id=control.dataset.id;
@@ -430,19 +600,34 @@
       }else{state.settings={...state.settings,phone:required(data.phone,'Phone'),address:required(data.address,'Address'),announcement:data.announcement.trim()};await persist('Updated guest-facing details');}
     }catch(error){status(error.message);}
   });
-  function showOwner(){loggedIn=true;$('#login-view').hidden=true;$('#owner-shell').hidden=false;syncSkipLink(true);view=['overview','menu','music','hours','inventory','purchases','team','activity','settings','website','schedule','backups'].includes(location.hash.slice(1))?location.hash.slice(1):'overview';render();workspace.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
-  function showLogin(message=''){loggedIn=false;$('#owner-shell').hidden=true;$('#login-view').hidden=false;syncSkipLink(false);if(dialog.open)dialog.close();$('#login-form').reset();$('#login-error').textContent=message;$('#owner-username').focus();window.scrollTo({top:0,behavior:'instant'});}
-  $('#logout').addEventListener('click',async event=>{const control=event.currentTarget;control.disabled=true;try{await API.logout();}finally{window.location.assign('index.html?logged-out=1');}});
+  function showOwner(){loggedIn=true;$('#login-view').hidden=true;$('#owner-shell').hidden=false;syncSkipLink(true);view=ownerViews.includes(location.hash.slice(1))?location.hash.slice(1):'overview';setOwnerNavigationOpen(false);render();workspace.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
+  function showLogin(message=''){loggedIn=false;setOwnerNavigationOpen(false);$('#owner-shell').hidden=true;$('#login-view').hidden=false;syncSkipLink(false);if(dialog.open)dialog.close();$('#login-form').reset();$('#login-error').textContent=message;$('#owner-username').focus();window.scrollTo({top:0,behavior:'instant'});}
+  async function completeLogout(control=$('#logout')) {
+    control.disabled=true;
+    try{await API.logout();}finally{allowPageLeave=true;window.location.assign('index.html?logged-out=1');}
+  }
+  $('#logout').addEventListener('click',async event=>{
+    const control=event.currentTarget;
+    if(hasDirtyInlineForm()){
+      confirmation('Log out without saving?','<p>You have changes in this section that have not been saved.</p><p>Logging out will discard those entries.</p>',async()=>{await completeLogout(control);},'Discard entries and log out');
+      return;
+    }
+    await completeLogout(control);
+  });
   $('#login-form').addEventListener('submit',async event=>{
     event.preventDefault();const data=Object.fromEntries(new FormData(event.target));const b=$('button[type=submit]',event.target);b.disabled=true;
     try{await API.login(data.username,data.password);applyWorkspace(await API.getWorkspace());$('#login-error').textContent='';event.target.reset();showOwner();}
     catch(error){$('#login-error').textContent=error.message;}finally{b.disabled=false;}
   });
+  async function discardDirtyAndRefresh() {
+    const refreshed = await refreshWorkspace({quiet:false,discardDirty:true});
+    if (!refreshed) throw new Error('The shared workspace could not be refreshed. Your unsaved entries are still in place. Close this message to continue editing, or try again.');
+  }
   async function refreshWorkspace({quiet=true,discardDirty=false}={}) {
     if(!loggedIn||saving||refreshing||(dialog.open&&!discardDirty))return false;
     if(hasDirtyInlineForm()&&!discardDirty){
       if(quiet)return false;
-      confirmation('Reload the shared workspace?','<p>You have entries in this form that have not been saved. Reloading will discard those entries and load the latest confirmed workspace.</p>',async()=>{await refreshWorkspace({quiet:false,discardDirty:true});},'Discard entries and reload');
+      confirmation('Reload the shared workspace?','<p>You have entries in this form that have not been saved. Reloading will discard those entries and load the latest confirmed workspace.</p>',discardDirtyAndRefresh,'Discard entries and reload');
       return false;
     }
     refreshing=true;
@@ -474,6 +659,16 @@
   }
   window.addEventListener('focus',()=>{if(loggedIn&&!dialog.open&&!saving)refreshWorkspace({quiet:true});});
   window.addEventListener('pageshow',()=>{if(loggedIn&&!dialog.open&&!saving)refreshWorkspace({quiet:true});});
+  window.addEventListener('hashchange',()=>{
+    if(!loggedIn)return;
+    const requested=location.hash.slice(1);
+    if(!ownerViews.includes(requested)||requested===view)return;
+    history.replaceState(null,'','#'+view);
+    navigate(requested);
+  });
+  function shouldWarnBeforeUnload(){return !allowPageLeave&&(editorDirty||editorPending||saving||hasDirtyInlineForm());}
+  window.addEventListener('beforeunload',event=>{if(shouldWarnBeforeUnload()){event.preventDefault();event.returnValue='';}});
   extra=window.OwnerTools?.create({getState:()=>state,replaceState:next=>{state=next;},persist,status,openEditor,confirmation,esc,button,field,area,select,check,heading,panel,empty,dateLabel,dayKey,requireCurrentState,render,navigate});
+  initializeOwnerNavigation();
   initialize();
 })();
