@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#211f19">
+  <title>Homepage Direction Comparison | Tolbert’s</title>
+  <meta name="description" content="Compare the current Tolbert’s redesign homepage with a separate editorial direction inspired by the owner-review page.">
+  <link rel="icon" href="assets/favicon.svg">
+  <link rel="stylesheet" href="fonts.css">
+  <link rel="stylesheet" href="compare-homepages.css?v=1">
+  <script src="compare-homepages.js?v=1" defer></script>
+</head>
+<body data-active-preview="current">
+  <a class="skip-link" href="#comparison">Skip to the homepage comparison</a>
+
+  <header class="comparison-header">
+    <a class="comparison-brand" href="proposal.html" aria-label="Back to the Tolbert’s owner review">
+      <img src="assets/logo-white.png" width="162" height="78" alt="Tolbert’s">
+      <span>DESIGN COMPARISON</span>
+    </a>
+    <div class="comparison-heading">
+      <p>HOMEPAGE STUDY</p>
+      <h1>Same restaurant. <em>Two directions.</em></h1>
+    </div>
+    <a class="back-link" href="proposal.html">Back to owner review <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main id="comparison">
+    <section class="comparison-controls" aria-label="Comparison controls">
+      <fieldset class="viewport-controls">
+        <legend>Preview width</legend>
+        <button type="button" data-preview-width="1280" aria-pressed="true">
+          <span>Desktop</span><small>1280</small>
+        </button>
+        <button type="button" data-preview-width="768" aria-pressed="false">
+          <span>Tablet</span><small>768</small>
+        </button>
+        <button type="button" data-preview-width="390" aria-pressed="false">
+          <span>Phone</span><small>390</small>
+        </button>
+      </fieldset>
+
+      <fieldset class="direction-controls">
+        <legend>Shown direction</legend>
+        <button type="button" data-direction="current" aria-pressed="true">A · Current</button>
+        <button type="button" data-direction="editorial" aria-pressed="false">B · New</button>
+      </fieldset>
+
+      <button class="reset-button" type="button" id="reset-previews">Reset homepages</button>
+    </section>
+
+    <section class="preview-grid" aria-label="Interactive homepage previews">
+      <article class="preview-panel preview-panel-current" data-preview="current">
+        <header class="preview-label">
+          <div>
+            <span class="preview-letter">A</span>
+            <div>
+              <p>CURRENT HOMEPAGE</p>
+              <h2>Bold parlor collage</h2>
+            </div>
+          </div>
+          <a href="index.html" target="_blank" rel="noopener">Open full size <span aria-hidden="true">↗</span></a>
+        </header>
+        <div class="preview-stage">
+          <div class="preview-viewport">
+            <iframe src="index.html" data-homepage-src="index.html" title="Current Tolbert’s homepage, interactive preview" loading="eager"></iframe>
+          </div>
+        </div>
+      </article>
+
+      <article class="preview-panel preview-panel-editorial" data-preview="editorial">
+        <header class="preview-label">
+          <div>
+            <span class="preview-letter">B</span>
+            <div>
+              <p>NEW DIRECTION</p>
+              <h2>Editorial owner-review style</h2>
+            </div>
+          </div>
+          <a href="home-editorial.html" target="_blank" rel="noopener">Open full size <span aria-hidden="true">↗</span></a>
+        </header>
+        <div class="preview-stage">
+          <div class="preview-viewport">
+            <iframe src="home-editorial.html" data-homepage-src="home-editorial.html" title="Editorial Tolbert’s homepage direction, interactive preview" loading="eager"></iframe>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <aside class="review-note" aria-label="How to compare the directions">
+      <p class="eyebrow">WHAT TO LOOK FOR</p>
+      <p>Compare the first impression, how quickly you find today’s music and visit details, how the photography carries the Tolbert’s story, and whether each page still feels easy to use after the visual change.</p>
+    </aside>
+  </main>
+
+  <footer>
+    <p>Independent homepage direction study · The existing homepage remains available as Direction A.</p>
+    <a href="proposal.html">Return to the owner review <span aria-hidden="true">↗</span></a>
+  </footer>
+</body>
+</html>
