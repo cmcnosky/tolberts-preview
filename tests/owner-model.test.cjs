@@ -154,6 +154,68 @@ test("rejects malformed browser state before the owner interface uses it", () =>
   });
 });
 
+test("enforces the owner form and collection bounds without partial mutations", () => {
+  const recordCases = [
+    (subject) => { subject.menu[0].name = "x".repeat(101); },
+    (subject) => { subject.menu[0].category = "x".repeat(101); },
+    (subject) => { subject.menu[0].description = "x".repeat(1001); },
+    (subject) => { subject.menu[0].price = "x".repeat(181); },
+    (subject) => { subject.menu[0].imageAlt = "x".repeat(241); },
+    (subject) => { subject.events[0].name = "x".repeat(121); },
+    (subject) => { subject.events[0].genre = "x".repeat(141); },
+    (subject) => { subject.settings.phone = "x".repeat(41); },
+    (subject) => { subject.settings.address = "x".repeat(201); },
+    (subject) => { subject.settings.announcement = "x".repeat(1001); },
+    (subject) => { subject.inventory[0].name = "x".repeat(101); },
+    (subject) => { subject.inventory[0].vendor = "x".repeat(101); },
+    (subject) => { subject.inventory[0].unit = "x".repeat(41); },
+    (subject) => { subject.team[0].name = "x".repeat(101); },
+    (subject) => { subject.activity.push({ id: "activity-long", message: "x".repeat(501), createdAt: new Date().toISOString() }); },
+    (subject) => { subject.exceptions.push({ id: "hours-long", date: "2026-12-24", label: "x".repeat(101), open: "11:00", close: "18:00", closed: false }); }
+  ];
+  recordCases.forEach((makeInvalid) => {
+    const subject = state();
+    makeInvalid(subject);
+    assert.equal(Model.isUsableState(subject), false);
+  });
+
+  const tooManyMenuItems = state();
+  tooManyMenuItems.menu = Array.from({ length: Model.limits.menuItems + 1 }, (_, index) => ({
+    ...tooManyMenuItems.menu[0],
+    id: `menu-cap-${index}`
+  }));
+  assert.equal(Model.isUsableState(tooManyMenuItems), false);
+
+  const tooManyOrders = state();
+  tooManyOrders.orders = Array.from({ length: Model.limits.orders }, (_, index) => ({ id: `placeholder-${index}` }));
+  const ordersBefore = JSON.stringify(tooManyOrders.orders);
+  const item = firstVendorItem(tooManyOrders);
+  assert.throws(
+    () => Model.createOrder(tooManyOrders, { vendor: item.vendor, lines: [{ itemId: item.id, quantity: 1 }] }),
+    /up to 1000 purchase orders/i
+  );
+  assert.equal(JSON.stringify(tooManyOrders.orders), ordersBefore);
+
+  const tooManyLines = state();
+  const linesBefore = JSON.stringify(tooManyLines.orders);
+  assert.throws(
+    () => Model.createOrder(tooManyLines, {
+      vendor: firstVendorItem(tooManyLines).vendor,
+      lines: Array.from({ length: Model.limits.orderLines + 1 }, () => ({
+        itemId: firstVendorItem(tooManyLines).id,
+        quantity: 1
+      }))
+    }),
+    /up to 1000 line items/i
+  );
+  assert.equal(JSON.stringify(tooManyLines.orders), linesBefore);
+
+  const longActivity = state();
+  const activityBefore = JSON.stringify(longActivity.activity);
+  assert.throws(() => Model.addActivity(longActivity, "x".repeat(501)), /500 characters or fewer/i);
+  assert.equal(JSON.stringify(longActivity.activity), activityBefore);
+});
+
 test("seeds HTML-compatible hours and represents a midnight close as 00:00", () => {
   const subject = state();
   const validClock = /^(?:[01]\d|2[0-3]):[0-5]\d$/;

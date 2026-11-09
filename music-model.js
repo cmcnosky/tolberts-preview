@@ -147,8 +147,12 @@ const MusicModel = (() => {
 
   function todayEvents(events, now = Date.now()) {
     const today = chicagoDate(now);
+    const nowTime = new Date(now).getTime();
     return sortEvents((Array.isArray(events) ? events : []).filter(event =>
-      event && event.date === today && hasUsableSchedule(event)
+      event && hasUsableSchedule(event) && (
+        event.date === today ||
+        (eventStart(event).getTime() <= nowTime && eventEnd(event).getTime() > nowTime)
+      )
     ));
   }
 

@@ -48,7 +48,36 @@
   const MAX_STOCK_VALUE = 100000;
   const MAX_UNIT_COST = 100000;
   const MAX_ORDER_QUANTITY = 10000;
+  // These collection limits are deliberately well above the needs of one
+  // restaurant. They keep imported backups and authenticated saves from
+  // turning validation or rendering into unbounded work.
+  const MAX_MENU_ITEMS = 2000;
+  const MAX_EVENTS = 2000;
+  const MAX_EXCEPTIONS = 1000;
+  const MAX_INVENTORY_ITEMS = 1000;
+  const MAX_ORDERS = 1000;
+  const MAX_ORDER_LINES = 1000;
+  const MAX_TEAM_MEMBERS = 500;
+  const MAX_ACTIVITY = 100;
   const MAX_SHIFTS = 1000;
+  // These match the owner form controls. Backup imports and API saves must
+  // obey the same contract even when browser maxlength checks are bypassed.
+  const MAX_MENU_NAME_LENGTH = 100;
+  const MAX_CATEGORY_LENGTH = 100;
+  const MAX_DESCRIPTION_LENGTH = 1000;
+  const MAX_PRICE_LENGTH = 180;
+  const MAX_IMAGE_ALT_LENGTH = 240;
+  const MAX_EVENT_NAME_LENGTH = 120;
+  const MAX_GENRE_LENGTH = 140;
+  const MAX_EXCEPTION_LABEL_LENGTH = 100;
+  const MAX_INVENTORY_NAME_LENGTH = 100;
+  const MAX_VENDOR_LENGTH = 100;
+  const MAX_UNIT_LENGTH = 40;
+  const MAX_TEAM_NAME_LENGTH = 100;
+  const MAX_ACTIVITY_MESSAGE_LENGTH = 500;
+  const MAX_PHONE_LENGTH = 40;
+  const MAX_ADDRESS_LENGTH = 200;
+  const MAX_ANNOUNCEMENT_LENGTH = 1000;
   const MAX_CONTENT_FIELDS = 100;
   const MAX_CONTENT_VALUE_LENGTH = 5000;
   const MAX_CONTENT_TOTAL_LENGTH = 100000;
@@ -76,6 +105,10 @@
 
   function hasNonBlankStrings(value, fields) {
     return hasStrings(value, fields) && fields.every((field) => value[field].trim().length > 0);
+  }
+
+  function isBoundedString(value, maximum, requireText = false) {
+    return typeof value === "string" && value.length <= maximum && (!requireText || value.trim().length > 0);
   }
 
   function hasUniqueSafeIds(values) {
@@ -208,8 +241,9 @@
     if (!isRecord(value) || value.version !== 1) return false;
     const arrayFields = ["menu", "events", "hours", "exceptions", "inventory", "orders", "team", "activity"];
     if (!arrayFields.every((field) => Array.isArray(value[field]))) return false;
-    if (!hasStrings(value.settings, ["phone", "address", "announcement"]) ||
-        !value.settings.phone.trim() || !value.settings.address.trim()) return false;
+    if (!isBoundedString(value.settings?.phone, MAX_PHONE_LENGTH, true) ||
+        !isBoundedString(value.settings?.address, MAX_ADDRESS_LENGTH, true) ||
+        !isBoundedString(value.settings?.announcement, MAX_ANNOUNCEMENT_LENGTH)) return false;
     if (owns(value.settings, "content") && !isBoundedStringMap(
       value.settings.content, MAX_CONTENT_FIELDS, MAX_CONTENT_VALUE_LENGTH, MAX_CONTENT_TOTAL_LENGTH
     )) return false;
@@ -218,18 +252,29 @@
     )) return false;
     const shifts = owns(value, "shifts") ? value.shifts : [];
     if (!Array.isArray(shifts)) return false;
+    const collectionsWithinLimits =
+      value.menu.length <= MAX_MENU_ITEMS && value.events.length <= MAX_EVENTS &&
+      value.exceptions.length <= MAX_EXCEPTIONS && value.inventory.length <= MAX_INVENTORY_ITEMS &&
+      value.orders.length <= MAX_ORDERS && value.team.length <= MAX_TEAM_MEMBERS &&
+      value.activity.length <= MAX_ACTIVITY && shifts.length <= MAX_SHIFTS;
+    if (!collectionsWithinLimits) return false;
     const idCollections = ["menu", "events", "exceptions", "inventory", "orders", "team", "activity"];
     if (!idCollections.every((field) => hasUniqueSafeIds(value[field]))) return false;
 
     const menuValid = value.menu.every((item) =>
       hasStrings(item, ["id", "category", "name", "description", "price"]) &&
-      item.category.trim() && item.name.trim() && typeof item.available === "boolean" &&
+      isBoundedString(item.category, MAX_CATEGORY_LENGTH, true) &&
+      isBoundedString(item.name, MAX_MENU_NAME_LENGTH, true) &&
+      isBoundedString(item.description, MAX_DESCRIPTION_LENGTH) &&
+      isBoundedString(item.price, MAX_PRICE_LENGTH) && typeof item.available === "boolean" &&
       (!owns(item, "image") || (typeof item.image === "string" && (!item.image || isStoredImage(item.image)))) &&
-      (!owns(item, "imageAlt") || (typeof item.imageAlt === "string" && item.imageAlt.length <= 240))
+      (!owns(item, "imageAlt") || isBoundedString(item.imageAlt, MAX_IMAGE_ALT_LENGTH))
     );
     const eventsValid = value.events.every((event) =>
       hasStrings(event, ["id", "name", "genre", "date", "start", "end", "image", "status"]) &&
-      event.name.trim() && isCivilDate(event.date) && isClock(event.start) && isClock(event.end) &&
+      isBoundedString(event.name, MAX_EVENT_NAME_LENGTH, true) &&
+      isBoundedString(event.genre, MAX_GENRE_LENGTH) &&
+      isCivilDate(event.date) && isClock(event.start) && isClock(event.end) &&
       event.start !== event.end && isStoredImage(event.image) && EVENT_STATUSES.has(event.status)
     );
     const validClock = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
@@ -242,13 +287,16 @@
     );
     const exceptionsValid = value.exceptions.every((exception) =>
       hasStrings(exception, ["id", "date", "label", "open", "close"]) &&
-      exception.label.trim() && typeof exception.closed === "boolean" && isCivilDate(exception.date) &&
+      isBoundedString(exception.label, MAX_EXCEPTION_LABEL_LENGTH, true) &&
+      typeof exception.closed === "boolean" && isCivilDate(exception.date) &&
       validClock.test(exception.open) && validClock.test(exception.close) &&
       (exception.closed || exception.open !== exception.close)
     ) && new Set(value.exceptions.map((entry) => entry.date)).size === value.exceptions.length;
     const inventoryValid = value.inventory.every((item) =>
       hasStrings(item, ["id", "name", "unit", "vendor"]) &&
-      item.name.trim() && item.unit.trim() && item.vendor.trim() &&
+      isBoundedString(item.name, MAX_INVENTORY_NAME_LENGTH, true) &&
+      isBoundedString(item.unit, MAX_UNIT_LENGTH, true) &&
+      isBoundedString(item.vendor, MAX_VENDOR_LENGTH, true) &&
       [item.onHand, item.par, item.reorderAt].every((value) => isNumberInRange(value, MAX_STOCK_VALUE)) &&
       isNumberInRange(item.cost, MAX_UNIT_COST) &&
       (!owns(item, "archived") || typeof item.archived === "boolean") &&
@@ -256,12 +304,15 @@
     );
     const ordersValid = value.orders.every((order) =>
       hasStrings(order, ["id", "number", "vendor", "notes", "status", "createdAt"]) &&
-      /^PO-DEMO-\d+$/.test(order.number) && order.vendor.trim() && order.notes.length <= 1000 && ORDER_STATUSES.has(order.status) &&
+      /^PO-DEMO-\d+$/.test(order.number) &&
+      isBoundedString(order.vendor, MAX_VENDOR_LENGTH, true) && order.notes.length <= 1000 && ORDER_STATUSES.has(order.status) &&
       isIsoTimestamp(order.createdAt) && order.sample === true && hasValidOrderLifecycle(order) &&
-      Array.isArray(order.lines) && order.lines.length > 0 &&
+      Array.isArray(order.lines) && order.lines.length > 0 && order.lines.length <= MAX_ORDER_LINES &&
       new Set(order.lines.map((line) => line && line.itemId)).size === order.lines.length &&
       order.lines.every((line) =>
         hasNonBlankStrings(line, ["itemId", "name", "unit"]) && SAFE_ID.test(line.itemId) &&
+        isBoundedString(line.name, MAX_INVENTORY_NAME_LENGTH, true) &&
+        isBoundedString(line.unit, MAX_UNIT_LENGTH, true) &&
         value.inventory.some((item) => item && item.id === line.itemId && item.vendor === order.vendor) &&
         Number.isInteger(line.quantity) && line.quantity > 0 && line.quantity <= MAX_ORDER_QUANTITY &&
         isNumberInRange(line.unitCost, MAX_UNIT_COST) && Number.isInteger(line.received) &&
@@ -271,10 +322,12 @@
     ) && new Set(value.orders.map((order) => order.number)).size === value.orders.length;
     const teamValid = value.team.some((member) => member && member.id === "steven" && member.role === "Owner" && member.status === "Active") && value.team.every((member) =>
       hasNonBlankStrings(member, ["id", "name", "role", "status"]) &&
+      isBoundedString(member.name, MAX_TEAM_NAME_LENGTH, true) &&
       TEAM_ROLES.has(member.role) && TEAM_STATUSES.has(member.status)
     );
-    const activityValid = value.activity.length <= 100 && value.activity.every((entry) =>
-      hasNonBlankStrings(entry, ["id", "message", "createdAt"]) && isIsoTimestamp(entry.createdAt)
+    const activityValid = value.activity.every((entry) =>
+      hasNonBlankStrings(entry, ["id", "message", "createdAt"]) &&
+      isBoundedString(entry.message, MAX_ACTIVITY_MESSAGE_LENGTH, true) && isIsoTimestamp(entry.createdAt)
     );
     const shiftsValid = shiftsAreValid(shifts, value.team);
     return menuValid && eventsValid && hoursValid && exceptionsValid && inventoryValid && ordersValid && teamValid && activityValid && shiftsValid;
@@ -376,9 +429,10 @@
     if (!state || !Array.isArray(state.activity)) throw new TypeError("A valid activity list is required.");
     const cleanMessage = String(message || "").trim();
     if (!cleanMessage) throw new Error("Activity message is required.");
+    if (cleanMessage.length > MAX_ACTIVITY_MESSAGE_LENGTH) throw new Error("Activity messages must be 500 characters or fewer.");
     const entry = { id: id("activity"), message: cleanMessage, createdAt: new Date().toISOString() };
     state.activity.unshift(entry);
-    if (state.activity.length > 100) state.activity.length = 100;
+    if (state.activity.length > MAX_ACTIVITY) state.activity.length = MAX_ACTIVITY;
     return entry;
   }
 
@@ -463,6 +517,7 @@
     const notes = String(input && input.notes || "").trim();
     if (!vendor) throw new Error("Choose a vendor.");
     if (!requestedLines.length) throw new Error("Add at least one item to the purchase order.");
+    if (requestedLines.length > MAX_ORDER_LINES) throw new Error(`A purchase order supports up to ${MAX_ORDER_LINES} line items.`);
     if (notes.length > 1000) throw new Error("Order notes must be 1,000 characters or fewer.");
 
     const seen = new Set();
@@ -498,6 +553,7 @@
 
   function createOrder(state, input) {
     requireState(state);
+    if (state.orders.length >= MAX_ORDERS) throw new Error(`The workspace supports up to ${MAX_ORDERS} purchase orders.`);
     const { vendor, lines, notes } = normalizeDraftOrderInput(state, input);
 
     const sequence = state.orders.reduce((highest, order) => {
@@ -592,6 +648,17 @@
   }
 
   return {
+    limits: Object.freeze({
+      menuItems: MAX_MENU_ITEMS,
+      events: MAX_EVENTS,
+      exceptions: MAX_EXCEPTIONS,
+      inventoryItems: MAX_INVENTORY_ITEMS,
+      orders: MAX_ORDERS,
+      orderLines: MAX_ORDER_LINES,
+      teamMembers: MAX_TEAM_MEMBERS,
+      activity: MAX_ACTIVITY,
+      shifts: MAX_SHIFTS
+    }),
     createState,
     isUsableState,
     money,

@@ -163,6 +163,11 @@
   });
   function required(value,label) { const text = String(value || '').trim(); if(!text) throw new Error(`${label} is required.`); return text; }
   function numeric(value,label,min=0) { if(value === '' || !Number.isFinite(Number(value)) || Number(value) < min) throw new Error(`${label} must be a number of at least ${min}.`); return Number(value); }
+  function requireCollectionRoom(collection, maximum, label) {
+    if (!Array.isArray(collection) || !Number.isInteger(maximum) || collection.length >= maximum) {
+      throw new Error(`The workspace supports up to ${maximum} ${label}.`);
+    }
+  }
   function requireCurrentState(expected) { if(state!==expected) throw new Error('The shared workspace changed while this editor was open. Reopen it and try again.'); }
   async function readPhoto(file) {
     if(!file || !file.size)return null;
@@ -212,7 +217,7 @@
       const image=upload?await readPhoto(upload):(data.removeImage?'':item?.image || '');
       requireCurrentState(editState);
       const values = {name:required(data.name,'Dish name'),category:required(data.category,'Category'),price:data.price.trim(),description:data.description.trim(),available:!!data.available,image,imageAlt:data.imageAlt.trim()};
-      if(item) Object.assign(item,values); else state.menu.push({id:M.id('menu'),...values}); await persist(`${item ? 'Updated' : 'Added'} ${values.name}`);
+      if(item) Object.assign(item,values); else { requireCollectionRoom(state.menu,M.limits.menuItems,'menu items'); state.menu.push({id:M.id('menu'),...values}); } await persist(`${item ? 'Updated' : 'Added'} ${values.name}`);
     });
   }
   function renderMusic() {
@@ -232,7 +237,7 @@
       requireCurrentState(editState);
       if(data.start === data.end) throw new Error('Start and end times must be different. A set ending earlier than it starts is treated as ending the next day.');
       const values = {name,genre:data.genre.trim(),date:data.date,start:data.start,end:data.end,image,status:data.status};
-      if(item) Object.assign(item,values); else state.events.push({id:M.id('show'),...values}); await persist(`${item ? 'Updated' : 'Added'} show: ${name}`);
+      if(item) Object.assign(item,values); else { requireCollectionRoom(state.events,M.limits.events,'shows'); state.events.push({id:M.id('show'),...values}); } await persist(`${item ? 'Updated' : 'Added'} show: ${name}`);
     });
   }
   function renderHours() {
@@ -246,7 +251,7 @@
       if(state.exceptions.some(e=>e.date===data.date && e.id!==id)) throw new Error('That date already has special hours. Edit the existing entry.');
       const values={date:data.date,label:required(data.label,'Label'),open:data.open,close:data.close,closed:!!data.closed};
       if(!values.closed && values.open===values.close) throw new Error('Opening and closing times must be different.');
-      if(item) Object.assign(item,values); else state.exceptions.push({id:M.id('hours'),...values}); await persist(`Saved special hours for ${dateLabel(data.date)}`);
+      if(item) Object.assign(item,values); else { requireCollectionRoom(state.exceptions,M.limits.exceptions,'special dates'); state.exceptions.push({id:M.id('hours'),...values}); } await persist(`Saved special hours for ${dateLabel(data.date)}`);
     });
   }
   function renderInventory() {
@@ -261,7 +266,7 @@
       const values={name:required(data.name,'Item name'),vendor:required(data.vendor,'Supplier'),unit:required(data.unit,'Unit'),cost:numeric(data.cost,'Cost'),onHand:numeric(data.onHand,'On hand'),reorderAt:numeric(data.reorderAt,'Reorder level'),par:numeric(data.par,'Target stock')};
       if(values.par < values.reorderAt) throw new Error('Target stock must be at least the reorder level.');
       if(item && values.vendor !== item.vendor && state.orders.some(order=>order.lines.some(line=>line.itemId===item.id))) throw new Error('The supplier cannot be changed after this item has been used in a demo order.');
-      if(item) Object.assign(item,values); else state.inventory.push({id:M.id('stock'),...values}); await persist(`Updated stock: ${values.name}`);
+      if(item) Object.assign(item,values); else { requireCollectionRoom(state.inventory,M.limits.inventoryItems,'inventory items'); state.inventory.push({id:M.id('stock'),...values}); } await persist(`Updated stock: ${values.name}`);
     });
   }
   function renderPurchases() {
@@ -303,7 +308,7 @@
   }
   function editTeammate(id) {
     const item=state.team.find(i=>i.id===id);
-    openEditor(item?'Edit demo teammate':'Add demo teammate',`<p class="notice">No invitation or account will be created.</p><div class="field-grid">${field('name','Name',item?.name,'text','required maxlength="100"')}${item?.id==='steven'?'<p class="muted full">Steven keeps full owner access. This changes the display name; the login remains Steven.</p>':select('role','Role',['Owner','Manager','Editor'],item?.role || 'Editor')+select('status','Status',['Active','Inactive'],item?.status || 'Active')}</div>`,async data=>{const values={name:required(data.name,'Name'),role:item?.id==='steven'?'Owner':data.role,status:item?.id==='steven'?'Active':data.status};if(item)Object.assign(item,values);else state.team.push({id:M.id('team'),...values});await persist(`Updated demo teammate: ${values.name}`);});
+    openEditor(item?'Edit demo teammate':'Add demo teammate',`<p class="notice">No invitation or account will be created.</p><div class="field-grid">${field('name','Name',item?.name,'text','required maxlength="100"')}${item?.id==='steven'?'<p class="muted full">Steven keeps full owner access. This changes the display name; the login remains Steven.</p>':select('role','Role',['Owner','Manager','Editor'],item?.role || 'Editor')+select('status','Status',['Active','Inactive'],item?.status || 'Active')}</div>`,async data=>{const values={name:required(data.name,'Name'),role:item?.id==='steven'?'Owner':data.role,status:item?.id==='steven'?'Active':data.status};if(item)Object.assign(item,values);else {requireCollectionRoom(state.team,M.limits.teamMembers,'team members');state.team.push({id:M.id('team'),...values});}await persist(`Updated demo teammate: ${values.name}`);});
   }
   function activityRows(limit=100) { return state.activity.length ? `<div class="row-list">${state.activity.slice(0,limit).map(a=>`<div class="activity-row"><span class="user-avatar" aria-hidden="true">S</span><div><strong>${esc(a.message)}</strong><p>Steven · ${new Date(a.at || a.timestamp || a.createdAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</p></div></div>`).join('')}</div>` : empty('A fresh start.','Saved edits and order actions will appear here.'); }
   function renderActivity() { return heading('A record of the changes.','Your latest 100 workspace actions, shared across signed-in devices.')+panel('Activity.',activityRows()); }

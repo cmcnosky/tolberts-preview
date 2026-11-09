@@ -132,22 +132,25 @@
       const existing = shiftsFor(expected).find((shift) => shift.id === id);
       if (id && !existing) throw new Error("That shift is no longer available.");
       const team = teamFor(expected);
-      if (!team.length) {
-        adapter.status("Add a team member before creating a shift.");
+      const eligibleTeam = existing
+        ? team.filter((member) => member.status === "Active" || member.id === existing.memberId)
+        : team.filter((member) => member.status === "Active");
+      if (!eligibleTeam.length) {
+        adapter.status("Add or reactivate a team member before creating a shift.");
         adapter.navigate("team");
         return;
       }
-      const memberOptions = team.map((member) => [
+      const memberOptions = eligibleTeam.map((member) => [
         member.id,
         `${member.name}${member.status === "Inactive" ? " (Inactive)" : ""}`
       ]);
-      const defaultMember = existing?.memberId || team.find((member) => member.status === "Active")?.id || team[0].id;
+      const defaultMember = existing?.memberId || eligibleTeam[0].id;
       const fields = `<div class="field-grid">${
         adapter.select("memberId", "Team member", memberOptions, defaultMember)
       }${adapter.field("date", "Shift date", existing?.date || adapter.dayKey(), "date", "required")}${
         adapter.field("start", "Starts", existing?.start || "11:00", "time", "required")
       }${adapter.field("end", "Ends", existing?.end || "17:00", "time", "required")}${
-        adapter.field("role", "Shift role", existing?.role || team.find((member) => member.id === defaultMember)?.role || "Floor", "text", 'required maxlength="100"')
+        adapter.field("role", "Shift role", existing?.role || eligibleTeam.find((member) => member.id === defaultMember)?.role || "Floor", "text", 'required maxlength="100"')
       }${adapter.area("notes", "Notes", existing?.notes || "", 'maxlength="1000" placeholder="Optional handoff or station note"')}</div><p class="field full muted">Overnight shifts are supported. A team member cannot have overlapping shifts; back-to-back shifts are allowed.</p>`;
 
       adapter.openEditor(existing ? "Edit shift" : "Add a shift", fields, async (data) => {
@@ -238,12 +241,12 @@
       );
       const current = adapter.panel(
         "What this copy contains.",
-        `${summaryGrid(state)}<p class="muted">The JSON file contains this preview workspace: menu edits, shows, hours, special dates, sample inventory and orders, team entries, activity, settings, and schedules. It does not contain the owner password or session token.</p>`,
+        `${summaryGrid(state)}<p class="muted">The JSON file contains this preview workspace: menu edits, shows, hours, special dates, sample inventory and orders, team entries, activity, settings, and schedules. It does not contain the owner password or session token. Photographs are recorded as references; the separate website assets and shared photo storage must also be preserved for complete recovery.</p>`,
         adapter.button("Choose backup file", "backup-import", "", "secondary")
       );
       const boundary = adapter.panel(
         "What remains outside this demo.",
-        `<ul class="backup-boundaries"><li>Tolbert’s official domain, CMS, analytics, and live publishing</li><li>SpotOn orders and customer transactions</li><li>Supplier, POS, payment, and real inventory systems</li><li>Staff invitations and role-enforced accounts</li><li>Time clocks, payroll, messaging, and notifications</li></ul><p class="muted">A backup restores only this preview workspace’s data. It does not connect or update any system listed above.</p>`
+        `<ul class="backup-boundaries"><li>Tolbert’s official restaurant domain, existing CMS migration, analytics, and redirects</li><li>SpotOn orders and customer transactions</li><li>Supplier, POS, payment, and real inventory systems</li><li>Staff invitations and role-enforced accounts</li><li>Time clocks, payroll, messaging, and notifications</li></ul><p class="muted">A backup restores only this preview workspace’s data. It does not connect or update any system listed above.</p>`
       );
       const importControl = `<input id="owner-backup-file" class="owner-tools-file" type="file" accept="application/json,.json" hidden><p class="notice owner-tools-disclosure"><strong>Shared preview workspace.</strong> Successful saves sync across devices. Downloaded backups stay on the device where you save them; treat those files as private if they contain business-style notes.</p>`;
       return `<div class="owner-tools backup-tools">${heading}${importControl}<div class="split">${current}${boundary}</div></div>`;

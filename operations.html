@@ -29,7 +29,7 @@
 <body>
   <main>
     <a class="back" href="proposal.html">← The owner proposal</a>
-    <p class="eyebrow">OWNER REVIEW · NOVEMBER 6, 2026</p>
+    <p class="eyebrow">OWNER REVIEW · NOVEMBER 9, 2026</p>
     <h1>Keep it useful<br>after launch.</h1>
     <p class="lede">A restaurant website is only as dependable as its menu, hours, show listings, and contact routes. This plan turns the working demonstration into a system the Tolbert’s team can own and keep current.</p>
 
@@ -45,7 +45,7 @@
     <h2>What the working preview demonstrates</h2>
     <ul>
       <li>A complete HTML menu with prices, categories, search, and shareable filtered links.</li>
-      <li>A music finder that reads the restaurant’s public event feed, removes ended shows, labels freshness, and provides a dated fallback and official-calendar route when live data is unavailable.</li>
+      <li>A music finder that uses the shared owner-maintained schedule, removes ended shows, and identifies its source. The original public feed and dated saved lineup provide fallbacks when the shared service cannot be reached; the official calendar remains linked.</li>
       <li>Individual show planning with menu, phone, directions, a shareable link, and a calendar reminder.</li>
       <li>Today’s posted hours in Grapevine’s time zone, plus full weekly hours and visit information.</li>
       <li>Clear handoffs to the existing SpotOn ordering, telephone, directions, newsletter, and social destinations.</li>
@@ -54,7 +54,7 @@
 
     <div class="note"><strong>Use the shared owner interface:</strong> <a href="owner.html">Log in to the owner workspace</a> with Steven’s private credentials. Saved dishes, photographs, website copy, hours, and shows update this public GitHub website and are available after signing in from another device. Inventory, purchasing, staff records, schedules, and activity remain private. Supplier submissions, payments, real inventory systems, payroll, and staff notifications remain unconnected. Restoring a backup replaces the shared workspace after review and a recovery download.</div>
 
-    <p>The expanded workspace has 40 bounded website text/link fields, seven website-photograph controls, and optional photographs on individual dishes. Its 12 signed-in sections were checked at 320, 768, and 1280 CSS pixels without horizontal page overflow or broken loaded images in those 36 recorded observations. Seventy-seven named automated cases cover the menu, feed, music behavior, management model, and editable-content contract. These checks demonstrate the preview; they are not a security review or production acceptance.</p>
+    <p>The expanded workspace has 40 bounded website text/link fields, seven website-photograph controls, and optional photographs on individual dishes. Its 12 signed-in sections were checked at 320, 768, and 1280 CSS pixels without horizontal page overflow or broken loaded images in those 36 recorded observations. Automated checks cover menu search, feed and music behavior, shared publishing, data validation, and the editable-content contract. The dated results and limits are recorded in the <a href="audit.html">audit</a>. These checks demonstrate the preview; they are not a security review or production acceptance.</p>
 
     <h2>Who changes what</h2>
     <table>
@@ -64,12 +64,12 @@
       <tbody>
         <tr>
           <td>Menu and prices</td>
-          <td data-label="Working preview">Reviewed entries in <code>menu-data.json</code>; <code>scripts/build-menu.py</code> regenerates the page while preserving its design.</td>
+          <td data-label="Working preview">Steven’s confirmed menu edits are saved to the shared database and appear on the public preview. Packaged menu data is an initial baseline and outage fallback; changing that file alone does not replace shared records.</td>
           <td data-label="Production agreement">Choose one approved source of truth and a staff editor. Resolve PDF and SpotOn discrepancies before publication, then provide a routine editing and approval workflow.</td>
         </tr>
         <tr>
           <td>Shows</td>
-          <td data-label="Working preview">Reads the public WordPress event feed. The saved fallback contains 12 events checked November 6, 2026 and is always identified as saved data.</td>
+          <td data-label="Working preview">Uses shows saved in the shared owner workspace. The original WordPress feed and packaged November 6 lineup remain fallbacks. Website edits do not automatically update the separate official calendar.</td>
           <td data-label="Production agreement">Keep the owner’s established show-entry process where it works. Confirm feed access, fields, caching, cancellation handling, artist-image standards, and the person responsible for changes.</td>
         </tr>
         <tr>
@@ -98,13 +98,13 @@
     <h2>The production sequence</h2>
     <ol>
       <li><strong>Confirm the facts and owners.</strong> Reconcile prices, ingredients, hours, and show details. The Chili Verde disagreement between published sources is one concrete issue that needs an owner decision.</li>
-      <li><strong>Connect only the approved systems.</strong> Preserve SpotOn, analytics, newsletter, event publishing, and existing contact delivery unless the owners deliberately replace them. Treat staff accounts, vendors, payments, inventory, payroll, and notifications as separate scoped integrations with their own security and acceptance requirements.</li>
+      <li><strong>Connect only the approved systems.</strong> Preserve SpotOn, analytics, newsletter, event publishing, and existing contact delivery unless the owners deliberately replace them. Staff accounts, vendors, payments, inventory, payroll, and notifications need provider access, connection work, and their own acceptance checks. Integration labor is included in the proposed customization periods; approved outside service charges remain separate.</li>
       <li><strong>Test the real operation.</strong> Verify actual inquiry delivery and external handoffs. Test physical phones, major browsers, keyboard and screen-reader use, enlarged text, and representative network conditions.</li>
       <li><strong>Migrate with a recovery path.</strong> Preserve or redirect useful URLs, publish an identifiable version, verify the official domain, and document backup and rollback.</li>
       <li><strong>Train with a real update and recovery.</strong> Have the named staff editor change an actual menu item, special-hours exception, or show, verify the published result, and complete an owner-approved backup/rollback exercise before handoff is accepted.</li>
     </ol>
 
-    <h2>Measure the first 30 days</h2>
+    <h2>The proposed offer</h2><p><strong>Build price: fully negotiable.</strong> A complimentary supported evaluation includes one agreed preview change before purchase. From the agreed official launch date, the first three calendar months include all website customization and care at no additional labor charge. Optional care from month four is <strong>$200 per month</strong>, including all requested website changes with no hourly cap or per-change labor fee. Priorities and timing are agreed together; outside service charges require approval and remain separate.</p><p>Chris aims to acknowledge requests within 30 minutes during agreed support hours. This is a target, not a completion deadline or 24-hour coverage. Care is month to month with no automatic enrollment; editor access and the agreed handoff do not depend on buying care. Active hosting and data services remain necessary.</p><h2>Data and photograph recovery</h2><p>The workspace export contains records and photo references. It does not independently copy the photo object store, account credentials, deployment configuration, or provider infrastructure. The launch handoff must cover those assets and a tested recovery process, with custody and recurring checks agreed in writing.</p><h2>Measure the first 30 days</h2>
     <p>Record a comparable pre-launch baseline, then measure menu searches, show-detail views, directions, tap-to-call, order handoffs, calendar saves, and completed inquiries. Review broken paths, content-update effort, traffic mix, and event timing alongside those actions.</p>
     <p>These are activity signals. They are not completed purchases or visits, and the preview contains no analytics collector or revenue result. Any financial case should use project cost and verified business inputs supplied by Tolbert’s.</p>
 

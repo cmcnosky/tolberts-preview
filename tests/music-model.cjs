@@ -75,6 +75,21 @@ test('today events use the Chicago civil date, retain ended sets, and sort by st
   assert.equal(Music.isPending(Music.todayEvents(events, now)[0], now), false);
 });
 
+test('today events keep a previous-date overnight set only while it is still running', () => {
+  const events = [
+    show({name: 'Late Saturday', date: '2026-11-07', start: '11:00 pm', end: '1:00 am'}),
+    show({name: 'Sunday Night', date: '2026-11-08', start: '7:00 pm', end: '9:00 pm'})
+  ];
+  assert.deepEqual(
+    Music.todayEvents(events, new Date('2026-11-08T06:30:00Z')).map(event => event.name),
+    ['Late Saturday', 'Sunday Night']
+  );
+  assert.deepEqual(
+    Music.todayEvents(events, new Date('2026-11-08T07:30:00Z')).map(event => event.name),
+    ['Sunday Night']
+  );
+});
+
 test('today events never substitute the next date when today has no listing', () => {
   const now = new Date('2026-11-03T18:00:00Z'); // Noon Central on November 3.
   const events = [

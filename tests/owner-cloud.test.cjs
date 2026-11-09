@@ -5,6 +5,8 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const source = fs.readFileSync(path.join(__dirname, '..', 'shared-api.js'), 'utf8');
+const ownerSource = fs.readFileSync(path.join(__dirname, '..', 'owner.js'), 'utf8');
+const toolsSource = fs.readFileSync(path.join(__dirname, '..', 'owner-tools.js'), 'utf8');
 
 function storage(initial = {}) {
   const values = new Map(Object.entries(initial));
@@ -164,4 +166,15 @@ test('expired stored sessions are removed before an authenticated fetch begins',
   await assert.rejects(api.getWorkspace(), (error) => error.status === 401);
   assert.equal(fetched, false);
   assert.deepEqual(sessionStorage.snapshot(), {});
+});
+
+test('owner additions honor model collection limits and recovery copy names external photo storage', () => {
+  for (const limit of ['menuItems', 'events', 'exceptions', 'inventoryItems', 'teamMembers']) {
+    assert.match(ownerSource, new RegExp(`requireCollectionRoom\\([^\\n]+M\\.limits\\.${limit}`));
+  }
+  assert.match(toolsSource, /member\.status === "Active"/);
+  assert.match(toolsSource, /Photographs are recorded as references/);
+  assert.match(toolsSource, /shared photo storage must also be preserved for complete recovery/);
+  assert.match(toolsSource, /official restaurant domain, existing CMS migration, analytics, and redirects/);
+  assert.doesNotMatch(toolsSource, /official domain, CMS, analytics, and live publishing/);
 });

@@ -513,3 +513,7 @@ footer .footer-note { margin-top: 0; }
   .screenshots, .scope, footer { color: var(--ink); background: #fff; }
   .phone-frame { box-shadow: none; }
 }
+
+/* Keep the evaluation and care offer readable as separate decisions. */
+#offer p + p { margin-top: .95rem; }
+#offer a { text-decoration: underline; text-underline-offset: .2em; }
