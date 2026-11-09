@@ -78,6 +78,8 @@
   const MAX_PHONE_LENGTH = 40;
   const MAX_ADDRESS_LENGTH = 200;
   const MAX_ANNOUNCEMENT_LENGTH = 1000;
+  const MAX_ASSET_REFERENCE_LENGTH = 240;
+  const MAX_ORDER_NUMBER_LENGTH = 64;
   const MAX_CONTENT_FIELDS = 100;
   const MAX_CONTENT_VALUE_LENGTH = 5000;
   const MAX_CONTENT_TOTAL_LENGTH = 100000;
@@ -151,7 +153,7 @@
 
   function isStoredImage(value) {
     if (typeof value !== "string") return false;
-    if (/^assets\/[a-zA-Z0-9._-]+$/.test(value)) return true;
+    if (value.length <= MAX_ASSET_REFERENCE_LENGTH && /^assets\/[a-zA-Z0-9._-]+$/.test(value)) return true;
     if (/^shared:[a-f0-9]{64}\.(?:webp|png|jpg)$/.test(value)) return true;
     return value.length <= 850000 && /^data:image\/(?:png|jpeg|webp);base64,[a-zA-Z0-9+/=]+$/i.test(value);
   }
@@ -304,7 +306,7 @@
     );
     const ordersValid = value.orders.every((order) =>
       hasStrings(order, ["id", "number", "vendor", "notes", "status", "createdAt"]) &&
-      /^PO-DEMO-\d+$/.test(order.number) &&
+      isBoundedString(order.number, MAX_ORDER_NUMBER_LENGTH, true) && /^PO-DEMO-\d+$/.test(order.number) &&
       isBoundedString(order.vendor, MAX_VENDOR_LENGTH, true) && order.notes.length <= 1000 && ORDER_STATUSES.has(order.status) &&
       isIsoTimestamp(order.createdAt) && order.sample === true && hasValidOrderLifecycle(order) &&
       Array.isArray(order.lines) && order.lines.length > 0 && order.lines.length <= MAX_ORDER_LINES &&

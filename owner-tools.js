@@ -166,7 +166,7 @@
         };
         if (existing) input.id = existing.id;
         M.upsertShift(current, input);
-        if (await adapter.persist(`${existing ? "Updated" : "Added"} sample shift for ${memberName(current, input.memberId)}`)) {
+        if (await adapter.persist()) {
           adapter.status(`${existing ? "Updated" : "Added"} shift for ${memberName(adapter.getState(), input.memberId)} · saved to the shared workspace.`);
         }
       }, existing ? "Save shift" : "Add shift");
@@ -184,7 +184,7 @@
         async () => {
           adapter.requireCurrentState(expected);
           M.removeShift(adapter.getState(), shift.id);
-          if (await adapter.persist(`Removed sample shift for ${name}`)) adapter.status(`Removed shift for ${name} · saved to the shared workspace.`);
+          if (await adapter.persist()) adapter.status(`Removed shift for ${name} · saved to the shared workspace.`);
         },
         "Remove shift"
       );

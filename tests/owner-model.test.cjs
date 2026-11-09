@@ -216,6 +216,31 @@ test("enforces the owner form and collection bounds without partial mutations", 
   assert.equal(JSON.stringify(longActivity.activity), activityBefore);
 });
 
+test("bounds packaged image references and generated-order identifiers", () => {
+  const exact = state();
+  exact.events[0].image = `assets/${"a".repeat(233)}`;
+  const item = firstVendorItem(exact);
+  const order = Model.createOrder(exact, {
+    vendor: item.vendor,
+    lines: [{ itemId: item.id, quantity: 1 }]
+  });
+  order.number = `PO-DEMO-${"1".repeat(56)}`;
+  assert.equal(Model.isUsableState(exact), true);
+
+  const longAsset = state();
+  longAsset.events[0].image = `assets/${"a".repeat(234)}`;
+  assert.equal(Model.isUsableState(longAsset), false);
+
+  const longOrderNumber = state();
+  const orderItem = firstVendorItem(longOrderNumber);
+  const longOrder = Model.createOrder(longOrderNumber, {
+    vendor: orderItem.vendor,
+    lines: [{ itemId: orderItem.id, quantity: 1 }]
+  });
+  longOrder.number = `PO-DEMO-${"1".repeat(57)}`;
+  assert.equal(Model.isUsableState(longOrderNumber), false);
+});
+
 test("seeds HTML-compatible hours and represents a midnight close as 00:00", () => {
   const subject = state();
   const validClock = /^(?:[01]\d|2[0-3]):[0-5]\d$/;
