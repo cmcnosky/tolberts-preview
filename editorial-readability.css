@@ -1,0 +1,176 @@
+/* Readability and section rhythm for the current editorial design.
+   Keep the historical homepage and the print layouts unchanged. */
+@media screen {
+  :is(.editorial-home,.menu-page,.music-page) {
+    --line:#95866d;
+    --soft-sage:#e2e7d8;
+    --warm-paper:#fbf4e5;
+  }
+
+  /* Navigation remains compact, with readable labels and the approved wordmark. */
+  :is(.editorial-home,.menu-page,.music-page) .desktop-nav { font-size:17px; gap:22px; letter-spacing:.04em; }
+  :is(.editorial-home,.menu-page,.music-page) .header .brand span { font-size:12px; letter-spacing:.04em; }
+  :is(.editorial-home,.menu-page,.music-page) .header .order-link { font-size:17px; }
+  :is(.editorial-home,.menu-page,.music-page) .nav-toggle b { font-size:13px; }
+  :is(.editorial-home,.menu-page,.music-page) .eyebrow { font-size:15px; letter-spacing:.09em; }
+  :is(.editorial-home,.menu-page,.music-page) .button,
+  :is(.editorial-home,.menu-page,.music-page) .text-link { font-size:17px; }
+  :is(.editorial-home,.menu-page,.music-page) .footer-bottom { font-size:14px; line-height:1.7; }
+
+  /* Give each chapter a visible edge; the lighter sections have distinct paper tones. */
+  .editorial-home .visit-summary.with-today { border-bottom:2px solid var(--ink); padding-block:13px; }
+  .editorial-home .today-stage { background:var(--warm-paper); border-bottom:3px solid var(--ink); padding-block:15px; }
+  .editorial-home .parlor-hero { border-bottom:3px solid var(--ink); }
+  .editorial-home .menu-section { background:var(--cream); }
+  .editorial-home .music-section { border-top:3px solid var(--gold); }
+  .editorial-home .visit-section { border-top:3px solid var(--ink); }
+  .editorial-home .story-section { background:var(--soft-sage); border-top:3px solid var(--green); }
+  .editorial-home .gather-section { border-top:3px solid var(--ink); }
+  .editorial-home .faq-section { background:var(--warm-paper); border-top:3px solid var(--ink); }
+  .editorial-home .social-strip { border-top:3px solid var(--ink); }
+  .editorial-home footer { border-top:3px solid var(--ink); }
+  .editorial-home .hours-panel { border:1px solid var(--line); border-top:4px solid var(--ink); }
+  .editorial-home .faqs details { border-bottom:1px solid var(--line); }
+  .editorial-home .lineup-toolbar,
+  .editorial-home .music-note { border-color:#b8b8a2; }
+  .editorial-home #show-grid .show-card { border-top:2px solid #b8b8a2; }
+
+  /* Visit facts and today's act are useful information, not fine print. */
+  .editorial-home .visit-summary.with-today span,
+  .editorial-home .visit-summary.with-today>a:last-child span { font-size:14px; letter-spacing:.05em; }
+  .editorial-home .visit-summary.with-today strong { font-size:18px; }
+  .editorial-home .visit-summary.with-today small { font-size:15px; }
+  .editorial-home .today-stage .today-stage-label,
+  .editorial-home .today-card-label { font-size:15px; }
+  .editorial-home #today-stage-date { font-size:16px; }
+  .editorial-home .today-artist-name { font-size:32px; }
+  .editorial-home .today-artist-time { font-size:18px; }
+  .editorial-home .today-artist-state,
+  .editorial-home .today-stage-source { font-size:15px; }
+  .editorial-home .today-stage .today-calendar { font-size:17px; }
+
+  .editorial-home .heading-aside p,
+  .editorial-home .food-pick p,
+  .editorial-home .menu-bottom>span,
+  .editorial-home .story-copy p,
+  .editorial-home .gather-content p,
+  .editorial-home .faqs p { font-size:17px; line-height:1.7; }
+  .editorial-home .heading-aside p,
+  .editorial-home .food-pick p,
+  .editorial-home .menu-bottom>span,
+  .editorial-home .story-copy p,
+  .editorial-home .faqs p { color:#514b40; }
+  .editorial-home .music-section .heading-aside p { color:var(--cream); }
+  .editorial-home .food-tag,
+  .editorial-home .pick-heading { font-size:15px; }
+  .editorial-home .price small { font-size:14px; }
+  .editorial-home .menu-footnote { font-size:15px; }
+  .editorial-home .lineup-toolbar>span,
+  .editorial-home .show-count,
+  .editorial-home .lineup-bottom p { font-size:14px; }
+  .editorial-home .filter-group button { font-size:16px; }
+  .editorial-home #show-grid .show-date span,
+  .editorial-home #show-grid .show-card .genre { font-size:14px; }
+  .editorial-home #show-grid .show-card .show-time,
+  .editorial-home #show-grid .show-card .show-detail { font-size:16px; }
+  .editorial-home .music-note a,
+  .editorial-home .visit-links { font-size:17px; }
+  .editorial-home .rail-access h3 { font-size:16px; }
+  .editorial-home #rail-access-title { font-size:16px; }
+  .editorial-home .rail-access p,
+  .editorial-home .rail-links a,
+  .editorial-home .rail-vintage a { font-size:16px; }
+  .editorial-home .hours-title span { font-size:14px; }
+  .editorial-home .hours>div { font-size:17px; border-color:var(--line); }
+  .editorial-home .hours-panel>p,
+  .editorial-home .happy-hour small { font-size:15px; }
+  .editorial-home .happy-hour { font-size:17px; }
+  .editorial-home .story-timeline span { font-size:14px; line-height:1.5; }
+  .editorial-home .social-strip a,
+  .editorial-home .footer-top p { font-size:16px; }
+  .editorial-home .gather-content .eyebrow,
+  .editorial-home .footer-top .eyebrow { font-size:15px; }
+
+  /* Search, results and policy text use the same readable scale as the homepage. */
+  .menu-page .menu-page-heading { border-bottom:3px solid var(--gold); }
+  :is(.menu-page,.music-page) .breadcrumb { font-size:15px; }
+  .menu-page .menu-title-row { border-bottom:2px solid #f3e9d299; }
+  .menu-page .menu-title-row p { font-size:17px; }
+  .menu-page .menu-date { font-size:14px; }
+  .menu-page .menu-search-form>label,
+  .menu-page .menu-tools>label { font-size:16px; }
+  .menu-page .menu-sidebar nav>a { font-size:16px; }
+  .menu-page .menu-tools { background:var(--soft-sage); border-block:2px solid var(--green); padding-inline:12px; }
+  .menu-page .menu-tools select { font-size:16px; }
+  .menu-page .menu-result-actions,
+  .menu-page .menu-result-actions button,
+  .menu-page .back-search { font-size:14px; }
+  .menu-page .menu-group + .menu-group { border-top:3px solid var(--green); margin-top:30px; }
+  .menu-page .menu-group>h2 { border-bottom:2px solid var(--line); }
+  .menu-page .menu-item p { font-size:17px; color:#514b40; }
+  .menu-page .item-price { font-size:17px; }
+  .menu-page .menu-page-policy p { font-size:16px; }
+  .music-page .music-section { border-top:3px solid var(--gold); }
+  .music-page .finder-fields label { font-size:16px; }
+  .music-page .filter-group button { font-size:16px; }
+  .music-page .music-results-bar .show-count,
+  .music-page .source-note { font-size:14px; }
+  .music-page .music-results-bar>a { font-size:15px; }
+  .music-page #show-grid { border-top:2px solid #b8b8a2; }
+  .music-page #show-grid .show-card { border-bottom:2px solid #b8b8a2; }
+  .music-page #show-grid .show-card:nth-child(even) { background:#f3e9d208; }
+  .music-page #show-grid .genre,
+  .music-page #show-grid .show-date span { font-size:14px; }
+  .music-page #show-grid .show-time,
+  .music-page #show-grid .show-detail,
+  .music-page .music-help p { font-size:16px; }
+  :is(.menu-page,.music-page) .footer-main p:not(.eyebrow),
+  :is(.menu-page,.music-page) .footer-main>div>a:not(.footer-wordmark) { font-size:16px; }
+  :is(.editorial-home,.music-page) #show-dialog .show-dialog-bar>span,
+  :is(.editorial-home,.music-page) #show-dialog .detail-image-link>span,
+  :is(.editorial-home,.music-page) #show-dialog .detail-genre,
+  :is(.editorial-home,.music-page) #show-dialog .detail-source { font-size:14px; }
+  :is(.editorial-home,.music-page) #show-dialog .detail-note { font-size:15px; }
+
+  /* The editing workspace already has bordered panels and 16px fields. */
+  .editorial-owner .owner-nav-toggle-label { font-size:14px; }
+  .editorial-owner .owner-status { font-size:15px; }
+  .editorial-document main>section,
+  .editorial-document main>h2 { border-top:3px solid var(--sage); padding-top:28px; margin-top:36px; }
+  .editorial-document tbody tr:nth-child(even) { background:var(--paper); }
+  .editorial-document .decision-list span,
+  .editorial-document table { font-size:15px; }
+  .editorial-document code,
+  .editorial-document footer { font-size:14px; }
+}
+
+@media screen and (max-width:1100px) {
+  :is(.editorial-home,.menu-page,.music-page) .desktop-nav { gap:16px; }
+}
+@media screen and (max-width:760px) {
+  /* The full restaurant name is prominent in the page; avoid a tiny duplicate beside the logo. */
+  :is(.editorial-home,.menu-page,.music-page) .header .brand { width:100px; }
+  :is(.editorial-home,.menu-page,.music-page) .header .brand span { display:none; }
+  :is(.editorial-home,.menu-page,.music-page) .header .order-link { font-size:16px; gap:9px; padding:12px; }
+  :is(.editorial-home,.menu-page,.music-page) .mobile-bottom>a { font-size:15px; line-height:1.3; }
+  .editorial-home .visit-summary.with-today { padding-block:13px; }
+  .editorial-home .visit-summary.with-today strong { font-size:16px; }
+  .editorial-home .visit-summary.with-today small { font-size:14px; white-space:normal; }
+  .editorial-home .today-stage { padding-block:15px; }
+  .editorial-home .today-artist-name { font-size:28px; }
+  .editorial-home .today-artist-time { font-size:16px; }
+  .editorial-home .today-card-label { font-size:14px; }
+  .editorial-home .today-stage .today-calendar { font-size:15px; }
+  .editorial-home .parlor-hero .hero-copy>p { font-size:17px; }
+  .editorial-home .hours>div { font-size:16px; }
+  .editorial-home .lineup-bottom { flex-wrap:wrap; }
+  .editorial-home .lineup-bottom p { max-width:none; }
+}
+@media screen and (max-width:400px) {
+  :is(.editorial-home,.menu-page,.music-page) .header { padding-inline:12px; gap:8px; }
+  :is(.editorial-home,.menu-page,.music-page) .header .brand { width:96px; }
+  :is(.editorial-home,.menu-page,.music-page) .header .brand img { width:96px; }
+  :is(.editorial-home,.menu-page,.music-page) .header .order-link { padding:11px 10px; gap:8px; }
+  .editorial-home .visit-summary.with-today { padding-inline:12px; gap:8px; }
+  .editorial-home .visit-summary.with-today>a { padding-right:6px; }
+}
