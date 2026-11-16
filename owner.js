@@ -200,7 +200,7 @@
       ? '<p>Your owner session expired during the save. Copy any values you need, then sign in again and compare them with the last confirmed shared state.</p>'
       : '<p>The save was rejected, conflicted with another device, or could not be confirmed. These values were not reapplied. The editable form below shows the last confirmed shared state.</p>';
     const dismissLabel=deferredLoginMessage?'Done — sign in again':'Dismiss submitted copy';
-    return `<section class="notice" aria-label="Submitted values from the last save attempt"><strong>Keep a copy of these submitted values.</strong>${sessionCopy}<dl class="backup-summary">${rows}</dl>${button(dismissLabel,'dismiss-inline-recovery','','quiet',deferredLoginMessage?'Finish reviewing the submitted values and sign in again':'Dismiss the submitted values copy')}</section>`;
+    return `<section class="notice owner-tools" aria-label="Submitted values from the last save attempt"><strong>Keep a copy of these submitted values.</strong>${sessionCopy}<dl class="backup-summary">${rows}</dl>${button(dismissLabel,'dismiss-inline-recovery','','quiet',deferredLoginMessage?'Finish reviewing the submitted values and sign in again':'Dismiss the submitted values copy')}</section>`;
   }
   function finishInlineSave(recovery,saved) {
     const hadRecovery=Boolean(inlineRecovery);
