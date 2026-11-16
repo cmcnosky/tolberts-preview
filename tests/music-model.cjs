@@ -58,6 +58,28 @@ test('pending events hide ended listings and preserve chronological order', () =
   assert.deepEqual(Music.pendingEvents(events, now).map(event => event.name), ['Tonight', 'Later']);
 });
 
+test('published lineup refresh starts only after a nonempty shared schedule has ended', () => {
+  const now = new Date('2026-11-16T18:00:00Z');
+  const ended = show({name: 'Sunday Artist', date: '2026-11-15', start: '7:00 pm', end: '9:00 pm', status: 'Scheduled'});
+  const future = show({name: 'Monday Artist', date: '2026-11-16', start: '7:00 pm', end: '9:00 pm', status: 'Scheduled'});
+  assert.equal(Music.publishedLineupNeedsRefresh([], [], now), false);
+  assert.equal(Music.publishedLineupNeedsRefresh([ended], [ended], now), true);
+  assert.equal(Music.publishedLineupNeedsRefresh([ended, future], [ended, future], now), false);
+});
+
+test('owner-cancelled shows stay hidden when an ended shared lineup falls back to the official feed', () => {
+  const official = [
+    show({name: 'Jason Elmore', date: '2026-11-16', start: '7:00 pm', end: '9:00 pm'}),
+    show({name: 'Honcho', date: '2026-11-17', start: '7:30 pm', end: '9:45 pm'})
+  ];
+  const published = [
+    {...official[0], name: 'Jasón  Elmore!', status: 'Cancelled'},
+    {...official[1], status: 'Scheduled'}
+  ];
+  assert.deepEqual(Music.excludeCancelledEvents(official, published).map(event => event.name), ['Honcho']);
+  assert.deepEqual(Music.excludeCancelledEvents(official, []), official);
+});
+
 test('today events use the Chicago civil date, retain ended sets, and sort by start', () => {
   const now = new Date('2026-11-04T04:30:00Z'); // 10:30 pm Central on November 3.
   const events = [
@@ -218,14 +240,21 @@ test('calendar description does not add duplicate punctuation to an event genre'
 
 test('saved calendar output states its dated fallback rather than implying a live check', () => {
   const text = Music.buildIcs(show(), {live: false, now: new Date('2026-11-01T18:00:00Z')});
-  assert.match(text.replace(/\r\n /g, ''), /Saved schedule checked November 6\\, 2026\./);
+  assert.match(text.replace(/\r\n /g, ''), /Saved schedule checked November 16\\, 2026\./);
+});
+
+test('calendar identity stays stable when the same show moves between saved and live sources', () => {
+  const saved = Music.buildIcs(show(), {live: false});
+  const live = Music.buildIcs(show({id: 5626}), {live: true});
+  const uid = text => text.match(/\r\nUID:([^\r\n]+)/)[1];
+  assert.equal(uid(saved), uid(live));
 });
 
 test('published edited shows identify the shared preview schedule without a stale checked date', () => {
   const text = Music.buildIcs(show({id: 'owner-created-show', name: 'Steven’s New Show'}), {published: true});
   const unfolded = text.replace(/\r\n /g, '');
   assert.match(unfolded, /From the shared Tolbert’s preview schedule\./);
-  assert.doesNotMatch(unfolded, /Saved schedule checked November 6|From the restaurant’s live calendar|Owner preview from this browser/);
+  assert.doesNotMatch(unfolded, /Saved schedule checked November 16|From the restaurant’s live calendar|Owner preview from this browser/);
   assert.doesNotMatch(unfolded, /SUMMARY:DEMO:/);
 });
 

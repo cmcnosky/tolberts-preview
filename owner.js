@@ -14,7 +14,15 @@
   const dateLabel = value => /^\d{4}-\d{2}-\d{2}$/.test(value || '') ? new Intl.DateTimeFormat('en-US', {month:'short', day:'numeric', year:'numeric',timeZone:'UTC'}).format(new Date(value + 'T12:00:00Z')) : String(value || '');
   const timeLabel = v => /^\d{2}:\d{2}$/.test(v || '') ? new Intl.DateTimeFormat('en-US', {hour:'numeric',minute:'2-digit',timeZone:'UTC'}).format(new Date(`2000-01-01T${v}:00Z`)).toLowerCase() : v;
   const inputTime = v => { if (/^\d{2}:\d{2}$/.test(v || '')) return v; const m = /^(\d{1,2}):(\d{2})\s*(am|pm)$/i.exec(v || ''); return m ? String(Number(m[1]) % 12 + (m[3].toLowerCase() === 'pm' ? 12 : 0)).padStart(2,'0') + ':' + m[2] : '20:00'; };
-  let state, baseline = {events: []}, savedState, revision = null, updatedAt = '', view = 'overview', filter = '', activeOrder = null, editorSubmit = null, editorOpener = null, editorPending = false, editorDirty = false, editorInvalidated = false, editorFailureMessage = '', deferredLoginMessage = '', loggedIn = false, saving = false, refreshing = false, needsRefresh = false, allowPageLeave = false, toastTimer;
+  function sharedScheduleNeedsOfficialFallback(events, now=Date.now()) {
+    const music=window.MusicModel;
+    if(typeof music?.publishedLineupNeedsRefresh!=='function')return false;
+    const scheduled=(Array.isArray(events)?events:[]).filter(event=>String(event?.status || '').toLowerCase()!=='cancelled');
+    if(!scheduled.length)return false;
+    const guestSchedule=scheduled.map(event=>({...event,start:timeLabel(event.start),end:timeLabel(event.end)}));
+    return music.publishedLineupNeedsRefresh(scheduled,guestSchedule,now);
+  }
+  let state, baseline = {events: []}, savedState, revision = null, updatedAt = '', view = 'overview', filter = '', activeOrder = null, editorSubmit = null, editorOpener = null, editorPending = false, editorDirty = false, editorInvalidated = false, editorFailureMessage = '', deferredLoginMessage = '', inlineRecovery = null, loggedIn = false, saving = false, refreshing = false, needsRefresh = false, allowPageLeave = false, toastTimer;
   const workspace = $('#workspace');
   const dialog = $('#editor-dialog');
   const form = $('#editor-form');
@@ -48,9 +56,10 @@
     return false;
   }
   function deferOrShowLogin(loginMessage, editorMessage) {
-    if (editorPending && dialog.open) {
+    if ((editorPending && dialog.open) || inlineRecovery) {
       deferredLoginMessage = loginMessage;
-      editorFailureMessage = editorMessage;
+      if (editorPending && dialog.open) editorFailureMessage = editorMessage;
+      else status(editorMessage || loginMessage);
       return true;
     }
     showLogin(loginMessage);
@@ -167,6 +176,37 @@
     const allowed = /^(assets\/[a-zA-Z0-9._-]+|data:image\/(png|jpeg|webp);base64,[a-zA-Z0-9+/=]+)$/.test(resolved) ||
       (resolved.startsWith(imagePrefix) && /^[a-f0-9]{64}\.(webp|png|jpg)$/.test(resolved.slice(imagePrefix.length)));
     return allowed ? resolved : 'assets/stage.webp';
+  }
+  function buildInlineRecovery(formId,data) {
+    if(formId==='hours-form'){
+      return {view:'hours',rows:state.hours.map((hours,index)=>[
+        hours.day,
+        data[`closed-${index}`] ? 'Closed' : `${timeLabel(data[`open-${index}`])}–${timeLabel(data[`close-${index}`])} Central`
+      ])};
+    }
+    if(formId==='settings-form'){
+      return {view:'settings',rows:[
+        ['Phone number',String(data.phone || '').trim()],
+        ['Address',String(data.address || '').trim()],
+        ['Homepage notice',String(data.announcement || '').trim() || 'Blank — hidden from the homepage']
+      ]};
+    }
+    return null;
+  }
+  function renderInlineRecovery(targetView) {
+    if(!inlineRecovery || inlineRecovery.view!==targetView)return '';
+    const rows=inlineRecovery.rows.map(([label,value])=>`<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('');
+    const sessionCopy=deferredLoginMessage
+      ? '<p>Your owner session expired during the save. Copy any values you need, then sign in again and compare them with the last confirmed shared state.</p>'
+      : '<p>The save was rejected, conflicted with another device, or could not be confirmed. These values were not reapplied. The editable form below shows the last confirmed shared state.</p>';
+    const dismissLabel=deferredLoginMessage?'Done — sign in again':'Dismiss submitted copy';
+    return `<section class="notice" aria-label="Submitted values from the last save attempt"><strong>Keep a copy of these submitted values.</strong>${sessionCopy}<dl class="backup-summary">${rows}</dl>${button(dismissLabel,'dismiss-inline-recovery','','quiet',deferredLoginMessage?'Finish reviewing the submitted values and sign in again':'Dismiss the submitted values copy')}</section>`;
+  }
+  function finishInlineSave(recovery,saved) {
+    const hadRecovery=Boolean(inlineRecovery);
+    inlineRecovery=saved?null:recovery;
+    if(!saved || hadRecovery)render();
+    return saved;
   }
   function searchBar(label,placeholder,extra='') { return `<div class="toolbar"><label class="field">${label}<input id="list-search" type="search" value="${esc(filter)}" placeholder="${placeholder}" autocomplete="off"></label>${extra}</div><p id="result-count" class="result-count" role="status"></p>`; }
   function setEditorPending(active) {
@@ -318,6 +358,7 @@
   }
   function navigate(next) {
     if(!loggedIn||saving||refreshing||editorPending) return false;
+    if(inlineRecovery&&deferredLoginMessage){status('Finish reviewing the submitted-values copy, then sign in again.');return false;}
     if (!ownerViews.includes(next)) next = 'overview';
     if (next === view) {
       setOwnerNavigationOpen(false, true);
@@ -386,8 +427,11 @@
   }
   function renderMusic() {
     const events = [...state.events].sort((a,b)=>a.date.localeCompare(b.date));
+    const fallbackNotice=sharedScheduleNeedsOfficialFallback(state.events)
+      ? '<p class="notice"><strong>No upcoming shows are published in the shared schedule.</strong> Guests will check the restaurant’s live calendar instead until you save a new upcoming show. The list below remains the exact shared schedule for editing.</p>'
+      : '';
     return heading('Keep the stage moving.','Manage the artist, photo, date, and set times. The saved lineup is a starting point for this demo.',button('Add a show','new-event','','') + preview('music.html','Preview calendar ↗')) +
-      `<p class="notice">This is an editable copy of the saved lineup. It does not change Tolbert’s official calendar.</p><div class="card-grid">${events.map(e=>`<article class="item-card event-card"><div class="photo-tile"><img src="${esc(safeImage(e.image))}" alt="${esc(e.name)}" loading="lazy"></div><div class="item-body"><div class="item-meta"><time datetime="${esc(e.date)}">${esc(dateLabel(e.date))}</time>${pill(e.status,e.status === 'Cancelled' ? 'warning' : 'good')}</div><h2>${esc(e.name)}</h2><p>${esc(e.genre || 'Live music')}</p><strong>${esc(timeLabel(e.start))}–${esc(timeLabel(e.end))} Central</strong><div class="row-actions">${button('Edit show','edit-event',e.id,'secondary',`Edit ${e.name}`)}${button(e.status === 'Cancelled' ? 'Restore show' : 'Cancel show',e.status === 'Cancelled' ? 'restore-event':'cancel-event',e.id,'quiet',`${e.status === 'Cancelled' ? 'Restore' : 'Cancel'} ${e.name}`)}</div></div></article>`).join('')}</div>${!events.length ? empty('No shows yet.','Add the first show to your calendar.') : ''}`;
+      `<p class="notice">This is an editable copy of the saved lineup. It does not change Tolbert’s official calendar.</p>${fallbackNotice}<div class="card-grid">${events.map(e=>`<article class="item-card event-card"><div class="photo-tile"><img src="${esc(safeImage(e.image))}" alt="${esc(e.name)}" loading="lazy"></div><div class="item-body"><div class="item-meta"><time datetime="${esc(e.date)}">${esc(dateLabel(e.date))}</time>${pill(e.status,e.status === 'Cancelled' ? 'warning' : 'good')}</div><h2>${esc(e.name)}</h2><p>${esc(e.genre || 'Live music')}</p><strong>${esc(timeLabel(e.start))}–${esc(timeLabel(e.end))} Central</strong><div class="row-actions">${button('Edit show','edit-event',e.id,'secondary',`Edit ${e.name}`)}${button(e.status === 'Cancelled' ? 'Restore show' : 'Cancel show',e.status === 'Cancelled' ? 'restore-event':'cancel-event',e.id,'quiet',`${e.status === 'Cancelled' ? 'Restore' : 'Cancel'} ${e.name}`)}</div></div></article>`).join('')}</div>${!events.length ? empty('No shows yet.','Add the first show to your calendar.') : ''}`;
   }
   function editEvent(id) {
     const editState = state;
@@ -406,6 +450,7 @@
   }
   function renderHours() {
     return heading('Open doors. Clear hours.','Keep regular hours and special dates in one place.',preview('index.html','Preview hours ↗')) +
+      renderInlineRecovery('hours')+
       `<div class="split">${panel('Weekly hours.',`<form id="hours-form"><div class="row-list">${state.hours.map((h,i)=>`<div class="hours-editor"><strong>${esc(h.day)}</strong><div class="field-grid">${field('open-'+i,'Opens',h.open,'time',`required aria-label="${esc(h.day)} opens"`)}${field('close-'+i,'Closes',h.close,'time',`required aria-label="${esc(h.day)} closes"`)}${check('closed-'+i,'Closed',h.closed,`${h.day} closed`)}</div></div>`).join('')}</div><p class="muted">All times are Central. 12:00 AM means midnight at the end of the day.</p><button class="button" type="submit">Save weekly hours</button></form>`)}` +
       `${panel('Special dates.',`<p>A holiday or one-time closure overrides the weekly hours for that date.</p><div class="row-list">${state.exceptions.map(e=>listRow(dateLabel(e.date),`${esc(e.label)} · ${e.closed ? 'Closed' : `${esc(timeLabel(e.open))}–${esc(timeLabel(e.close))}`}`,button('Edit','edit-exception',e.id,'secondary',`Edit special hours for ${dateLabel(e.date)}`)+button('Remove','remove-exception',e.id,'quiet',`Remove special hours for ${dateLabel(e.date)}`))).join('') || empty('No exceptions yet.','Add holiday hours or a one-time closure.')}</div>`,button('Add special date','new-exception'))}</div>`;
   }
@@ -467,7 +512,7 @@
   function renderTeam() {
     return heading('The right hands on deck.','Explore how owner, manager, and editor roles would be organized.',button('Add demo teammate','new-teammate','',''))+
       `<p class="notice">Team entries illustrate permissions. They do not invite people or create working accounts; Steven is the only demo login.</p>`+
-      panel('People & roles.',`<div class="row-list">${state.team.map(t=>listRow(t.name,`${esc(t.role)} · ${t.role==='Owner'?'All demo controls':t.role==='Manager'?'Operations, stock, and purchase drafts':'Menu, music, and hours'}`,button(t.id==='steven'?'Edit profile':'Edit role','edit-teammate',t.id)+(t.id==='steven'?pill('Your account','good'):button('Remove','remove-teammate',t.id,'quiet')),pill(t.status))).join('')}</div>`)+
+      panel('People & roles.',`<div class="row-list">${state.team.map(t=>listRow(t.name,`${esc(t.role)} · ${t.role==='Owner'?'All demo controls':t.role==='Manager'?'Operations, stock, and purchase drafts':'Menu, music, and hours'}`,button(t.id==='steven'?'Edit profile':'Edit role','edit-teammate',t.id,'secondary',`${t.id==='steven'?'Edit profile for':'Edit role for'} ${t.name}`)+(t.id==='steven'?pill('Your account','good'):button('Remove','remove-teammate',t.id,'quiet',`Remove ${t.name}`)),pill(t.status))).join('')}</div>`)+
       `<div class="card-grid">${[['Owner','Website settings, team roles, all content, inventory, and purchase-order actions.'],['Manager','Menu, calendar, hours, stock counts, and purchase drafts.'],['Editor','Guest-facing content: menu, music, and hours.']].map(([title,copy])=>panel(title,`<p>${copy}</p>`)).join('')}</div>`;
   }
   function editTeammate(id) {
@@ -478,6 +523,7 @@
   function renderActivity() { return heading('A record of the changes.','Your latest 100 workspace actions, shared across signed-in devices.')+panel('Activity.',activityRows()); }
   function renderSettings() {
     return heading('Make it feel like your parlor.','Update contact details, a guest notice, and your sign-in.',preview())+
+      renderInlineRecovery('settings')+
       `<div class="split">${panel('Guest-facing details.',`<form id="settings-form" class="field-grid">${field('phone','Phone number',state.settings.phone,'tel','required maxlength="40"')}${field('address','Address',state.settings.address,'text','required maxlength="200"')}${area('announcement','Homepage notice',state.settings.announcement,'placeholder="Optional: special hours, a private event, or an announcement."')}<p class="muted full">Leave the notice blank to hide it. Saved details appear in your guest preview.</p><button class="button" type="submit">Save details</button></form>`)}`+
       `${panel('Your login.',`<p><strong>Username: Steven</strong></p><p>Use a unique password of at least 12 characters. A password change signs future requests with a new private session token.</p>${button('Change password','change-password')}`)}</div>`;
   }
@@ -487,8 +533,8 @@
     const groups=[...new Set(catalog.fields.map(f=>f.group || 'Website text'))];
     return heading('Your words. Your photographs.','Edit the website here, then open the guest preview to see your saved version.',preview())+
       `<p class="notice">Edit the website copy, links, and photographs below. Successful saves update this shared preview for visitors on every device.</p>`+
-      `<div class="card-grid">${groups.map(group=>panel(esc(group),`<p>${catalog.fields.filter(f=>(f.group || 'Website text')===group).map(f=>esc(f.label)).join(' · ')}</p>${button('Edit text','edit-content',group)}`)).join('')}</div>`+
-      `<section class="website-photo-section"><h2>Website photographs</h2><div class="card-grid">${catalog.images.map(image=>`<article class="item-card"><img class="editor-photo" src="${esc(safeImage(state.settings.images?.[image.key] || image.defaultValue))}" alt="${esc(image.label)}"><h3>${esc(image.label)}</h3>${button('Change photograph','edit-photo',image.key)}</article>`).join('')}</div></section>`;
+      `<div class="card-grid">${groups.map(group=>panel(esc(group),`<p>${catalog.fields.filter(f=>(f.group || 'Website text')===group).map(f=>esc(f.label)).join(' · ')}</p>${button('Edit text','edit-content',group,'secondary',`Edit ${group} website text`)}`)).join('')}</div>`+
+      `<section class="website-photo-section"><h2>Website photographs</h2><div class="card-grid">${catalog.images.map(image=>`<article class="item-card"><img class="editor-photo" src="${esc(safeImage(state.settings.images?.[image.key] || image.defaultValue))}" alt="${esc(image.label)}"><h3>${esc(image.label)}</h3>${button('Change photograph','edit-photo',image.key,'secondary',`Change photograph: ${image.label}`)}</article>`).join('')}</div></section>`;
   }
   function editContent(group) {
     const fields=window.OwnerContent.fields.filter(f=>(f.group || 'Website text')===group);
@@ -535,7 +581,11 @@
         await API.changePassword(data.current,data.next);
         status('Password changed. This browser is still signed in with the new private session.');
       } catch(error) {
-        if(error?.status===401)showLogin('Your owner session expired. Sign in again to change the password.');
+        const code=error?.payload?.error?.code;
+        if(error?.status===401 && code!=='invalid_credentials'){
+          API.clearSession();
+          showLogin('Your owner session expired. Sign in again to change the password.');
+        }
         throw error;
       }
     },'Change password');
@@ -548,7 +598,7 @@
   }
   document.addEventListener('click',async event=>{
     const link=event.target.closest('a[href]');
-    if(link&&loggedIn&&hasDirtyInlineForm()&&!isSameDocumentAnchor(link)&&!link.hasAttribute('download')&&link.target!=='_blank'){
+    if(link&&loggedIn&&(hasDirtyInlineForm()||inlineRecovery)&&!isSameDocumentAnchor(link)&&!link.hasAttribute('download')&&link.target!=='_blank'){
       event.preventDefault();
       confirmPageLeave(link.href,link.textContent.trim() || 'that page');
       return;
@@ -556,6 +606,7 @@
     const nav=event.target.closest('[data-view]');if(nav){navigate(nav.dataset.view);return;}
     const control=event.target.closest('[data-action]');if(!control||!loggedIn)return;
     const action=control.dataset.action,id=control.dataset.id;
+    if(inlineRecovery&&deferredLoginMessage&&action!=='dismiss-inline-recovery'){status('Finish reviewing the submitted-values copy, then sign in again.');return;}
     if(action.startsWith('nav-')){navigate(action.slice(4));return;}
     const handlers={
       'new-menu':()=>editMenu(), 'edit-menu':()=>editMenu(id),
@@ -580,6 +631,7 @@
       'remove-teammate':()=>confirmation('Remove demo teammate?','<p>This removes only the sample workspace entry; it does not revoke a real staff account.</p>',async()=>{if((state.shifts || []).some(shift=>shift.memberId===id))throw new Error('This person has saved shifts. Mark them inactive to keep the schedule history, or remove their shifts first.');state.team=state.team.filter(t=>t.id!==id);await persist('Removed demo teammate');},'Remove teammate'),
       'change-password':changePassword,
       'edit-content':()=>editContent(id), 'edit-photo':()=>editPhoto(id),
+      'dismiss-inline-recovery':()=>{inlineRecovery=null;if(!showDeferredLogin())render();},
       'refresh-workspace':()=>refreshWorkspace({quiet:false})
     };
     try{if(!handlers[action] && extra?.handle(action,id))return;await handlers[action]?.();}catch(error){status(error.message || 'That action could not be completed.');}
@@ -591,13 +643,15 @@
   workspace.addEventListener('change',event=>markInlineFormDirty(event.target));
   workspace.addEventListener('submit',async event=>{
     if(!['hours-form','settings-form'].includes(event.target.id))return;event.preventDefault();
+    if(inlineRecovery&&deferredLoginMessage){status('Finish reviewing the submitted-values copy, then sign in again.');return;}
     const data=Object.fromEntries(new FormData(event.target));
+    const recovery=buildInlineRecovery(event.target.id,data);
     try{
       if(event.target.id==='hours-form'){
         const hours=state.hours.map((h,i)=>({...h,open:data['open-'+i],close:data['close-'+i],closed:!!data['closed-'+i]}));
         if(hours.some(h=>!h.closed && h.open===h.close))throw new Error('Opening and closing times must differ for each open day.');
-        state.hours=hours;await persist('Updated weekly hours');
-      }else{state.settings={...state.settings,phone:required(data.phone,'Phone'),address:required(data.address,'Address'),announcement:data.announcement.trim()};await persist('Updated guest-facing details');}
+        state.hours=hours;inlineRecovery=recovery;finishInlineSave(recovery,await persist('Updated weekly hours'));
+      }else{state.settings={...state.settings,phone:required(data.phone,'Phone'),address:required(data.address,'Address'),announcement:data.announcement.trim()};inlineRecovery=recovery;finishInlineSave(recovery,await persist('Updated guest-facing details'));}
     }catch(error){status(error.message);}
   });
   function showOwner(){loggedIn=true;$('#login-view').hidden=true;$('#owner-shell').hidden=false;syncSkipLink(true);view=ownerViews.includes(location.hash.slice(1))?location.hash.slice(1):'overview';setOwnerNavigationOpen(false);render();workspace.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
@@ -608,8 +662,12 @@
   }
   $('#logout').addEventListener('click',async event=>{
     const control=event.currentTarget;
-    if(hasDirtyInlineForm()){
-      confirmation('Log out without saving?','<p>You have changes in this section that have not been saved.</p><p>Logging out will discard those entries.</p>',async()=>{await completeLogout(control);},'Discard entries and log out');
+    if(hasDirtyInlineForm()||inlineRecovery){
+      const dirty=hasDirtyInlineForm();
+      const detail=inlineRecovery
+        ? `<p>You have ${dirty?'unsaved form entries and ':''}a read-only copy from a save that did not complete cleanly.</p><p>Logging out will discard ${dirty?'both':'that copy'}.</p>`
+        : '<p>You have changes in this section that have not been saved.</p><p>Logging out will discard those entries.</p>';
+      confirmation('Log out without saving?',detail,async()=>{inlineRecovery=null;await completeLogout(control);},'Discard values and log out');
       return;
     }
     await completeLogout(control);
@@ -640,7 +698,10 @@
       else if(!quiet)status('This device already has the latest shared workspace.');
       return true;
     }catch(error){
-      if(error?.status===401)showLogin('Your owner session expired. Sign in again.');
+      if(error?.status===401)deferOrShowLogin(
+        'Your owner session expired. Sign in again.',
+        'Your owner session expired. Copy anything you need from the submitted-values summary, then sign in again.'
+      );
       else if(!quiet)status(error?.message || 'The shared workspace could not be refreshed.');
       return false;
     }finally{refreshing=false;setBusy(false);}
@@ -666,7 +727,7 @@
     history.replaceState(null,'','#'+view);
     navigate(requested);
   });
-  function shouldWarnBeforeUnload(){return !allowPageLeave&&(editorDirty||editorPending||saving||hasDirtyInlineForm());}
+  function shouldWarnBeforeUnload(){return !allowPageLeave&&(editorDirty||editorPending||saving||hasDirtyInlineForm()||Boolean(inlineRecovery));}
   window.addEventListener('beforeunload',event=>{if(shouldWarnBeforeUnload()){event.preventDefault();event.returnValue='';}});
   extra=window.OwnerTools?.create({getState:()=>state,replaceState:next=>{state=next;},persist,status,openEditor,confirmation,esc,button,field,area,select,check,heading,panel,empty,dateLabel,dayKey,requireCurrentState,render,navigate});
   initializeOwnerNavigation();

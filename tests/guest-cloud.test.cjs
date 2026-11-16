@@ -34,6 +34,7 @@ const validPublic = () => ({
   updatedAt: '2026-11-06T19:00:00.000Z',
   menu: [{id: 'dish-1', category: 'Chili', name: 'Bowl of Red', description: 'Family recipe.', price: '11.99', image: '', imageAlt: '', available: true}],
   events: [{id: 'show-1', name: 'Texas Band', genre: 'Country', date: '2026-11-07', start: '21:00', end: '23:00', image: 'assets/stage.webp', status: 'Scheduled'}],
+  cancelledEvents: [],
   hours: days.map(day => ({day, open: '11:00', close: '21:00', closed: false})),
   exceptions: [],
   settings: {phone: '(817) 421-4888', address: '423 South Main Street', announcement: '', content: {}, images: {}}
@@ -44,6 +45,17 @@ test('accepts a bounded public envelope and preserves its revision', () => {
   assert.equal(result.revision, 4);
   assert.equal(result.menu[0].name, 'Bowl of Red');
   assert.equal(result.events[0].name, 'Texas Band');
+  assert.deepEqual(Array.from(result.cancelledEvents), []);
+});
+
+test('accepts bounded public cancellation tombstones and distinguishes an old server without the field', () => {
+  const withCancellation = validPublic();
+  withCancellation.cancelledEvents = [{date: '2026-11-08', name: 'Cancelled Artist', status: 'Cancelled'}];
+  const result = context.normalizePublishedEnvelope(withCancellation);
+  assert.deepEqual(JSON.parse(JSON.stringify(result.cancelledEvents)), withCancellation.cancelledEvents);
+  const oldServer = validPublic();
+  delete oldServer.cancelledEvents;
+  assert.equal(context.normalizePublishedEnvelope(oldServer).cancelledEvents, null);
 });
 
 test('accepts an intentionally empty published menu without restoring stale fallback dishes', () => {
@@ -70,6 +82,13 @@ test('rejects malformed public data instead of partially applying it', () => {
   delete missingEventField.events[0].status;
   const extraEventField = validPublic();
   extraEventField.events[0].imageAlt = 'Not in the public event contract';
+  const malformedCancellation = validPublic();
+  malformedCancellation.cancelledEvents = [{date: '2026-11-08', name: 'Cancelled Artist', status: 'Scheduled'}];
+  const duplicateCancellation = validPublic();
+  duplicateCancellation.cancelledEvents = [
+    {date: '2026-11-08', name: 'Cancelled Artist', status: 'Cancelled'},
+    {date: '2026-11-08', name: 'Cancelled Artist', status: 'Cancelled'}
+  ];
   assert.equal(context.normalizePublishedEnvelope(missingDay), null);
   assert.equal(context.normalizePublishedEnvelope(duplicateDay), null);
   assert.equal(context.normalizePublishedEnvelope(invalidRevision), null);
@@ -77,6 +96,8 @@ test('rejects malformed public data instead of partially applying it', () => {
   assert.equal(context.normalizePublishedEnvelope(partialSettings), null);
   assert.equal(context.normalizePublishedEnvelope(missingEventField), null);
   assert.equal(context.normalizePublishedEnvelope(extraEventField), null);
+  assert.equal(context.normalizePublishedEnvelope(malformedCancellation), null);
+  assert.equal(context.normalizePublishedEnvelope(duplicateCancellation), null);
 });
 
 test('rejects public responses containing private workspace fields', () => {
@@ -111,11 +132,14 @@ test('resolves only exact shared image tokens on public pages', () => {
   assert.equal(context.normalizePublishedEnvelope(embedded), null);
 });
 
-test('guest scripts wait until shared content has rendered', () => {
-  for (const file of ['app.js', 'menu.js', 'music.js']) {
+test('data-rendering guest scripts wait for shared content while homepage controls bind immediately', () => {
+  for (const file of ['menu.js', 'music.js']) {
     const text = fs.readFileSync(path.join(root, file), 'utf8');
     assert.match(text, /await \(window\.OwnerPreview\?\.ready \|\| Promise\.resolve\(\)\)/, file);
   }
+  const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
+  assert.doesNotMatch(app, /await \(window\.OwnerPreview\?\.ready/);
+  assert.match(app, /\(window\.OwnerPreview\?\.ready \|\| Promise\.resolve\(\)\)\.then\(updateHours\)/);
   for (const file of ['index.html', 'menu.html', 'music.html']) {
     const html = fs.readFileSync(path.join(root, file), 'utf8');
     const api = html.indexOf('shared-api.js');
@@ -125,10 +149,14 @@ test('guest scripts wait until shared content has rendered', () => {
   }
 });
 
-test('shared lineup is authoritative and does not trigger the official feed refresh', () => {
+test('a current or intentionally empty shared lineup remains authoritative while an ended one refreshes safely', () => {
   const music = fs.readFileSync(path.join(root, 'music.js'), 'utf8');
-  assert.match(music, /if \(stateMode\)[\s\S]*savedEvents = ownerPreviewEvents\(\);[\s\S]*renderShows\(\);[\s\S]*return;/);
-  assert.match(music, /if \(!stateMode && !document\.hidden/);
+  assert.match(music, /publishedFallbackMode = publishedMode && !ownerViewMode && cancelledEvents !== null &&[\s\S]*publishedLineupNeedsRefresh\(previewState\.events, savedEvents\)/);
+  assert.match(music, /if \(sharedScheduleActive\)[\s\S]*Current lineup published by Tolbert’s[\s\S]*return;/);
+  assert.match(music, /excludeCancelledEvents\(liveEvents, cancelledEvents\)/);
+  assert.match(music, /loadSavedCalendar\(\)\.finally\(refreshCalendar\)/);
+  assert.match(music, /When checked November 16, the calendar listed 2:30 pm and the promotional artwork showed 3:00 pm/);
+  assert.match(music, /if \(!sharedScheduleActive && !document\.hidden/);
 });
 
 test('normal and owner-view guest URLs use the same public state and never read a private local workspace', () => {

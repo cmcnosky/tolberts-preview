@@ -6,6 +6,16 @@ Owner-facing comparison: https://cmcnosky.github.io/tolberts-preview/proposal.ht
 
 This is an independent preview, not the restaurant’s official website. The official domain and systems have not been modified. The preview is public and marked noindex. Source provenance and limits are in research.html, operations.html, and audit.html.
 
+## End-to-end repair and preview refresh — November 16, 2026
+
+The current editorial design is preserved. This audit repairs a public music calendar that had stopped at November 15, protects Steven’s cancellations during official-feed refreshes, and refreshes the dated packaged lineup and all eight current artist photographs. The backend adds only a bounded public cancellation list; private inventory, purchasing, staffing, activity, and account data remain excluded. A versioned public ETag prevents an old cached response from hiding the new contract.
+
+A mistyped current password no longer discards a valid owner session. Repeated website and team editing controls have specific accessible names. Failed or unconfirmed Hours and Settings saves retain a copy of submitted values without silently reapplying them. An ended shared lineup receives an owner-facing explanation. The group inquiry action is available while shared data loads. The new `social-preview-20261116-editorial.jpg` matches the current white-logo, chili-red, cream/gold, and green design; all current social metadata points to it. Existing third-party preview caches remain controlled by their respective apps.
+
+A live reversible sample-inventory save survived logout and a fresh sign-in. The original quantity was restored and verified after reload; before/after workspace exports differed only in activity. No public restaurant content was changed by that save trial. Browser checks exercised menu/search, music filters and details, calendar download, inquiry-draft preparation, owner editing forms, unsaved Hours protection, backups, and logout. No email, purchase, payment, supplier submission, or staff notification was sent. Current verification is recorded in `audit.html` and the dated local release receipt.
+
+The decision brief remains two pages; small evidence/support paragraphs were enlarged. Its substantive offer is unchanged. The PDF has selectable text but is untagged and is not described as an accessibility certification.
+
 ## Mobile and editing refinement — November 9, 2026
 
 The editorial identity is retained. Mobile visit links and quick actions are more readable, narrow headlines avoid an unnecessary split, and account controls use 16px text. The mobile account sidebar becomes a compact sticky section selector with the same 12 destinations.
@@ -20,7 +30,7 @@ The adopted editorial homepage is now `index.html`. The `home-editorial.html` UR
 
 All 11 root pages were checked at 320, 768, and 1280 CSS pixels without horizontal page overflow after the narrow-screen story-heading repair. Browser checks exercised menu and music filters, empty states, show details, copyable links, calendar download, keyboard focus return, and inquiry-draft preparation. Small-text contrast and the visible login action were repaired. Live sign-in, session reload, guest preview, and logout passed. All 12 management sections fit at the same three widths; dish/show/text/photo editors opened and were cancelled without business-data writes. See `audit.html` for this release and separately dated earlier live-write evidence.
 
-The frontend Node runner passes 63 tests, including three legacy wrappers. The individually invoked menu/feed/music suites contain 7/13/24 assertions; do not add those to the combined runner count. The unchanged backend separately passes 14 isolated API tests, and its clean rebuild matches the delivered bundle. These checks are not proof of physical-device compatibility, service uptime, or third-party fulfillment.
+At that November 9 release, the frontend Node runner passed 63 tests, including three legacy wrappers. The individually invoked menu/feed/music suites contain 7/13/24 assertions; do not add those to the combined runner count. The unchanged backend separately passes 14 isolated API tests, and its clean rebuild matches the delivered bundle. These checks are not proof of physical-device compatibility, service uptime, or third-party fulfillment.
 
 ## Preview locally
 
@@ -44,7 +54,7 @@ Also check the home, menu, music finder, show links, contact draft, and owner pr
 
 GitHub Pages serves this repository’s main branch root. Publish the reviewed commit, wait for the Pages deployment to succeed, and verify the live URL and primary tasks. Preserve the previous commit for rollback. GitHub Pages serves the public interface. The existing hosted project now supplies the authenticated API, shared database, and photo storage. Deploy and verify backend compatibility before publishing frontend changes that depend on it.
 
-The shared show schedule takes priority. The original WordPress feed remains a fallback only when the shared public workspace cannot be loaded. A production engagement needs owner-approved access, content/update ownership, form delivery, analytics, structured data, redirects, image permissions, and launch testing. These are proposed work, not completed integrations or an agreed contract.
+The shared show schedule takes priority while it contains a pending show, and an intentionally empty schedule stays authoritative. A nonempty schedule with no pending show can fall back to the official feed once the public response explicitly includes cancellation markers. Matching cancelled date/artist pairs are excluded from live and saved fallback results. Owner preview remains the exact shared schedule. The original WordPress feed is also used when shared public content cannot be loaded. Before a custom-domain launch, verify the calendar source accepts the new browser origin. A production engagement needs owner-approved access, content/update ownership, form delivery, analytics, structured data, redirects, image permissions, and launch testing. These are proposed work, not completed integrations or an agreed contract.
 
 ## Presentation finish — November 4, 2026
 

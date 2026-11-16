@@ -1,6 +1,5 @@
-(async () => {
+(() => {
 'use strict';
-await (window.OwnerPreview?.ready || Promise.resolve());
 const chicagoDate = () => new Intl.DateTimeFormat('en-CA', {timeZone:'America/Chicago', year:'numeric', month:'2-digit', day:'2-digit'}).format(new Date());
 const closing = {Monday:'9 pm',Tuesday:'10 pm',Wednesday:'11 pm',Thursday:'11 pm',Friday:'midnight',Saturday:'midnight',Sunday:'9 pm'};
 function inquiryEmail() {
@@ -26,6 +25,7 @@ function updateHours() {
   $$('.hours>div').forEach(row => row.classList.toggle('current-day', $('dt', row).textContent === day));
 }
 updateHours();
+(window.OwnerPreview?.ready || Promise.resolve()).then(updateHours);
 $('#inquiry-open').addEventListener('click', () => {$('input[name="date"]').min = chicagoDate(); openDialog($('#inquiry-dialog'));});
 $('#inquiry-form').addEventListener('submit', event => {
   event.preventDefault(); const data = Object.fromEntries(new FormData(event.currentTarget));

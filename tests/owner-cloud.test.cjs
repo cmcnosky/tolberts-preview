@@ -129,6 +129,25 @@ test('password rotation replaces the stored token without putting either passwor
   assert.deepEqual(JSON.parse(calls[1].options.body), {currentPassword: 'old-private-password', newPassword: 'new-private-password'});
 });
 
+test('an incorrect current password keeps the still-valid owner session', async () => {
+  const calls = [];
+  const {api, sessionStorage} = loadClient(async (url, options) => {
+    calls.push({url, options});
+    return calls.length === 1
+      ? jsonResponse(200, sessionPayload)
+      : jsonResponse(401, {error: {code: 'invalid_credentials', message: 'The current password is incorrect.'}});
+  });
+
+  await api.login('Steven', 'private-password');
+  await assert.rejects(
+    api.changePassword('mistyped-password', 'new-private-password'),
+    (error) => error.status === 401 && error.payload.error.code === 'invalid_credentials'
+  );
+
+  assert.equal(JSON.parse(sessionStorage.snapshot()[api.SESSION_KEY]).token, sessionPayload.token);
+  assert.equal(calls[1].options.headers.Authorization, `Bearer ${sessionPayload.token}`);
+});
+
 test('public reads are unauthenticated and do not create a session', async () => {
   const calls = [];
   const {api, sessionStorage} = loadClient(async (url, options) => {

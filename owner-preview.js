@@ -99,8 +99,12 @@
 
   function normalizePublishedEnvelope(response) {
     if (!response || typeof response !== 'object' || Array.isArray(response)) return null;
-    const allowed = new Set(['version', 'revision', 'updatedAt', 'menu', 'events', 'hours', 'exceptions', 'settings']);
-    if (Object.keys(response).length !== allowed.size || Object.keys(response).some(key => !allowed.has(key))) return null;
+    const required = new Set(['version', 'revision', 'updatedAt', 'menu', 'events', 'hours', 'exceptions', 'settings']);
+    const allowed = new Set([...required, 'cancelledEvents']);
+    const responseKeys = Object.keys(response);
+    if ([...required].some(key => !Object.prototype.hasOwnProperty.call(response, key)) ||
+        responseKeys.some(key => !allowed.has(key))) return null;
+    const hasCancellationTombstones = Object.prototype.hasOwnProperty.call(response, 'cancelledEvents');
     const settingKeys = new Set(['phone', 'address', 'announcement', 'content', 'images']);
     if (!response.settings || typeof response.settings !== 'object' || Array.isArray(response.settings) ||
         Object.keys(response.settings).length !== settingKeys.size ||
@@ -120,6 +124,8 @@
     const menuStrings = new Set(['id', 'category', 'name', 'description', 'price']);
     const eventRequired = new Set(['id', 'name', 'genre', 'date', 'start', 'end', 'image', 'status']);
     const eventStrings = new Set(eventRequired);
+    const cancelledEventRequired = new Set(['date', 'name', 'status']);
+    const cancelledEventStrings = new Set(cancelledEventRequired);
     const hoursRequired = new Set(['day', 'open', 'close', 'closed']);
     const hoursStrings = new Set(['day', 'open', 'close']);
     const exceptionRequired = new Set(['id', 'date', 'label', 'open', 'close', 'closed']);
@@ -136,6 +142,10 @@
           (item.imageAlt !== undefined && typeof item.imageAlt !== 'string')) ||
         !Array.isArray(response.events) || response.events.some(event =>
           !exactRecord(event, eventRequired) || !stringFields(event, eventStrings) || !publicImage(event.image)) ||
+        (hasCancellationTombstones && (!Array.isArray(response.cancelledEvents) || response.cancelledEvents.length > 2000 ||
+          response.cancelledEvents.some(event => !exactRecord(event, cancelledEventRequired) ||
+            !stringFields(event, cancelledEventStrings) || !validDate(event.date) ||
+            !event.name.trim() || event.name.length > 160 || event.status !== 'Cancelled'))) ||
         !Array.isArray(response.hours) || response.hours.some(hour =>
           !exactRecord(hour, hoursRequired) || !stringFields(hour, hoursStrings) || typeof hour.closed !== 'boolean') ||
         !Array.isArray(response.exceptions) || response.exceptions.some(exception =>
@@ -150,8 +160,13 @@
         response.hours.some(hour => !hour.day.trim()) ||
         response.exceptions.some(exception => !exception.id.trim() || !exception.date.trim()) ||
         !response.settings.phone.trim() || !response.settings.address.trim()) return null;
+    const cancelledEvents = hasCancellationTombstones
+      ? response.cancelledEvents.map(event => ({date: event.date, name: text(event.name, 160), status: 'Cancelled'}))
+      : null;
+    const cancelledKeys = cancelledEvents?.map(event => `${event.date}|${event.name.toLowerCase()}`) || [];
+    if (new Set(cancelledKeys).size !== cancelledKeys.length) return null;
     const normalized = normalizeState(response);
-    return normalized ? {...normalized, revision: response.revision, updatedAt: response.updatedAt} : null;
+    return normalized ? {...normalized, cancelledEvents, revision: response.revision, updatedAt: response.updatedAt} : null;
   }
 
   async function readPublishedState() {

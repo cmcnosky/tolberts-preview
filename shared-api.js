@@ -73,7 +73,7 @@
     return `The Tolbert's service could not complete this request (${response.status}).`;
   }
 
-  async function request(path, {method = 'GET', body, auth = false, signal, timeoutMs = 30000} = {}) {
+  async function request(path, {method = 'GET', body, auth = false, signal, timeoutMs = 30000, clearSessionOn401 = true} = {}) {
     const headers = {Accept: 'application/json'};
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     if (auth) {
@@ -116,7 +116,7 @@
       signal?.removeEventListener?.('abort', relayAbort);
     }
     if (!response.ok) {
-      if (response.status === 401) clearSession();
+      if (response.status === 401 && clearSessionOn401) clearSession();
       throw new APIError(messageFor(payload, response), response.status, payload);
     }
     return payload;
@@ -142,6 +142,10 @@
     const payload = await request('/api/v1/password', {
       method: 'POST',
       auth: true,
+      // The password endpoint also uses 401 when the current password is
+      // incorrect. That rejection does not revoke the valid server session,
+      // so let the owner controller distinguish it from an expired session.
+      clearSessionOn401: false,
       body: {currentPassword: String(currentPassword || ''), newPassword: String(newPassword || '')}
     });
     return storeSession(payload);

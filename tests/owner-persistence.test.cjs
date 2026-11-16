@@ -8,6 +8,7 @@ const owner = fs.readFileSync(path.join(__dirname, '..', 'owner.js'), 'utf8');
 const tools = fs.readFileSync(path.join(__dirname, '..', 'owner-tools.js'), 'utf8');
 const access = fs.readFileSync(path.join(__dirname, '..', 'owner-access.js'), 'utf8');
 const html = fs.readFileSync(path.join(__dirname, '..', 'owner.html'), 'utf8');
+const Music = require('../music-model.js');
 
 function persistenceHarness(saveWorkspace, getWorkspace = async () => { throw new Error('unexpected refresh'); }) {
   const start = owner.indexOf('function setSaving(active)');
@@ -25,6 +26,7 @@ function persistenceHarness(saveWorkspace, getWorkspace = async () => { throw ne
     editorInvalidated: false,
     editorFailureMessage: '',
     deferredLoginMessage: '',
+    inlineRecovery: null,
     dialog: {open: true},
     M: {isUsableState: () => true, addActivity() {}},
     API: {saveWorkspace, getWorkspace},
@@ -220,6 +222,7 @@ test('beforeunload protects changed modal fields without warning for an untouche
     editorDirty: false,
     editorPending: false,
     saving: false,
+    inlineRecovery: null,
     hasDirtyInlineForm: () => false
   };
   vm.runInNewContext(owner.slice(warnStart, warnEnd), warning);
@@ -229,6 +232,9 @@ test('beforeunload protects changed modal fields without warning for an untouche
   warning.editorDirty = false;
   warning.editorPending = true;
   assert.equal(warning.shouldWarnBeforeUnload(), true, 'an in-flight editor action still warns');
+  warning.editorPending = false;
+  warning.inlineRecovery = {view: 'hours', rows: []};
+  assert.equal(warning.shouldWarnBeforeUnload(), true, 'a submitted-values recovery copy is protected before page exit');
   warning.allowPageLeave = true;
   assert.equal(warning.shouldWarnBeforeUnload(), false, 'a confirmed page leave bypasses the warning');
   assert.match(owner, /beforeunload'[\s\S]*shouldWarnBeforeUnload\(\)/);
@@ -323,17 +329,90 @@ test('an expired session preserves modal values until close and distinguishes kn
   assert.match(ambiguousLogins[0], /sign in again.*last save could not be confirmed/i);
 });
 
+test('an expired inline save keeps its submitted-values copy visible until the owner finishes reviewing it', async () => {
+  const logins = [];
+  const expired = persistenceHarness(async () => {
+    const error = new Error('Session expired');
+    error.status = 401;
+    throw error;
+  });
+  expired.sandbox.editorPending = false;
+  expired.sandbox.dialog.open = false;
+  expired.sandbox.inlineRecovery = {view: 'settings', rows: [['Address', 'Submitted address']]};
+  expired.sandbox.showLogin = message => logins.push(message);
+
+  assert.equal(await expired.sandbox.persist(), false);
+  assert.equal(logins.length, 0, 'the owner shell remains visible while the submitted-values copy needs review');
+  assert.match(expired.sandbox.deferredLoginMessage, /session expired.*sign in again/i);
+  assert.match(expired.statuses.at(-1), /copy anything you need/i);
+  assert.equal(expired.sandbox.showDeferredLogin(), true);
+  assert.equal(logins.length, 1, 'sign-in appears only after the owner finishes reviewing the copy');
+  assert.match(owner, /if\(inlineRecovery&&deferredLoginMessage\)\{status\('Finish reviewing the submitted-values copy, then sign in again\.'\);return false;\}/);
+  assert.match(owner, /action!=='dismiss-inline-recovery'/);
+  assert.match(owner, /if\(inlineRecovery&&deferredLoginMessage\)\{status\('Finish reviewing the submitted-values copy, then sign in again\.'\);return;\}/);
+});
+
 test('dirty inline entries are guarded across sections, links, hashes, logout, and page exit', () => {
   assert.match(owner, /if \(hasDirtyInlineForm\(\)\) \{[\s\S]*Leave without saving\?/);
-  assert.match(owner, /link&&loggedIn&&hasDirtyInlineForm\(\)/);
+  assert.match(owner, /link&&loggedIn&&\(hasDirtyInlineForm\(\)\|\|inlineRecovery\)/);
   assert.match(owner, /!isSameDocumentAnchor\(link\)/);
   assert.match(owner, /Boolean\(target\.hash\)[\s\S]*target\.pathname === current\.pathname/);
   assert.match(owner, /Log out without saving\?/);
   assert.match(owner, /window\.addEventListener\('hashchange'/);
   assert.match(owner, /window\.addEventListener\('beforeunload'/);
-  assert.match(owner, /editorPending\|\|saving\|\|hasDirtyInlineForm\(\)/);
+  assert.match(owner, /editorPending\|\|saving\|\|hasDirtyInlineForm\(\)\|\|Boolean\(inlineRecovery\)/);
   assert.match(owner, /if\(!loggedIn\|\|saving\|\|refreshing\|\|editorPending\) return false/);
   assert.match(owner, /Discard entries and continue/);
+});
+
+test('failed and conflicted inline saves preserve a copyable summary while success clears it', () => {
+  const start = owner.indexOf('function buildInlineRecovery(');
+  const end = owner.indexOf('function searchBar(', start);
+  assert.ok(start >= 0 && end > start, 'inline recovery helpers are present');
+  const renders = [];
+  const sandbox = {
+    state: {hours: [{day: 'Monday'}, {day: 'Tuesday'}]},
+    inlineRecovery: null,
+    deferredLoginMessage: '',
+    timeLabel: value => String(value || ''),
+    esc: value => String(value ?? '').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character])),
+    button: (label, action) => `<button data-action="${action}">${label}</button>`,
+    render: () => renders.push('render')
+  };
+  vm.runInNewContext(owner.slice(start, end), sandbox);
+
+  const rejected = sandbox.buildInlineRecovery('settings-form', {
+    phone: '(817) 555-0101', address: 'First submitted address', announcement: 'First submitted notice'
+  });
+  assert.equal(sandbox.finishInlineSave(rejected, false), false);
+  let summary = sandbox.renderInlineRecovery('settings');
+  assert.match(summary, /First submitted address/);
+  assert.match(summary, /rejected, conflicted with another device, or could not be confirmed/i);
+  assert.match(summary, /These values were not reapplied/i);
+  assert.match(summary, /last confirmed shared state/i);
+  assert.doesNotMatch(summary, /<input|<textarea|contenteditable/i, 'the preserved values are read-only text');
+
+  sandbox.deferredLoginMessage = 'Your owner session expired. Sign in again.';
+  summary = sandbox.renderInlineRecovery('settings');
+  assert.match(summary, /session expired during the save/i);
+  assert.match(summary, /Done — sign in again/);
+  sandbox.deferredLoginMessage = '';
+
+  const conflicted = sandbox.buildInlineRecovery('settings-form', {
+    phone: '(817) 555-0102', address: 'Second submitted address', announcement: ''
+  });
+  assert.equal(sandbox.finishInlineSave(conflicted, false), false);
+  summary = sandbox.renderInlineRecovery('settings');
+  assert.match(summary, /Second submitted address/);
+  assert.doesNotMatch(summary, /First submitted address/);
+  assert.match(summary, /Blank — hidden from the homepage/);
+
+  assert.equal(sandbox.finishInlineSave(conflicted, true), true);
+  assert.equal(sandbox.inlineRecovery, null);
+  assert.equal(sandbox.renderInlineRecovery('settings'), '');
+  assert.equal(renders.length, 3, 'failure, conflict, and clearing an existing copy each rerender confirmed state');
+  assert.match(owner, /dismiss-inline-recovery'[\s\S]*inlineRecovery=null;if\(!showDeferredLogin\(\)\)render\(\)/);
+  assert.match(owner, /inlineRecovery=recovery;finishInlineSave\(recovery,await persist\('Updated weekly hours'\)\)/);
 });
 
 test('the compact owner navigation synchronizes its current section and Escape behavior', () => {
@@ -370,6 +449,8 @@ test('public navigation contains no credential dialog, default password, or rese
 test('password changes use the private server endpoint contract with a 12-character minimum', () => {
   assert.match(owner, /await API\.changePassword\(data\.current,data\.next\)/);
   assert.match(owner, /minlength="12"/);
+  assert.match(owner, /code!==['"]invalid_credentials['"]/);
+  assert.match(owner, /API\.clearSession\(\)/);
   assert.doesNotMatch(owner, /write\(AUTH|removeLocal\(AUTH/);
 });
 
@@ -378,4 +459,26 @@ test('owner copy keeps operational simulations distinct from shared website publ
   assert.match(html, /Purchase orders, payments, payroll, supplier connections, and staff notifications remain simulated/);
   assert.match(owner, /No supplier receives it and no money is spent/);
   assert.match(tools, /It does not notify anyone/);
+});
+
+test('owner music notice follows the guest fallback policy without hiding shared records', () => {
+  const start = owner.indexOf('const timeLabel =');
+  const end = owner.indexOf('let state,', start);
+  assert.ok(start >= 0 && end > start, 'the owner schedule fallback helper is present');
+  const sandbox = {window: {MusicModel: Music}, Intl, Date};
+  vm.runInNewContext(owner.slice(start, end), sandbox);
+
+  const event = (overrides = {}) => ({
+    name: 'Test Artist', genre: 'Texas Music', date: '2026-11-15',
+    start: '19:00', end: '21:00', status: 'Scheduled', ...overrides
+  });
+  const now = new Date('2026-11-16T18:00:00Z');
+  assert.equal(sandbox.sharedScheduleNeedsOfficialFallback([], now), false, 'an empty shared schedule does not claim that a published lineup ended');
+  assert.equal(sandbox.sharedScheduleNeedsOfficialFallback([event({status: 'Cancelled'})], now), false, 'cancelled-only records leave an intentionally empty guest schedule authoritative');
+  assert.equal(sandbox.sharedScheduleNeedsOfficialFallback([event()], now), true, 'an entirely ended scheduled lineup activates the notice');
+  assert.equal(sandbox.sharedScheduleNeedsOfficialFallback([event({date: '2026-11-16', start: '19:00', end: '21:00'})], now), false, 'an upcoming scheduled show suppresses the notice');
+  assert.equal(sandbox.sharedScheduleNeedsOfficialFallback([event({date: '2026-11-15', start: '23:00', end: '13:00'})], new Date('2026-11-16T18:00:00Z')), false, 'an overnight show remains pending until its inferred next-day end');
+
+  assert.match(owner, /Guests will check the restaurant’s live calendar instead until you save a new upcoming show/);
+  assert.match(owner, /list below remains the exact shared schedule for editing/);
 });

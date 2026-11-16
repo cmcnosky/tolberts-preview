@@ -14,12 +14,13 @@
   const dialog = $('#show-dialog');
   const details = $('#show-details');
   const fullPage = document.body.dataset.musicPage === 'full';
-  const savedChecked = 'November 6, 2026';
+  const savedChecked = 'November 16, 2026';
   const officialCalendar = 'https://tolbertsrestaurant.com/calendar/';
   const previewState = window.OwnerPreview?.state || null;
   const stateMode = Boolean(previewState && Array.isArray(previewState.events));
   const ownerViewMode = Boolean(stateMode && window.OwnerPreview?.active);
   const publishedMode = Boolean(stateMode && window.OwnerPreview?.published);
+  const cancelledEvents = Array.isArray(previewState?.cancelledEvents) ? previewState.cancelledEvents : null;
   const previewLink = value => ownerViewMode ? window.OwnerPreview.guestUrl(value) : value;
   const previewPhone = previewState?.settings?.phone || '(817) 421-4888';
   const previewPhoneHref = `tel:${previewPhone.replace(/[^\d+]/g, '') || '+18174214888'}`;
@@ -31,7 +32,10 @@
 
   let savedEvents = [];
   let savedLoaded = false;
+  let packagedFallbackLoaded = false;
   let events = [];
+  let sharedScheduleActive = stateMode;
+  let publishedFallbackMode = false;
   let filter = 'all';
   let query = '';
   let selectedDate = '';
@@ -62,6 +66,27 @@
 
   function setSource(message) {
     if (source) source.textContent = message;
+  }
+
+  async function loadSavedCalendar() {
+    try {
+      const response = await fetch('events.json', {cache: 'no-store'});
+      if (!response.ok) throw new Error('Saved calendar unavailable');
+      const data = await response.json();
+      if (!Array.isArray(data)) throw new Error('Invalid saved calendar');
+      packagedFallbackLoaded = true;
+      savedLoaded = true;
+      savedEvents = publishedFallbackMode
+        ? MusicModel.excludeCancelledEvents(data, cancelledEvents)
+        : data;
+      events = savedEvents;
+      setSource(`Saved fallback checked ${savedChecked}. Checking Tolbert’s live calendar…`);
+      renderShows();
+    } catch {
+      setSource(publishedFallbackMode
+        ? 'The published lineup has ended. The saved fallback is unavailable; checking the restaurant’s live calendar…'
+        : 'Saved fallback unavailable. Checking Tolbert’s live calendar…');
+    }
   }
 
   function linkStatusNode() {
@@ -111,6 +136,11 @@
       if (fullImageLink) fullImageLink.href = event.image;
       image.alt = event.imageAlt;
     }, {once: true});
+  }
+
+  function hasArtworkTimeConflict(event) {
+    return !sharedScheduleActive && event?.date === '2026-11-22' && event?.start === '2:30 pm' &&
+      MusicModel.normalizeText(event?.name) === 'the country dead';
   }
 
   function monthLabel(date) {
@@ -174,11 +204,11 @@
     const sourceText = source?.textContent || 'Times are Central. Confirm the schedule before heading over.';
     if (status) {
       if (status.textContent !== sourceText) status.textContent = sourceText;
-      status.hidden = (publishedMode || (!stateMode && Boolean(liveChecked))) && !/unavailable/i.test(sourceText);
+      status.hidden = (sharedScheduleActive || Boolean(liveChecked)) && !/unavailable/i.test(sourceText);
     }
     if (!artists.length) {
       lastTodaySignature = '';
-      const message = stateMode
+      const message = sharedScheduleActive
         ? 'No artist is scheduled for today in the current published lineup. Explore the calendar for another night.'
         : !liveResolved
         ? 'Checking today’s artists and set times…'
@@ -298,12 +328,12 @@
       event.genre || '',
       event.image || '',
       event.imageAlt || '',
-      publishedMode ? 'published' : liveChecked ? 'live' : 'saved'
+      sharedScheduleActive ? 'published' : liveChecked ? 'live' : 'saved'
     ]);
   }
 
   function downloadCalendar(event) {
-    const calendarText = MusicModel.buildIcs(event, {live: Boolean(liveChecked) && !stateMode, published: publishedMode, ...(stateMode ? {address: previewAddress, phone: previewPhone, url: MusicModel.shareUrl(event, location.href)} : {})});
+    const calendarText = MusicModel.buildIcs(event, {live: Boolean(liveChecked) && !sharedScheduleActive, published: sharedScheduleActive && publishedMode, savedChecked, ...(stateMode ? {address: previewAddress, phone: previewPhone, url: MusicModel.shareUrl(event, location.href)} : {})});
     const blob = new Blob([calendarText], {type: 'text/calendar;charset=utf-8'});
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -338,11 +368,14 @@
     const share = previewLink(MusicModel.shareUrl(event, location.href));
     const image = event.image || 'assets/stage.webp';
     const imageAlt = event.imageAlt || `${event.name} — promotional image`;
-    const sourceNote = publishedMode
+    const sourceNote = sharedScheduleActive
       ? 'From Tolbert’s shared published workspace.'
       : liveChecked
       ? 'From the restaurant’s live calendar.'
       : `From saved listings checked ${savedChecked}.`;
+    const artworkAdvisory = hasArtworkTimeConflict(event)
+      ? '<p class="detail-note"><strong>Schedule note:</strong> When checked November 16, the calendar listed 2:30 pm and the promotional artwork showed 3:00 pm. Call Tolbert’s to confirm before you go.</p>'
+      : '';
     details.innerHTML = `<div class="detail-layout">
         <figure class="detail-art"><a class="detail-image-link" href="${esc(image)}" target="_blank" rel="noopener" aria-label="Open full-size image for ${esc(event.name)}"><img class="detail-image" src="${esc(image)}" alt="${esc(imageAlt)}"><span>Full image ↗</span></a></figure>
         <div class="detail-heading"><p class="detail-genre">${esc(event.genre || 'Live music')}</p><h2 id="show-title">${esc(event.name)}</h2>
@@ -351,7 +384,7 @@
         <div class="detail-information">
           <p class="detail-place"><strong>Tolbert’s Restaurant &amp; Chili Parlor</strong><span>${esc(detailAddress)}</span></p>
           <div class="detail-actions"><a class="detail-call" href="${esc(previewPhoneHref)}">Call for seating <span aria-hidden="true">↗</span></a><a href="${esc(previewLink('menu.html'))}">View menu</a><a href="${esc(directions)}" target="_blank" rel="noopener">Directions ↗</a></div>
-          <p class="detail-note">For reservations and any cover charge, call the restaurant.</p>
+          <p class="detail-note">For reservations and any cover charge, call the restaurant.</p>${artworkAdvisory}
           <div class="detail-utilities"><button id="save-show" type="button"><span aria-hidden="true">↓</span> Add to calendar</button><button id="copy-show-link" type="button"><span aria-hidden="true">↗</span> Copy show link</button></div>
           <div class="show-share-fallback" hidden><label for="show-share-url">Select and copy this show link</label><input id="show-share-url" type="text" readonly value="${esc(share)}"></div>
           <p id="show-action-status" role="status"></p><p class="detail-source">${sourceNote} Confirm details before heading over.</p>
@@ -412,7 +445,7 @@
     lastOpenedKey = requested;
     if (matching) {
       setLinkStatus('This shared show has ended. The current upcoming lineup appears below.');
-    } else if (stateMode) {
+    } else if (sharedScheduleActive) {
       setLinkStatus('This shared show is not in the current published lineup. The upcoming lineup appears below.');
     } else if (liveChecked) {
       setLinkStatus('This shared show was not found in the last successful live-calendar check. The current upcoming lineup appears below.');
@@ -426,7 +459,10 @@
     fetching = true;
     lastFetch = Date.now();
     try {
-      events = await CalendarData.fetchEvents(savedEvents);
+      const liveEvents = await CalendarData.fetchEvents(savedEvents);
+      events = publishedFallbackMode
+        ? MusicModel.excludeCancelledEvents(liveEvents, cancelledEvents)
+        : liveEvents;
       liveChecked = new Date();
       const checked = new Intl.DateTimeFormat('en-US', {
         timeZone: MusicModel.CHICAGO,
@@ -440,6 +476,10 @@
       if (!liveChecked) events = savedEvents;
       if (liveChecked) {
         setSource('Live refresh unavailable. Showing the last successful check from this visit; confirm with the official calendar.');
+      } else if (publishedFallbackMode && packagedFallbackLoaded) {
+        setSource(`Live calendar unavailable. Showing the saved fallback checked ${savedChecked}; confirm with the official calendar.`);
+      } else if (publishedFallbackMode) {
+        setSource('The published lineup has ended and the live calendar is unavailable. Check the official concert calendar.');
       } else if (savedLoaded) {
         setSource(`Live calendar unavailable. Showing the saved fallback checked ${savedChecked}; confirm with the official calendar.`);
       } else {
@@ -516,8 +556,18 @@
   });
 
   function refreshTimeSensitiveContent() {
+    if (publishedMode && !ownerViewMode && cancelledEvents !== null && sharedScheduleActive &&
+        MusicModel.publishedLineupNeedsRefresh(previewState.events, ownerPreviewEvents())) {
+      sharedScheduleActive = false;
+      publishedFallbackMode = true;
+      liveResolved = false;
+      setSource('The published lineup has ended. Loading the saved lineup and checking the restaurant’s live calendar…');
+      renderShows();
+      loadSavedCalendar().finally(refreshCalendar);
+      return;
+    }
     renderShows();
-    if (!stateMode && !document.hidden && Date.now() - lastFetch > 300000) refreshCalendar();
+    if (!sharedScheduleActive && !document.hidden && Date.now() - lastFetch > 300000) refreshCalendar();
   }
 
   setInterval(refreshTimeSensitiveContent, 60000);
@@ -530,27 +580,20 @@
     savedLoaded = true;
     savedEvents = ownerPreviewEvents();
     events = savedEvents;
-    liveResolved = true;
-    setSource('Current lineup published by Tolbert’s · Times are Central. Confirm details before heading over.');
+    publishedFallbackMode = publishedMode && !ownerViewMode && cancelledEvents !== null &&
+      MusicModel.publishedLineupNeedsRefresh(previewState.events, savedEvents);
+    sharedScheduleActive = !publishedFallbackMode;
+    if (sharedScheduleActive) {
+      liveResolved = true;
+      setSource('Current lineup published by Tolbert’s · Times are Central. Confirm details before heading over.');
+      renderShows();
+      return;
+    }
+    setSource('The published lineup has ended. Loading the saved lineup and checking the restaurant’s live calendar…');
     renderShows();
+    loadSavedCalendar().finally(refreshCalendar);
     return;
   }
   setSource(`Loading the saved lineup checked ${savedChecked} and checking Tolbert’s live calendar…`);
-  fetch('events.json', {cache: 'no-store'})
-    .then(response => {
-      if (!response.ok) throw new Error('Saved calendar unavailable');
-      return response.json();
-    })
-    .then(data => {
-      if (!Array.isArray(data)) throw new Error('Invalid saved calendar');
-      savedLoaded = true;
-      savedEvents = data;
-      events = data;
-      setSource(`Saved fallback checked ${savedChecked}. Checking Tolbert’s live calendar…`);
-      renderShows();
-    })
-    .catch(() => {
-      setSource('Saved fallback unavailable. Checking Tolbert’s live calendar…');
-    })
-    .finally(refreshCalendar);
+  loadSavedCalendar().finally(refreshCalendar);
 })();

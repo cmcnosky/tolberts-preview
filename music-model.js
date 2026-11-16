@@ -165,6 +165,26 @@ const MusicModel = (() => {
       .trim();
   }
 
+  function cancellationKey(event) {
+    const date = dateFilterValue(event?.date);
+    const name = normalizeText(event?.name).replace(/[^a-z0-9]+/g, ' ').trim();
+    return date && name ? `${date}|${name}` : '';
+  }
+
+  function excludeCancelledEvents(events, publishedRecords) {
+    const cancelled = new Set((Array.isArray(publishedRecords) ? publishedRecords : [])
+      .filter(event => event?.status === 'Cancelled')
+      .map(cancellationKey)
+      .filter(Boolean));
+    if (!cancelled.size) return Array.isArray(events) ? [...events] : [];
+    return (Array.isArray(events) ? events : []).filter(event => !cancelled.has(cancellationKey(event)));
+  }
+
+  function publishedLineupNeedsRefresh(publishedScheduledRecords, scheduledEvents, now = Date.now()) {
+    return Array.isArray(publishedScheduledRecords) && publishedScheduledRecords.length > 0 &&
+      pendingEvents(scheduledEvents, now).length === 0;
+  }
+
   function filterEvents(events, options = {}) {
     const now = options.now ?? Date.now();
     const nowTime = new Date(now).getTime();
@@ -234,14 +254,15 @@ const MusicModel = (() => {
   function buildIcs(event, options = {}) {
     const start = eventStart(event);
     const end = eventEnd(event);
+    const savedChecked = String(options.savedChecked || 'November 16, 2026').trim().slice(0, 80);
     const checked = options.preview
       ? 'Owner preview from this browser; not the official calendar.'
       : options.published
       ? 'From the shared Tolbert’s preview schedule.'
       : options.live
       ? 'From the restaurant’s live calendar.'
-      : 'Saved schedule checked November 6, 2026.';
-    const uidPart = String(event.id || eventKey(event))
+      : `Saved schedule checked ${savedChecked}.`;
+    const uidPart = eventKey(event)
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
@@ -283,6 +304,7 @@ const MusicModel = (() => {
     eventEnd,
     eventKey,
     eventStart,
+    excludeCancelledEvents,
     filterEvents,
     foldIcsLine,
     hour24,
@@ -291,6 +313,7 @@ const MusicModel = (() => {
     isUpcomingWeekend,
     normalizeText,
     pendingEvents,
+    publishedLineupNeedsRefresh,
     shareUrl,
     sortEvents,
     stamp,

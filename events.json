@@ -1,98 +1,66 @@
 [
   {
-    "name": "Velvet Love Box",
-    "genre": "Variety hits from the past and present!",
-    "date": "2026-11-06",
-    "start": "9:00 pm",
-    "end": "11:59 pm",
-    "image": "assets/artist-velvet-love-box.jpg"
-  },
-  {
-    "name": "Texas Floyd",
-    "genre": "Tribute to Pink Floyd",
-    "date": "2026-11-07",
-    "start": "9:00 pm",
-    "end": "11:59 pm",
-    "image": "assets/artist-texas-floyd.jpg"
-  },
-  {
-    "name": "FaceGiving - Thanksgiving Charity Show & Auction",
-    "genre": "Texas Blues",
-    "date": "2026-11-08",
-    "start": "3:00 pm",
-    "end": "6:00 pm",
-    "image": "assets/artist-facegiving.jpg"
-  },
-  {
-    "name": "Two Guys Walk Into A Bar",
-    "genre": "Classic Rock, Americana, Red Dirt",
-    "date": "2026-11-08",
+    "name": "Jason Elmore",
+    "genre": "Blues & Rock",
+    "date": "2026-11-16",
     "start": "7:00 pm",
     "end": "9:00 pm",
-    "image": "assets/artist-two-guys.jpg"
+    "image": "assets/artist-jason-elmore.webp"
   },
   {
-    "name": "Byron Haynie",
-    "genre": "Country Classics",
-    "date": "2026-11-09",
-    "start": "7:00 pm",
-    "end": "9:00 pm",
-    "image": "assets/artist-byron-haynie.jpg"
-  },
-  {
-    "name": "Big Mike",
-    "genre": "Big Mike Solo Show - Deep cuts and hits from all eras!",
-    "date": "2026-11-10",
+    "name": "Honcho",
+    "genre": "Classic Rock, Party Anthems, Country Hits",
+    "date": "2026-11-17",
     "start": "7:30 pm",
     "end": "9:45 pm",
-    "image": "assets/artist-big-mike.jpg"
+    "image": "assets/artist-honcho.webp"
   },
   {
-    "name": "Michael King Band",
-    "genre": "Texas Blues",
-    "date": "2026-11-11",
+    "name": "Mad World",
+    "genre": "A Tears For Fears Tribute",
+    "date": "2026-11-18",
     "start": "8:00 pm",
     "end": "10:45 pm",
-    "image": "assets/artist-michael-king-band.jpg"
+    "image": "assets/artist-mad-world.webp"
   },
   {
-    "name": "Trinity River Ramblers",
-    "genre": "Country, Americana and Classic Rock",
-    "date": "2026-11-12",
+    "name": "Ashmore",
+    "genre": "Classic & Southern Rock",
+    "date": "2026-11-19",
     "start": "8:00 pm",
-    "end": "10:44 pm",
-    "image": "assets/artist-trinity-river-ramblers.webp"
+    "end": "10:45 pm",
+    "image": "assets/artist-ashmore.webp"
   },
   {
-    "name": "The Machine",
-    "genre": "Classic and Contemporary Dance/Rock Covers",
-    "date": "2026-11-13",
+    "name": "The Alternatives",
+    "genre": "NINETIES AND ALTERNATIVE",
+    "date": "2026-11-20",
     "start": "9:00 pm",
     "end": "11:59 pm",
-    "image": "assets/artist-the-machine.png"
+    "image": "assets/artist-the-alternatives.webp"
   },
   {
-    "name": "Petty Theft",
-    "genre": "Tribute to Tom Petty & The Heartbreakers",
-    "date": "2026-11-14",
+    "name": "Cherry Bomb",
+    "genre": "A Tribute to the Women of Rock",
+    "date": "2026-11-21",
     "start": "9:00 pm",
     "end": "11:59 pm",
-    "image": "assets/artist-petty-theft.jpg"
+    "image": "assets/artist-cherry-bomb.webp"
   },
   {
-    "name": "James Hinds Band",
-    "genre": "Texas and Classic Country",
-    "date": "2026-11-15",
+    "name": "The Country Dead",
+    "genre": "Grateful Dead: Gone Country",
+    "date": "2026-11-22",
     "start": "2:30 pm",
     "end": "5:30 pm",
-    "image": "assets/artist-james-hinds-band.jpg"
+    "image": "assets/artist-the-country-dead.webp"
   },
   {
-    "name": "Jade Nickol",
-    "genre": "Solo Acoustic Show",
-    "date": "2026-11-15",
+    "name": "Jordan Whitmore",
+    "genre": "Texas Songwriter and Storyteller",
+    "date": "2026-11-22",
     "start": "7:00 pm",
     "end": "9:00 pm",
-    "image": "assets/artist-jade-nickol.jpg"
+    "image": "assets/artist-jordan-whitmore.webp"
   }
 ]
