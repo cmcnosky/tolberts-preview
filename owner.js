@@ -15,7 +15,7 @@
   const timeLabel = v => /^\d{2}:\d{2}$/.test(v || '') ? new Intl.DateTimeFormat('en-US', {hour:'numeric',minute:'2-digit',timeZone:'UTC'}).format(new Date(`2000-01-01T${v}:00Z`)).toLowerCase() : v;
   const inputTime = v => { if (/^\d{2}:\d{2}$/.test(v || '')) return v; const m = /^(\d{1,2}):(\d{2})\s*(am|pm)$/i.exec(v || ''); return m ? String(Number(m[1]) % 12 + (m[3].toLowerCase() === 'pm' ? 12 : 0)).padStart(2,'0') + ':' + m[2] : '20:00'; };
   function sharedScheduleNeedsOfficialFallback(events, now=Date.now()) {
-    const music=window.MusicModel;
+    const music=typeof MusicModel!=='undefined'?MusicModel:null;
     if(typeof music?.publishedLineupNeedsRefresh!=='function')return false;
     const scheduled=(Array.isArray(events)?events:[]).filter(event=>String(event?.status || '').toLowerCase()!=='cancelled');
     if(!scheduled.length)return false;

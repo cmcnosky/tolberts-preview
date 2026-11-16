@@ -8,7 +8,7 @@ const owner = fs.readFileSync(path.join(__dirname, '..', 'owner.js'), 'utf8');
 const tools = fs.readFileSync(path.join(__dirname, '..', 'owner-tools.js'), 'utf8');
 const access = fs.readFileSync(path.join(__dirname, '..', 'owner-access.js'), 'utf8');
 const html = fs.readFileSync(path.join(__dirname, '..', 'owner.html'), 'utf8');
-const Music = require('../music-model.js');
+const musicSource = fs.readFileSync(path.join(__dirname, '..', 'music-model.js'), 'utf8');
 
 function persistenceHarness(saveWorkspace, getWorkspace = async () => { throw new Error('unexpected refresh'); }) {
   const start = owner.indexOf('function setSaving(active)');
@@ -465,8 +465,10 @@ test('owner music notice follows the guest fallback policy without hiding shared
   const start = owner.indexOf('const timeLabel =');
   const end = owner.indexOf('let state,', start);
   assert.ok(start >= 0 && end > start, 'the owner schedule fallback helper is present');
-  const sandbox = {window: {MusicModel: Music}, Intl, Date};
-  vm.runInNewContext(owner.slice(start, end), sandbox);
+  const sandbox = {window: {}, Intl, Date};
+  vm.createContext(sandbox);
+  vm.runInContext(musicSource, sandbox);
+  vm.runInContext(owner.slice(start, end), sandbox);
 
   const event = (overrides = {}) => ({
     name: 'Test Artist', genre: 'Texas Music', date: '2026-11-15',
