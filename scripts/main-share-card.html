@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Tolbert’s link artwork — supper and the Main Street stage</title>
+  <title>Tolbert’s link artwork — Texas Flood on the Main Street stage</title>
   <link rel="stylesheet" href="../fonts.css">
   <style>
     * { box-sizing: border-box; }
@@ -32,21 +32,15 @@
       justify-content: space-between;
       padding: 34px 0 32px 44px;
     }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 24px;
-    }
-    .brand img { display: block; width: 242px; height: auto; }
-    .brand p {
-      margin: 0;
-      padding-left: 20px;
-      border-left: 2px solid #f3e9d27a;
-      font-size: 29px;
-      font-weight: 700;
-      line-height: 1.1;
-      letter-spacing: .8px;
-      text-transform: uppercase;
+    .mast { display: flex; align-items: center; gap: 30px; }
+    .wordmark { width: 269px; height: auto; }
+    .bowl {
+      display: block;
+      width: 172px;
+      height: 127px;
+      border: 4px solid var(--cream);
+      object-fit: cover;
+      object-position: 48% 50%;
     }
     h1 {
       margin: 0;
@@ -62,17 +56,33 @@
       letter-spacing: -4px;
       text-transform: none;
     }
-    .photographs {
+    .performance {
       display: grid;
-      grid-template-rows: minmax(0, 1.12fr) minmax(0, 1fr);
-      gap: 6px;
+      grid-template-rows: minmax(0, 1fr) auto;
       margin: 24px 30px 24px 12px;
       border: 6px solid var(--cream);
       background: var(--cream);
     }
-    .photographs img { display: block; width: 100%; height: 100%; object-fit: cover; }
-    .bowl { object-position: 50% 54%; }
-    .stage { object-position: 50% 45%; filter: saturate(.83); }
+    .performance img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 80%;
+      filter: brightness(1.2) saturate(.78);
+    }
+    figcaption {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      padding: 8px 10px 5px;
+      color: var(--ink);
+      font-weight: 700;
+      line-height: 1.05;
+    }
+    figcaption strong { font: 400 34px/1.1 'DM Serif Display', Georgia, serif; }
+    figcaption span { font-size: 28px; letter-spacing: 1.3px; text-transform: uppercase; }
     footer {
       height: 81px;
       display: flex;
@@ -93,15 +103,15 @@
 <body>
   <main class="cover">
     <section class="title-panel">
-      <div class="brand">
-        <img src="../assets/logo-white.png" alt="Tolbert’s">
-        <p>Restaurant &amp;<br>Chili Parlor</p>
+      <div class="mast">
+        <img class="wordmark" src="../assets/logo-white.png" alt="Tolbert’s">
+        <img class="bowl" src="../assets/hero-chili.webp" alt="Tolbert’s Bowl of Red">
       </div>
       <h1>Hot chili.<br>Cold beer.<em>Live music.</em></h1>
     </section>
-    <figure class="photographs">
-      <img class="bowl" src="../assets/hero-chili.webp" alt="Tolbert’s Bowl of Red topped with onions, cheese and a green pepper">
-      <img class="stage" src="../assets/music-room.webp" alt="Musicians and a crowd inside Tolbert’s on Main Street">
+    <figure class="performance">
+      <img src="../assets/texas-flood-tolberts-stage.webp" alt="Tommy Katona playing guitar under the Tolbert’s stage sign">
+      <figcaption><strong>Tommy Katona</strong><span>Texas Flood</span></figcaption>
     </figure>
   </main>
   <footer><span>423 South Main Street</span><span>Grapevine, Texas</span></footer>
