@@ -63,6 +63,39 @@ if (visitDate) {
   visitDate.closest('details').hidden = false;
   (window.OwnerPreview?.ready || Promise.resolve()).then(showVisitDate);
 }
+const stageFilm = $('#stage-film');
+const watchStageFilm = $('#watch-texas-flood');
+if (stageFilm && watchStageFilm && typeof stageFilm.showModal === 'function') {
+  const player = $('video', stageFilm);
+  const playbackError = $('.stage-film-error', stageFilm);
+  const soundButton = $('#stage-sound');
+  const soundIsOff = () => player.muted || player.volume === 0;
+  soundButton.hidden = false;
+  soundButton.addEventListener('click', () => {
+    const wasOff = soundIsOff();
+    if (wasOff && player.volume === 0) player.volume = 1;
+    player.muted = !wasOff;
+  });
+  player.addEventListener('volumechange', () => {
+    soundButton.textContent = soundIsOff() ? 'Turn sound on' : 'Mute sound';
+  });
+  player.addEventListener('error', () => { playbackError.hidden = false; });
+  player.addEventListener('playing', () => { playbackError.hidden = true; });
+  watchStageFilm.setAttribute('aria-haspopup', 'dialog');
+  watchStageFilm.addEventListener('click', event => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    openDialog(stageFilm, watchStageFilm);
+    player.muted = true;
+    if (player.error) player.load();
+    player.play().catch(() => { /* Native controls allow a retry; the original is linked below. */ });
+  });
+  stageFilm.addEventListener('close', () => {
+    player.pause();
+    player.currentTime = 0;
+    player.muted = true;
+  });
+}
 $('#inquiry-open').addEventListener('click', () => {$('input[name="date"]').min = chicagoDate(); openDialog($('#inquiry-dialog'));});
 $('#inquiry-form').addEventListener('submit', event => {
   event.preventDefault(); const data = Object.fromEntries(new FormData(event.currentTarget));

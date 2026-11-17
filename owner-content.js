@@ -54,23 +54,23 @@
     field('home.mainStreetAlt', 'Main Street photograph description', '.sign-print img', 'The tall Tolbert’s sign at Main and Franklin in downtown Grapevine', 'textarea', 240, {target: 'alt', section: 'Photographs'}),
     field('home.mainStreetCaptionTop', 'Main Street photograph caption, first line', '.sign-print figcaption span:first-child', 'MAIN & FRANKLIN', 'text', 80, {section: 'Photographs'}),
     field('home.mainStreetCaptionBottom', 'Main Street photograph caption, second line', '.sign-print figcaption span:last-child', 'GRAPEVINE, TEXAS', 'text', 80, {section: 'Photographs'}),
-    field('home.stageAlt', 'Stage photograph description', '.stage-print img', 'A band playing to a room full of guests at Tolbert’s', 'textarea', 240, {target: 'alt', section: 'Photographs'}),
-    field('home.stageCaption', 'Stage photograph caption', '.stage-print figcaption', 'Dinner has an encore.', 'text', 100, {section: 'Photographs'}),
+    field('home.stageAlt', 'Stage photograph description', '.stage-print img', 'Tommy Katona plays electric guitar beneath the Tolbert’s sign, with the Texas Flood drummer behind him.', 'textarea', 240, {target: 'alt', section: 'Photographs'}),
+    field('home.stageCaption', 'Stage photograph caption', '.stage-print figcaption', 'Tommy Katona of Texas Flood on the Main Street stage.', 'text', 100, {section: 'Photographs'}),
     field('home.menuPhotoAlt', 'Food photograph description', '.food-feature img', 'A close-up of Tolbert’s Bowl of Red', 'textarea', 240, {target: 'alt', section: 'Photographs'}),
     field('home.menuPhotoCaption', 'Food photograph caption', '.food-feature .food-tag', 'FRANK X. TOLBERT’S ORIGINAL RECIPE', 'text', 100, {section: 'Photographs'}),
     field('home.storyPhotoAlt', 'Story photograph description', '.story-image img', 'Tolbert’s wooden bar, Texas flags and brick walls', 'textarea', 240, {target: 'alt', section: 'Photographs'}),
     field('home.storyPhotoCaption', 'Story photograph caption', '.story-image .photo-note', 'Inside the chili parlor.', 'text', 100, {section: 'Photographs'}),
-    field('home.privateEventPhotoAlt', 'Groups-and-events photograph description', '#groups > img', 'Guests gathered for live music inside Tolbert’s', 'textarea', 240, {target: 'alt', section: 'Photographs'}),
+    field('home.privateEventPhotoAlt', 'Groups-and-events photograph description', '#groups > img', 'Dining tables and chairs inside Tolbert’s on Main Street', 'textarea', 240, {target: 'alt', section: 'Photographs'}),
     field('home.socialStageAlt', 'Social-strip stage photograph description', '.social-strip > img:first-child', 'Musicians performing on the Tolbert’s stage', 'textarea', 240, {target: 'alt', section: 'Photographs'}),
     field('home.socialDiningAlt', 'Social-strip dining photograph description', '.social-strip > img:last-child', 'The warm dining room at Tolbert’s on Main Street', 'textarea', 240, {target: 'alt', section: 'Photographs'})
   ]);
 
   const images = Object.freeze([
     image('home.mainStreetPhoto', 'Main Street photograph', '.sign-print img', 'assets/main-street.webp', 'home.mainStreetAlt', 'home.mainStreetCaptionTop'),
-    image('home.stagePhoto', 'Stage photograph', '.stage-print img', 'assets/music-room.webp', 'home.stageAlt', 'home.stageCaption'),
+    image('home.stagePhoto', 'Stage photograph', '.stage-print img', 'assets/texas-flood-tolberts-stage.webp', 'home.stageAlt', 'home.stageCaption'),
     image('home.menuPhoto', 'Food photograph', '.food-feature img', 'assets/hero-chili.webp', 'home.menuPhotoAlt', 'home.menuPhotoCaption'),
     image('home.storyPhoto', 'Story photograph', '.story-image img', 'assets/bar.webp', 'home.storyPhotoAlt', 'home.storyPhotoCaption'),
-    image('home.privateEventPhoto', 'Groups-and-events photograph', '#groups > img', 'assets/music-room.webp', 'home.privateEventPhotoAlt'),
+    image('home.privateEventPhoto', 'Groups-and-events photograph', '#groups > img', 'assets/dining-room.webp', 'home.privateEventPhotoAlt'),
     image('home.socialStagePhoto', 'Social-strip stage photograph', '.social-strip > img:first-child', 'assets/stage.webp', 'home.socialStageAlt'),
     image('home.socialDiningPhoto', 'Social-strip dining photograph', '.social-strip > img:last-child', 'assets/dining-room.webp', 'home.socialDiningAlt')
   ]);
