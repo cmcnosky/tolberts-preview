@@ -12,7 +12,7 @@
       height: 100%;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      grid-template-rows: repeat(2, minmax(0, 1fr));
+      grid-template-rows: minmax(0, 1fr) 417px;
       gap: 4px;
       background: #f3e9d2;
     }
@@ -24,14 +24,13 @@
     }
     .storefront { grid-row: span 2; object-position: 90% center; }
     .chili { object-position: 50% 50%; }
-    .stage { object-view-box: inset(17px 0 8px 0); object-position: 5% 50%; }
   </style>
 </head>
 <body>
   <main class="cover" aria-label="Tolbert’s Restaurant and Chili Parlor in Grapevine">
     <img class="storefront" src="../assets/main-street.webp" alt="The tall red Tolbert’s sign outside the restaurant at Main and Franklin">
     <img class="chili" src="../assets/hero-chili.webp" alt="Tolbert’s Bowl of Red with cheese, onions and a green pepper">
-    <img class="stage" src="../assets/texas-flood-stage-print.webp" alt="Tommy Katona of Texas Flood playing his electric guitar at Tolbert’s">
+    <img src="../assets/texas-flood-guitar-detail.webp" alt="Tommy Katona of Texas Flood playing his electric guitar at Tolbert’s">
   </main>
 </body>
 </html>
