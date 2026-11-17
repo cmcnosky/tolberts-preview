@@ -67,7 +67,7 @@
 
   const images = Object.freeze([
     image('home.mainStreetPhoto', 'Main Street photograph', '.sign-print img', 'assets/main-street.webp', 'home.mainStreetAlt', 'home.mainStreetCaptionTop'),
-    image('home.stagePhoto', 'Stage photograph', '.stage-print img', 'assets/texas-flood-tolberts-stage.webp', 'home.stageAlt', 'home.stageCaption'),
+    image('home.stagePhoto', 'Stage photograph', '.stage-print img', 'assets/texas-flood-main-street-stage.webp', 'home.stageAlt', 'home.stageCaption'),
     image('home.menuPhoto', 'Food photograph', '.food-feature img', 'assets/hero-chili.webp', 'home.menuPhotoAlt', 'home.menuPhotoCaption'),
     image('home.storyPhoto', 'Story photograph', '.story-image img', 'assets/bar.webp', 'home.storyPhotoAlt', 'home.storyPhotoCaption'),
     image('home.privateEventPhoto', 'Groups-and-events photograph', '#groups > img', 'assets/dining-room.webp', 'home.privateEventPhotoAlt'),

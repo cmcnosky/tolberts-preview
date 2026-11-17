@@ -19,9 +19,9 @@
       font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif;
     }
     .cover {
-      height: 549px;
+      height: 566px;
       display: grid;
-      grid-template-columns: 558px minmax(0, 1fr);
+      grid-template-columns: 460px minmax(0, 1fr);
       grid-template-rows: minmax(0, 1fr);
       background-image: radial-gradient(#54241836 .85px, transparent 1px);
       background-size: 7px 7px;
@@ -30,21 +30,22 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: 34px 0 32px 44px;
+      padding: 29px 16px 23px 30px;
     }
-    .mast { display: flex; align-items: center; gap: 30px; }
-    .wordmark { width: 269px; height: auto; }
+    .mast { display: flex; align-items: center; gap: 17px; }
+    .wordmark { width: 242px; height: auto; }
     .bowl {
       display: block;
-      width: 172px;
-      height: 127px;
+      width: 145px;
+      height: 108px;
       border: 4px solid var(--cream);
       object-fit: cover;
       object-position: 48% 50%;
     }
     h1 {
       margin: 0;
-      font: 800 122px/.85 'Barlow Condensed', 'Arial Narrow', sans-serif;
+      white-space: nowrap;
+      font: 800 100px/.90 'Barlow Condensed', 'Arial Narrow', sans-serif;
       text-transform: uppercase;
       letter-spacing: -2.7px;
     }
@@ -52,46 +53,43 @@
       display: block;
       margin-top: 9px;
       color: var(--gold);
-      font: italic 400 96px/1.04 'DM Serif Display', Georgia, serif;
+      font: italic 400 83px/1.04 'DM Serif Display', Georgia, serif;
       letter-spacing: -4px;
       text-transform: none;
     }
     .performance {
-      display: grid;
-      grid-template-rows: minmax(0, 1fr) auto;
-      margin: 24px 30px 24px 12px;
-      border: 6px solid var(--cream);
-      background: var(--cream);
+      display: block;
+      margin: 8px 10px 8px 0;
+      border: 4px solid var(--cream);
+      background: #200e26;
     }
     .performance img {
       display: block;
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      object-position: center 80%;
-      filter: brightness(1.2) saturate(.78);
+      object-fit: contain;
     }
-    figcaption {
+    .artist-credit {
       display: flex;
-      justify-content: space-between;
       align-items: baseline;
-      gap: 16px;
-      padding: 8px 10px 5px;
-      color: var(--ink);
-      font-weight: 700;
-      line-height: 1.05;
+      gap: 12px;
+      border-top: 2px solid #f3e9d270;
+      margin: 0;
+      padding-top: 9px;
+      font: 700 28px/1.15 'Barlow Condensed', sans-serif;
+      color: var(--cream);
     }
-    figcaption strong { font: 400 34px/1.1 'DM Serif Display', Georgia, serif; }
-    figcaption span { font-size: 28px; letter-spacing: 1.3px; text-transform: uppercase; }
+    .artist-credit strong { font: 400 33px/1.12 'DM Serif Display', Georgia, serif; }
+    .artist-credit span { color: var(--gold); }
     footer {
-      height: 81px;
+      height: 64px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       padding: 0 44px;
       border-top: 3px solid var(--ink);
       background: var(--green);
-      font-size: 36px;
+      font-size: 33px;
       font-weight: 700;
       line-height: 1;
       letter-spacing: 1.2px;
@@ -108,10 +106,10 @@
         <img class="bowl" src="../assets/hero-chili.webp" alt="Tolbert’s Bowl of Red">
       </div>
       <h1>Hot chili.<br>Cold beer.<em>Live music.</em></h1>
+      <p class="artist-credit"><strong>Tommy Katona</strong><span>·</span> Texas Flood</p>
     </section>
     <figure class="performance">
-      <img src="../assets/texas-flood-tolberts-stage.webp" alt="Tommy Katona playing guitar under the Tolbert’s stage sign">
-      <figcaption><strong>Tommy Katona</strong><span>Texas Flood</span></figcaption>
+      <img src="../assets/texas-flood-main-street-stage.webp" alt="Tommy Katona playing guitar under the Tolbert’s stage sign">
     </figure>
   </main>
   <footer><span>423 South Main Street</span><span>Grapevine, Texas</span></footer>

@@ -63,6 +63,42 @@ if (visitDate) {
   visitDate.closest('details').hidden = false;
   (window.OwnerPreview?.ready || Promise.resolve()).then(showVisitDate);
 }
+const photoDialog = $('#stage-photo-dialog');
+const enlargePhoto = $('#enlarge-stage-photo');
+if (photoDialog && enlargePhoto && typeof photoDialog.showModal === 'function') {
+  const stagePhoto = $('.stage-portrait img');
+  const expanded = $('img', photoDialog);
+  const viewport = $('.stage-photo-viewport', photoDialog);
+  const zoom = $('#stage-photo-zoom');
+  const syncPhoto = () => {
+    enlargePhoto.href = stagePhoto.src;
+    expanded.src = enlargePhoto.href;
+    expanded.alt = stagePhoto.alt;
+  };
+  enlargePhoto.setAttribute('aria-haspopup', 'dialog');
+  (window.OwnerPreview?.ready || Promise.resolve()).then(syncPhoto);
+  enlargePhoto.addEventListener('click', event => {
+    syncPhoto();
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    openDialog(photoDialog, enlargePhoto);
+  });
+  const fitPhoto = () => {
+    viewport.classList.remove('zoomed');
+    viewport.removeAttribute('tabindex');
+    zoom.textContent = 'Zoom in';
+    viewport.scrollTo(0, 0);
+  };
+  zoom.addEventListener('click', () => {
+    if (viewport.classList.contains('zoomed')) return fitPhoto();
+    viewport.style.setProperty('--detail-width', expanded.getBoundingClientRect().width * 2 + 'px');
+    viewport.classList.add('zoomed');
+    viewport.tabIndex = 0;
+    zoom.textContent = 'Fit photo';
+    viewport.scrollTo((viewport.scrollWidth - viewport.clientWidth) / 2, (viewport.scrollHeight - viewport.clientHeight) / 2);
+  });
+  photoDialog.addEventListener('close', fitPhoto);
+}
 const stageFilm = $('#stage-film');
 const watchStageFilm = $('#watch-texas-flood');
 if (stageFilm && watchStageFilm && typeof stageFilm.showModal === 'function') {
