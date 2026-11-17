@@ -64,15 +64,15 @@
     }
     .photographs {
       display: grid;
-      grid-template-rows: minmax(0, 1.12fr) minmax(0, 1fr);
+      grid-template-rows: 123px minmax(0, 1fr);
       gap: 6px;
       margin: 24px 30px 24px 12px;
       border: 6px solid var(--cream);
       background: var(--cream);
     }
     .photographs img { display: block; width: 100%; height: 100%; object-fit: cover; }
-    .bowl { object-position: 50% 54%; }
-    .stage { object-position: center; }
+    .bowl { object-position: 50% 44%; }
+    .stage { object-view-box: inset(12px 0 6px 0); object-position: 5% 50%; }
     footer {
       height: 81px;
       display: flex;
