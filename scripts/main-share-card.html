@@ -3,107 +3,35 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Tolbert’s link artwork — supper and the Main Street stage</title>
-  <link rel="stylesheet" href="../fonts.css">
+  <title>Tolbert’s at Main and Franklin — chili and Texas Flood</title>
   <style>
     * { box-sizing: border-box; }
-    html, body { margin: 0; width: 1200px; height: 630px; }
-    body {
-      --red: #922e20;
-      --cream: #f3e9d2;
-      --gold: #e9b852;
-      --green: #263f34;
-      --ink: #24211c;
-      color: var(--cream);
-      background: var(--red);
-      font-family: 'Barlow Condensed', 'Arial Narrow', sans-serif;
-    }
+    html, body { width: 1200px; height: 630px; margin: 0; }
     .cover {
-      height: 549px;
+      width: 100%;
+      height: 100%;
       display: grid;
-      grid-template-columns: 558px minmax(0, 1fr);
-      grid-template-rows: minmax(0, 1fr);
-      background-image: radial-gradient(#54241836 .85px, transparent 1px);
-      background-size: 7px 7px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-rows: repeat(2, minmax(0, 1fr));
+      gap: 4px;
+      background: #f3e9d2;
     }
-    .title-panel {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding: 34px 0 32px 44px;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 24px;
-    }
-    .brand img { display: block; width: 242px; height: auto; }
-    .brand p {
-      margin: 0;
-      padding-left: 20px;
-      border-left: 2px solid #f3e9d27a;
-      font-size: 29px;
-      font-weight: 700;
-      line-height: 1.1;
-      letter-spacing: .8px;
-      text-transform: uppercase;
-    }
-    h1 {
-      margin: 0;
-      font: 800 122px/.85 'Barlow Condensed', 'Arial Narrow', sans-serif;
-      text-transform: uppercase;
-      letter-spacing: -2.7px;
-    }
-    h1 em {
+    .cover img {
       display: block;
-      margin-top: 9px;
-      color: var(--gold);
-      font: italic 400 96px/1.04 'DM Serif Display', Georgia, serif;
-      letter-spacing: -4px;
-      text-transform: none;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
-    .photographs {
-      display: grid;
-      grid-template-rows: 123px minmax(0, 1fr);
-      gap: 6px;
-      margin: 24px 30px 24px 12px;
-      border: 6px solid var(--cream);
-      background: var(--cream);
-    }
-    .photographs img { display: block; width: 100%; height: 100%; object-fit: cover; }
-    .bowl { object-position: 50% 44%; }
-    .stage { object-view-box: inset(12px 0 6px 0); object-position: 5% 50%; }
-    footer {
-      height: 81px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 44px;
-      border-top: 3px solid var(--ink);
-      background: var(--green);
-      font-size: 36px;
-      font-weight: 700;
-      line-height: 1;
-      letter-spacing: 1.2px;
-      text-transform: uppercase;
-    }
-    footer span:last-child { color: var(--gold); }
+    .storefront { grid-row: span 2; object-position: 90% center; }
+    .chili { object-position: 50% 50%; }
+    .stage { object-view-box: inset(17px 0 8px 0); object-position: 5% 50%; }
   </style>
 </head>
 <body>
-  <main class="cover">
-    <section class="title-panel">
-      <div class="brand">
-        <img src="../assets/logo-white.png" alt="Tolbert’s">
-        <p>Restaurant &amp;<br>Chili Parlor</p>
-      </div>
-      <h1>Hot chili.<br>Cold beer.<em>Live music.</em></h1>
-    </section>
-    <figure class="photographs">
-      <img class="bowl" src="../assets/hero-chili.webp" alt="Tolbert’s Bowl of Red topped with onions, cheese and a green pepper">
-      <img class="stage" src="../assets/texas-flood-stage-print.webp" alt="Tommy Katona playing guitar with Texas Flood on Tolbert’s stage">
-    </figure>
+  <main class="cover" aria-label="Tolbert’s Restaurant and Chili Parlor in Grapevine">
+    <img class="storefront" src="../assets/main-street.webp" alt="The tall red Tolbert’s sign outside the restaurant at Main and Franklin">
+    <img class="chili" src="../assets/hero-chili.webp" alt="Tolbert’s Bowl of Red with cheese, onions and a green pepper">
+    <img class="stage" src="../assets/texas-flood-stage-print.webp" alt="Tommy Katona of Texas Flood playing his electric guitar at Tolbert’s">
   </main>
-  <footer><span>423 South Main Street</span><span>Grapevine, Texas</span></footer>
 </body>
 </html>
