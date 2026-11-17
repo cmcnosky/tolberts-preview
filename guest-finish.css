@@ -20,6 +20,8 @@
 .menu-sidebar a{min-height:44px;font-size:15px}
 .menu-result-actions,.menu-result-actions button,.back-search{font-size:14px}
 .menu-tools button,.menu-tools a{min-height:44px;display:inline-flex;align-items:center}
+.menu-item.is-requested-dish{position:relative;padding-inline:16px;background:rgba(233,184,82,.16);box-shadow:inset 4px 0 0 var(--red);scroll-margin-block:160px 90px}
+.menu-item.is-requested-dish::before{content:"YOUR MENU MATCH";display:block;width:max-content;margin-bottom:8px;color:var(--red);font:700 12px/1 var(--sans);letter-spacing:.9px}
 .menu-page-policy p{font-size:15px}
 .music-page-head h1{font-size:clamp(60px,7vw,88px);margin:12px 0 16px}
 .music-page-head>.eyebrow,.menu-title-row .eyebrow{font-size:12px;letter-spacing:1.2px}

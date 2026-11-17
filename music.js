@@ -149,9 +149,9 @@
       .toUpperCase();
   }
 
-  function renderDateOptions() {
+  function renderDateOptions(now = Date.now()) {
     if (!dateSelect) return;
-    const dates = [...new Set(MusicModel.pendingEvents(events).map(event => event.date).filter(MusicModel.validDate))];
+    const dates = [...new Set(MusicModel.pendingEvents(events, now).map(event => event.date).filter(MusicModel.validDate))];
     if (selectedDate && !dates.includes(selectedDate)) dates.push(selectedDate);
     dates.sort();
     dateSelect.replaceChildren();
@@ -168,13 +168,13 @@
     dateSelect.value = selectedDate;
   }
 
-  function updateHero() {
+  function updateHero(now = Date.now()) {
     const heroLink = $('#next-show');
     if (!heroLink) return;
     const label = $('#next-show-label');
     const name = $('#next-show-name');
     const time = $('#next-show-time');
-    const next = MusicModel.pendingEvents(events)[0];
+    const next = MusicModel.pendingEvents(events, now)[0];
     if (!next) {
       if (label) label.textContent = 'LATEST LINEUP';
       if (name) name.textContent = 'See the official concert calendar';
@@ -183,19 +183,17 @@
       if (time) time.textContent = '';
       return;
     }
-    const now = Date.now();
-    const happening = MusicModel.eventStart(next).getTime() <= now;
-    if (label) label.textContent = happening ? 'ON STAGE NOW' : 'NEXT ON STAGE';
+    const happening = MusicModel.eventPhase(next, now) === 'live';
+    if (label) label.textContent = happening ? 'SCHEDULED NOW' : 'NEXT ON STAGE';
     if (name) name.textContent = next.name;
     else heroLink.textContent = time ? `${next.name} →` : `${MusicModel.displayDate(next.date)} · ${next.name} · ${next.start} →`;
     heroLink.href = previewLink(MusicModel.shareUrl(next, location.href));
     if (time) time.textContent = `${MusicModel.displayDate(next.date, {long: true})} · ${next.start}–${next.end} Central`;
   }
 
-  function renderTodayStage() {
+  function renderTodayStage(now = new Date()) {
     const list = $('#today-stage-list');
     if (!list) return;
-    const now = new Date();
     const today = MusicModel.chicagoDate(now);
     const artists = MusicModel.todayEvents(events, now);
     const dateLabel = $('#today-stage-date');
@@ -218,33 +216,36 @@
       list.innerHTML = `<p class="today-empty">${esc(message)} <a href="${officialCalendar}" target="_blank" rel="noopener">Official calendar ↗</a></p>`;
       return;
     }
-    const signature = JSON.stringify(artists.map(event => [event, MusicModel.eventEnd(event).getTime() <= now.getTime(), MusicModel.eventStart(event).getTime() <= now.getTime()]));
+    const signature = JSON.stringify(artists.map(event => [event, MusicModel.eventPhase(event, now)]));
     if (signature === lastTodaySignature) return;
     lastTodaySignature = signature;
     list.innerHTML = artists.map(event => {
-      const ended = MusicModel.eventEnd(event).getTime() <= now.getTime();
-      const started = MusicModel.eventStart(event).getTime() <= now.getTime();
-      const state = ended ? 'Set finished' : started ? 'Scheduled on stage now' : 'View show details ↗';
+      const phase = MusicModel.eventPhase(event, now);
+      const ended = phase === 'ended';
+      const state = ended ? 'Scheduled set ended' : phase === 'live' ? 'Scheduled now' : 'Later today · View details ↗';
       const href = ended ? previewLink('music.html') : previewLink(MusicModel.shareUrl(event, location.href));
       const image = event.image || 'assets/stage.webp';
       const alt = event.image ? (event.imageAlt || `Promotional image for ${event.name}`) : 'The Tolbert’s stage';
-      return `<a class="today-artist" href="${esc(href)}" aria-label="${esc(event.name)}, ${esc(event.start)} to ${esc(event.end)} Central. ${ended ? 'Set finished. View upcoming shows.' : 'View show details.'}"><img class="today-artist-photo" src="${esc(image)}" alt="${esc(alt)}" width="80" height="80"><span class="today-artist-copy"><span class="today-card-label">Playing today</span><strong class="today-artist-name">${esc(event.name)}</strong><span class="today-artist-time">${esc(event.start)}–${esc(event.end)} <span>Central</span></span><span class="today-artist-state">${esc(state)}</span></span></a>`;
+      return `<a class="today-artist" href="${esc(href)}" aria-label="${esc(event.name)}, ${esc(event.start)} to ${esc(event.end)} Central. ${ended ? 'Scheduled set ended. View upcoming shows.' : 'View show details.'}"><img class="today-artist-photo" src="${esc(image)}" alt="${esc(alt)}" width="80" height="80"><span class="today-artist-copy"><span class="today-card-label">Playing today</span><strong class="today-artist-name">${esc(event.name)}</strong><span class="today-artist-time">${esc(event.start)}–${esc(event.end)} <span>Central</span></span><span class="today-artist-state">${esc(state)}</span></span></a>`;
     }).join('');
     $$('.today-artist-photo', list).forEach((image, index) => setImageFallback(image, artists[index]));
   }
 
   function renderShows() {
+    const now = new Date();
+    const today = MusicModel.chicagoDate(now);
     const focusedEventKey = grid.contains(document.activeElement)
       ? document.activeElement.closest('[data-event]')?.dataset.event
       : null;
-    renderDateOptions();
+    renderDateOptions(now);
     const matching = MusicModel.filterEvents(events, {
       filter,
       query,
-      date: selectedDate
+      date: selectedDate,
+      now
     });
     const visible = fullPage || expanded ? matching : matching.slice(0, 3);
-    const available = MusicModel.pendingEvents(events);
+    const available = MusicModel.pendingEvents(events, now);
     const hasFilters = filter !== 'all' || Boolean(query) || Boolean(selectedDate);
     if (resetButton) resetButton.hidden = !hasFilters;
 
@@ -259,7 +260,13 @@
       const link = previewLink(MusicModel.shareUrl(event, location.href));
       const image = event.image || 'assets/stage.webp';
       const imageAlt = event.imageAlt || `${event.name} — promotional image`;
-      return `<article class="show-card"><div class="show-image"><img src="${esc(image)}" width="900" height="560" alt="${esc(imageAlt)}" loading="lazy"></div><time class="show-date" datetime="${esc(event.date)}"><span>${monthLabel(event.date)}</span><strong>${Number(event.date.slice(8))}</strong><span class="show-weekday">${new Intl.DateTimeFormat('en-US', {weekday: 'short', timeZone: 'UTC'}).format(new Date(`${event.date}T12:00:00Z`))}</span></time><div class="show-copy"><p class="genre">${esc(event.genre || 'Live music')}</p><h3>${esc(event.name)}</h3><p class="show-time">${esc(event.start)}–${esc(event.end)} Central</p></div><a class="show-detail" data-event="${esc(key)}" href="${esc(link)}" aria-label="Show details for ${esc(event.name)}">Plan this night <span aria-hidden="true">↗</span></a></article>`;
+      const phase = MusicModel.eventPhase(event, now);
+      const timing = phase === 'live'
+        ? '<span class="show-state show-state-live">Scheduled now</span>'
+        : event.date === today
+          ? '<span class="show-state">Later today</span>'
+          : '';
+      return `<article class="show-card"><div class="show-image"><img src="${esc(image)}" width="900" height="560" alt="${esc(imageAlt)}" loading="lazy"></div><time class="show-date" datetime="${esc(event.date)}"><span>${monthLabel(event.date)}</span><strong>${Number(event.date.slice(8))}</strong><span class="show-weekday">${new Intl.DateTimeFormat('en-US', {weekday: 'short', timeZone: 'UTC'}).format(new Date(`${event.date}T12:00:00Z`))}</span></time><div class="show-copy">${timing}<p class="genre">${esc(event.genre || 'Live music')}</p><h3>${esc(event.name)}</h3><p class="show-time">${esc(event.start)}–${esc(event.end)} Central</p></div><a class="show-detail" data-event="${esc(key)}" href="${esc(link)}" aria-label="Show details for ${esc(event.name)}">Plan this night <span aria-hidden="true">↗</span></a></article>`;
     }).join('') : `<div class="no-results"><p>${available.length ? 'No upcoming shows match these filters.' : 'No upcoming listings are available here.'}</p>${hasFilters ? '<button type="button" class="reset-shows" data-reset-shows>Clear filters and see all shows</button>' : ''}<a class="text-link light" href="${officialCalendar}" target="_blank" rel="noopener">See the official calendar ↗</a></div>`;
 
     if (showMore) {
@@ -296,8 +303,8 @@
       }
     }
 
-    updateHero();
-    renderTodayStage();
+    updateHero(now);
+    renderTodayStage(now);
     resolveRequestedShow();
   }
 
@@ -328,6 +335,7 @@
       event.genre || '',
       event.image || '',
       event.imageAlt || '',
+      MusicModel.eventPhase(event),
       sharedScheduleActive ? 'published' : liveChecked ? 'live' : 'saved'
     ]);
   }
@@ -376,9 +384,16 @@
     const artworkAdvisory = hasArtworkTimeConflict(event)
       ? '<p class="detail-note"><strong>Schedule note:</strong> When checked November 16, the calendar listed 2:30 pm and the promotional artwork showed 3:00 pm. Call Tolbert’s to confirm before you go.</p>'
       : '';
+    const now = new Date();
+    const phase = MusicModel.eventPhase(event, now);
+    const timing = phase === 'live'
+      ? '<p class="detail-state detail-state-live">Scheduled now</p>'
+      : phase === 'upcoming' && event.date === MusicModel.chicagoDate(now)
+        ? '<p class="detail-state">Later today</p>'
+        : '';
     details.innerHTML = `<div class="detail-layout">
         <figure class="detail-art"><a class="detail-image-link" href="${esc(image)}" target="_blank" rel="noopener" aria-label="Open full-size image for ${esc(event.name)}"><img class="detail-image" src="${esc(image)}" alt="${esc(imageAlt)}"><span>Full image ↗</span></a></figure>
-        <div class="detail-heading"><p class="detail-genre">${esc(event.genre || 'Live music')}</p><h2 id="show-title">${esc(event.name)}</h2>
+        <div class="detail-heading">${timing}<p class="detail-genre">${esc(event.genre || 'Live music')}</p><h2 id="show-title">${esc(event.name)}</h2>
           <div class="detail-meta"><strong>${esc(MusicModel.displayDate(event.date, {long: true, year: true}))}</strong><span>${esc(event.start)}–${esc(event.end)} <small>Central</small></span></div>
         </div>
         <div class="detail-information">

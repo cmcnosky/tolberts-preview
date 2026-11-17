@@ -116,6 +116,8 @@ test('the editor freezes every modal control until an asynchronous submission se
   };
   const form = {addEventListener(type, listener) { listeners[type] = listener; }};
   const alert = {textContent: '', scrollIntoView() {}};
+  const discardWarning = {hidden: true};
+  const keepEditing = {focuses: 0, focus() { this.focuses += 1; }};
   const sandbox = {
     dialog,
     form,
@@ -141,7 +143,7 @@ test('the editor freezes every modal control until an asynchronous submission se
     render() {},
     FormData: class { *[Symbol.iterator]() { yield ['name', 'Test']; } },
     Object,
-    $: selector => selector === '#editor-save' ? controls[0] : alert,
+    $: selector => selector === '#editor-save' ? controls[0] : selector === '#editor-discard-warning' ? discardWarning : selector === '#editor-keep-editing' ? keepEditing : alert,
     $$: selector => selector.startsWith('[data-editor') ? controls.filter(control => control.dataset.editorSubmitDisabled === 'true') : controls
   };
   vm.runInNewContext(`${owner.slice(persistStart, persistEnd)}\n${owner.slice(pendingStart, pendingEnd)}\n${owner.slice(submitStart, submitEnd)}`, sandbox);
@@ -189,6 +191,15 @@ test('the editor freezes every modal control until an asynchronous submission se
   assert.equal(controls[0].textContent, 'Review required');
   assert.equal(controls[1].disabled, false, 'form values remain available for copying');
   assert.equal(dialog.attributes['aria-busy'], 'false');
+
+  controls[0].disabled = false;
+  discardWarning.hidden = false;
+  let blockedSubmissions = 0;
+  sandbox.editorSubmit = async () => { blockedSubmissions += 1; };
+  await listeners.submit({preventDefault() {}});
+  assert.equal(blockedSubmissions, 0, 'Enter cannot submit while the discard decision is open');
+  assert.equal(controls[0].disabled, false, 'the guarded submit does not enter a pending state');
+  assert.equal(keepEditing.focuses, 1, 'a blocked submit returns focus to the safe decision');
 });
 
 test('beforeunload protects changed modal fields without warning for an untouched dialog', () => {
@@ -238,6 +249,94 @@ test('beforeunload protects changed modal fields without warning for an untouche
   warning.allowPageLeave = true;
   assert.equal(warning.shouldWarnBeforeUnload(), false, 'a confirmed page leave bypasses the warning');
   assert.match(owner, /beforeunload'[\s\S]*shouldWarnBeforeUnload\(\)/);
+});
+
+test('dirty owner editors require an explicit discard while clean editors still close directly', () => {
+  assert.match(html, /id="editor-discard-warning"[\s\S]*id="editor-keep-editing"[\s\S]*id="editor-discard"/);
+
+  const start = owner.indexOf('function setEditorDecisionMode(');
+  const end = owner.indexOf("form.addEventListener('input'", start);
+  assert.ok(start >= 0 && end > start, 'the editor close guard is present');
+
+  const listeners = {};
+  const classes = new Set();
+  const warning = {hidden: true, scrolls: 0, scrollIntoView() { this.scrolls += 1; }};
+  const field = {isConnected: true, disabled: false, focuses: 0, getClientRects: () => [{}], focus() { this.focuses += 1; }};
+  const keep = {listeners: {}, focuses: 0, focus() { this.focuses += 1; }, addEventListener(type, listener) { this.listeners[type] = listener; }};
+  const discard = {listeners: {}, addEventListener(type, listener) { this.listeners[type] = listener; }};
+  const closeButton = {dataset: {}, isConnected: true, disabled: false, listeners: {}, getClientRects: () => [{}], focus() {}, addEventListener(type, listener) { this.listeners[type] = listener; }};
+  const hiddenCancel = {isConnected: true, disabled: false, hidden: false, focuses: 0, getClientRects: () => [], focus() { this.focuses += 1; }};
+  const fields = {inert: false};
+  let closeCount = 0;
+  const dialog = {
+    open: true,
+    classList: {add(value) { classes.add(value); }, remove(value) { classes.delete(value); }},
+    contains(target) { return [field, keep, discard, closeButton, hiddenCancel].includes(target); },
+    addEventListener(type, listener) { listeners[type] = listener; },
+    close() { closeCount += 1; }
+  };
+  const sandbox = {
+    dialog,
+    editorPending: false,
+    editorDirty: true,
+    editorCloseFocus: null,
+    editorInvalidated: false,
+    editorFailureMessage: '',
+    editorOpener: null,
+    loggedIn: true,
+    workspace: {focus() {}},
+    document: {activeElement: field, body: {classList: {remove() {}}}},
+    setEditorPending() {},
+    showDeferredLogin: () => false,
+    $: (selector) => ({
+      '#editor-discard-warning': warning,
+      '#editor-keep-editing': keep,
+      '#editor-discard': discard,
+      '#editor-fields': fields,
+      '#owner-username': field,
+      '.dialog-close': closeButton,
+      '.dialog-close:not([disabled])': closeButton
+    })[selector] || (selector === 'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])' ? field : null),
+    $$: (selector) => selector === '[data-close-dialog]' ? [closeButton] : []
+  };
+  vm.runInNewContext(owner.slice(start, end), sandbox);
+
+  closeButton.listeners.click();
+  assert.equal(closeCount, 0, 'Cancel and close do not discard a dirty editor immediately');
+  assert.equal(warning.hidden, false);
+  assert.equal(classes.has('discard-confirmation-visible'), true);
+  assert.equal(fields.inert, true, 'the original form is inert while deciding');
+  assert.equal(closeButton.disabled, true, 'the original close control is disabled while deciding');
+  assert.equal(keep.focuses, 1, 'the safe choice receives keyboard focus');
+
+  keep.listeners.click();
+  assert.equal(warning.hidden, true);
+  assert.equal(classes.has('discard-confirmation-visible'), false);
+  assert.equal(fields.inert, false);
+  assert.equal(closeButton.disabled, false);
+  assert.equal(field.focuses, 1, 'keeping the edit restores focus to the prior field');
+
+  let prevented = 0;
+  listeners.cancel({preventDefault() { prevented += 1; }});
+  assert.equal(prevented, 1, 'Escape cannot silently discard a dirty editor');
+  assert.equal(warning.hidden, false);
+  listeners.cancel({preventDefault() { prevented += 1; }});
+  assert.equal(prevented, 2, 'Escape from the warning returns to editing');
+  assert.equal(warning.hidden, true);
+
+  sandbox.document.activeElement = hiddenCancel;
+  sandbox.requestEditorClose();
+  keep.listeners.click();
+  assert.equal(hiddenCancel.focuses, 0, 'an unavailable prior control is not focused');
+  assert.equal(field.focuses, 3, 'focus falls back to the first usable editor field');
+
+  sandbox.requestEditorClose();
+  discard.listeners.click();
+  assert.equal(closeCount, 1, 'the explicit discard action closes the editor');
+
+  sandbox.editorDirty = false;
+  sandbox.requestEditorClose();
+  assert.equal(closeCount, 2, 'a clean editor closes without unnecessary confirmation');
 });
 
 test('real persistence invalidates stale editors for rejection, conflict, and ambiguous outcomes without retrying', async () => {

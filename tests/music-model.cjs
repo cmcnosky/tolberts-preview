@@ -58,6 +58,18 @@ test('pending events hide ended listings and preserve chronological order', () =
   assert.deepEqual(Music.pendingEvents(events, now).map(event => event.name), ['Tonight', 'Later']);
 });
 
+test('event phase has exact start/end boundaries and rejects malformed clocks', () => {
+  const event = show({date: '2026-11-04', start: '8:00 pm', end: '10:00 pm'});
+  assert.equal(Music.eventPhase(event, new Date('2026-11-05T01:59:59Z')), 'upcoming');
+  assert.equal(Music.eventPhase(event, new Date('2026-11-05T02:00:00Z')), 'live');
+  assert.equal(Music.eventPhase(event, new Date('2026-11-05T03:59:59Z')), 'live');
+  assert.equal(Music.eventPhase(event, new Date('2026-11-05T04:00:00Z')), 'ended');
+  assert.equal(Music.eventPhase(show({start: 'not a time'}), new Date('2026-11-05T02:00:00Z')), 'invalid');
+  assert.equal(Music.eventPhase(event, new Date('invalid')), 'invalid');
+  assert.equal(Music.isPending(event, new Date('2026-11-05T02:00:00Z')), true);
+  assert.equal(Music.isPending(event, new Date('2026-11-05T04:00:00Z')), false);
+});
+
 test('published lineup refresh starts only after a nonempty shared schedule has ended', () => {
   const now = new Date('2026-11-16T18:00:00Z');
   const ended = show({name: 'Sunday Artist', date: '2026-11-15', start: '7:00 pm', end: '9:00 pm', status: 'Scheduled'});

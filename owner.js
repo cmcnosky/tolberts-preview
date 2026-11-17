@@ -22,7 +22,7 @@
     const guestSchedule=scheduled.map(event=>({...event,start:timeLabel(event.start),end:timeLabel(event.end)}));
     return music.publishedLineupNeedsRefresh(scheduled,guestSchedule,now);
   }
-  let state, baseline = {events: []}, savedState, revision = null, updatedAt = '', view = 'overview', filter = '', activeOrder = null, editorSubmit = null, editorOpener = null, editorPending = false, editorDirty = false, editorInvalidated = false, editorFailureMessage = '', deferredLoginMessage = '', inlineRecovery = null, loggedIn = false, saving = false, refreshing = false, needsRefresh = false, allowPageLeave = false, toastTimer;
+  let state, baseline = {events: []}, savedState, revision = null, updatedAt = '', view = 'overview', filter = '', activeOrder = null, editorSubmit = null, editorOpener = null, editorCloseFocus = null, editorPending = false, editorDirty = false, editorInvalidated = false, editorFailureMessage = '', deferredLoginMessage = '', inlineRecovery = null, loggedIn = false, saving = false, refreshing = false, needsRefresh = false, allowPageLeave = false, toastTimer;
   const workspace = $('#workspace');
   const dialog = $('#editor-dialog');
   const form = $('#editor-form');
@@ -239,17 +239,53 @@
     editorDirty = false;
     editorInvalidated = false;
     editorFailureMessage = '';
+    hideEditorDiscardPrompt();
     editorOpener = document.activeElement; editorSubmit = callback;
     $('#editor-title').textContent = title; $('#editor-fields').innerHTML = `<p id="editor-error" role="alert" class="login-error"></p>${fields}`;
     $('#editor-save').textContent = saveText; $('#editor-save').disabled = false;
     dialog.showModal(); document.body.classList.add('dialog-open');
   }
   function confirmation(title,body,callback,label) { openEditor(title,body,callback,label); }
+  function setEditorDecisionMode(active) {
+    const fields = $('#editor-fields');
+    const close = $('.dialog-close', dialog);
+    if (fields) fields.inert = Boolean(active);
+    if (close) close.disabled = Boolean(active);
+    dialog.classList[active ? 'add' : 'remove']('discard-confirmation-visible');
+  }
+  function canRestoreEditorFocus(target) {
+    if (!target?.isConnected || !dialog.contains(target) || target.disabled || target.hidden) return false;
+    return typeof target.getClientRects !== 'function' || target.getClientRects().length > 0;
+  }
+  function hideEditorDiscardPrompt(restoreFocus=false) {
+    const warning = $('#editor-discard-warning');
+    if (warning) warning.hidden = true;
+    setEditorDecisionMode(false);
+    if (restoreFocus) {
+      const fallback = $('input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled])', $('#editor-fields')) || $('.dialog-close:not([disabled])', dialog);
+      const target = canRestoreEditorFocus(editorCloseFocus) ? editorCloseFocus : fallback;
+      target?.focus();
+    }
+    editorCloseFocus = null;
+  }
+  function requestEditorClose() {
+    if (editorPending || !dialog.open) return false;
+    if (!editorDirty) { dialog.close(); return true; }
+    const warning = $('#editor-discard-warning');
+    if (!warning || !warning.hidden) return false;
+    editorCloseFocus = document.activeElement;
+    warning.hidden = false;
+    setEditorDecisionMode(true);
+    $('#editor-keep-editing')?.focus({preventScroll:true});
+    warning.scrollIntoView({block:'nearest'});
+    return false;
+  }
   dialog.addEventListener('close', () => {
     setEditorPending(false);
     editorDirty = false;
     editorInvalidated = false;
     editorFailureMessage = '';
+    hideEditorDiscardPrompt();
     document.body.classList.remove('dialog-open');
     if (showDeferredLogin()) return;
     const replacement = editorOpener?.dataset.action ? $$('[data-action]').find(el=>el.dataset.action===editorOpener.dataset.action && el.dataset.id===editorOpener.dataset.id) : null;
@@ -258,12 +294,21 @@
     else if(loggedIn) workspace.focus({preventScroll:true});
     else $('#owner-username').focus({preventScroll:true});
   });
-  dialog.addEventListener('cancel', event => { if(editorPending) event.preventDefault(); });
-  $$('[data-close-dialog]').forEach(b => b.addEventListener('click', () => { if(!editorPending) dialog.close(); }));
+  dialog.addEventListener('cancel', event => {
+    if (editorPending) { event.preventDefault(); return; }
+    if (!$('#editor-discard-warning')?.hidden) { event.preventDefault(); hideEditorDiscardPrompt(true); return; }
+    if (editorDirty) { event.preventDefault(); requestEditorClose(); }
+  });
+  $$('[data-close-dialog]').forEach(b => b.addEventListener('click', requestEditorClose));
+  $('#editor-keep-editing').addEventListener('click', () => hideEditorDiscardPrompt(true));
+  $('#editor-discard').addEventListener('click', () => dialog.close());
   form.addEventListener('input', () => { if (dialog.open) editorDirty = true; });
   form.addEventListener('change', () => { if (dialog.open) editorDirty = true; });
   form.addEventListener('submit',async event => {
-    event.preventDefault(); const submit = $('#editor-save'); if(submit.disabled) return;
+    event.preventDefault();
+    const discardWarning = $('#editor-discard-warning');
+    if (discardWarning && !discardWarning.hidden) { $('#editor-keep-editing')?.focus({preventScroll:true}); return; }
+    const submit = $('#editor-save'); if(submit.disabled) return;
     const data = Object.fromEntries(new FormData(form));
     editorInvalidated = false;
     editorFailureMessage = '';

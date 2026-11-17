@@ -41,6 +41,7 @@ const search = $('#dish-search'), categorySelect = $('#category-select');
 const dishes = $$('.menu-item'), groups = $$('.menu-group');
 const categories = new Set(['All dishes', ...dishes.map(dish => dish.dataset.category)]);
 const normalize = MenuSearch.normalize;
+const dishNames = new Map(dishes.map(dish => [dish, normalize($('h3',dish).textContent)]));
 const searchable = new Map(dishes.map(dish => [dish, MenuSearch.textFor({
   name:$('h3',dish).textContent,
   description:$('p',dish)?.textContent || '',
@@ -53,6 +54,7 @@ function readLocation() {
   search.value = params.get('q') || '';
   category = categories.has(params.get('category')) ? params.get('category') : 'All dishes';
   renderMenu(false);
+  revealRequestedDish();
 }
 function updateLocation(push = false) {
   const url = new URL(location.href);
@@ -63,7 +65,7 @@ function updateLocation(push = false) {
 }
 function renderMenu(update = true, push = false) {
   const query = normalize(search.value), terms = query.split(/\s+/).filter(Boolean); let count = 0;
-  dishes.forEach(dish => {const match = (category === 'All dishes' || dish.dataset.category === category) && terms.every(term => searchable.get(dish).includes(term)); dish.hidden = !match; if (match) count++;});
+  dishes.forEach(dish => {dish.classList.remove('is-requested-dish'); const match = (category === 'All dishes' || dish.dataset.category === category) && terms.every(term => searchable.get(dish).includes(term)); dish.hidden = !match; if (match) count++;});
   $('#dietary-guidance').hidden = !/gluten|allerg|vegetarian|vegan|dairy|nut.?free/.test(query);
   groups.forEach(group => group.hidden = $$('.menu-item',group).every(dish => dish.hidden));
   $('#menu-count').textContent = `${count} ${count === 1 ? 'entry' : 'entries'}${category === 'All dishes' ? '' : ' · ' + category}`;
@@ -73,9 +75,19 @@ function renderMenu(update = true, push = false) {
   $$('[data-category]', $('.menu-sidebar')).forEach(link => {if (link.dataset.category === category) link.setAttribute('aria-current','true'); else link.removeAttribute('aria-current');});
   if (update) updateLocation(push);
 }
+function revealRequestedDish() {
+  const query = normalize(search.value);
+  if (!query) return;
+  const visible = dishes.filter(dish => !dish.hidden);
+  const exactTitleMatches = visible.filter(dish => dishNames.get(dish) === query);
+  const target = exactTitleMatches.length === 1 ? exactTitleMatches[0] : visible.length === 1 ? visible[0] : null;
+  if (!target) return;
+  target.classList.add('is-requested-dish');
+  target.scrollIntoView({block:'center',behavior:'auto'});
+}
 search.addEventListener('input', () => renderMenu());
 $('.menu-search-form').addEventListener('submit', event => {event.preventDefault(); renderMenu(); $('#menu-count').scrollIntoView({block:'center',behavior:'auto'});});
-categorySelect.addEventListener('change', () => {category = categorySelect.value; renderMenu(true,true);});
+categorySelect.addEventListener('change', () => {category = categorySelect.value; renderMenu(true,true); $('#menu-count').scrollIntoView({block:'center',behavior:'auto'});});
 $$('.menu-sidebar [data-category]').forEach(link => link.addEventListener('click', event => {if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); category = link.dataset.category; renderMenu(true,true); $('#menu-count').scrollIntoView({block:'center',behavior:'auto'});}));
 function resetMenu() {search.value = ''; category = 'All dishes'; renderMenu(true,true); search.focus();}
 $('#clear-menu').addEventListener('click',resetMenu); $('#reset-menu').addEventListener('click',resetMenu);
@@ -86,4 +98,5 @@ const initialCategory = pendingChoice.categoryTouched ? pendingChoice.category :
 category = categories.has(initialCategory) ? initialCategory : 'All dishes';
 pendingChoice.ready = true;
 renderMenu(interactedBeforeReady);
+if (!interactedBeforeReady && initialParams.get('q')) revealRequestedDish();
 })();

@@ -172,3 +172,28 @@ test('normal and owner-view guest URLs use the same public state and never read 
   assert.match(source, /if \(api\.state\) document\.body\.classList\.add\('owner-shared-content'\)/);
   assert.match(source, /\.owner-shared-content h1[^`]+overflow-wrap:anywhere/);
 });
+
+test('published phone numbers reach both the dial action and visible menu call prompts', () => {
+  const functions = source.slice(source.indexOf('  function phoneHref'), source.indexOf('  function addAnnouncement'));
+  const makeLink = textContent => ({
+    textContent, children:[], href:'tel:+18174214888',
+    matches:() => true, querySelectorAll:() => [],
+    getAttribute(name) { return this[name]; },
+    setAttribute(name, value) { this[name] = value; }
+  });
+  const value = '(214) 555-0123';
+  const ctx = {api:{state:{settings:{phone:value, address:'Grapevine'}}}, document:{}, URL};
+  vm.runInNewContext(functions, ctx);
+  for (const [before, after] of [
+    ['(817) 421-4888', value],
+    ['Call (817) 421-4888', 'Call ' + value],
+    ['call the team at (817) 421-4888', 'call the team at ' + value],
+    ['Call for seating', 'Call for seating']
+  ]) {
+    const link = makeLink(before);
+    link.matches = selector => selector.includes('tel:');
+    ctx.updateSettings(link);
+    assert.equal(link.textContent, after);
+    assert.equal(link.href, 'tel:2145550123');
+  }
+});

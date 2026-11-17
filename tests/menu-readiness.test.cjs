@@ -8,8 +8,10 @@ const source = fs.readFileSync(path.join(__dirname, '..', 'menu.js'), 'utf8');
 
 function element(properties = {}) {
   const listeners = new Map();
+  const classes = new Set();
   return {
     value: '', textContent: '', hidden: false, dataset: {}, options: [], attributes: {},
+    scrollCalls: [],
     ...properties,
     addEventListener(type, listener) { const list = listeners.get(type) || []; list.push(listener); listeners.set(type, list); },
     dispatch(type, init = {}) {
@@ -19,11 +21,12 @@ function element(properties = {}) {
     },
     setAttribute(name, value) { this.attributes[name] = String(value); },
     removeAttribute(name) { delete this.attributes[name]; },
-    scrollIntoView() {}, focus() {}
+    classList: {add(value) { classes.add(value); }, remove(value) { classes.delete(value); }, contains(value) { return classes.has(value); }},
+    scrollIntoView(options) { this.scrollCalls.push(options); }, focus() {}
   };
 }
 
-function menuHarness(url) {
+function menuHarness(url, {relatedMatch = false} = {}) {
   let currentUrl = new URL(url);
   let releaseReady;
   const ready = new Promise(resolve => { releaseReady = resolve; });
@@ -40,7 +43,8 @@ function menuHarness(url) {
     element({dataset: {category: 'Chili'}, name: 'Bowl of Red', description: 'Family chili', price: '11.99'}),
     element({dataset: {category: 'Starters'}, name: 'Donkey Tails', description: 'Beef franks and cheese', price: '11.99'})
   ];
-  const groups = [element({dishes: [dishes[0]]}), element({dishes: [dishes[1]]})];
+  if (relatedMatch) dishes.push(element({dataset: {category: 'Starters'}, name: 'Sampler Platter', description: 'Includes Donkey Tails', price: '22.99'}));
+  const groups = [element({dishes: [dishes[0]]}), element({dishes: dishes.slice(1)})];
   const sidebar = element();
   const links = ['All dishes', 'Chili', 'Starters'].map(value => element({dataset: {category: value}}));
   const globals = new Map([
@@ -108,4 +112,29 @@ test('menu still initializes from the URL and popstate after shared content load
   assert.equal(page.search.value, 'Donkey');
   assert.equal(page.category.value, 'Starters');
   assert.deepEqual(page.dishes.map(dish => dish.hidden), [true, false]);
+});
+
+test('an incoming dish link reveals the exact item even when a related dish also matches', async () => {
+  const page = menuHarness('https://example.test/menu.html?q=Donkey%20Tails', {relatedMatch: true});
+  page.releaseReady();
+  await page.execution;
+  assert.deepEqual(page.dishes.map(dish => dish.hidden), [true, false, false], 'the related sampler remains a valid search result');
+  assert.equal(page.dishes[1].classList.contains('is-requested-dish'), true);
+  assert.equal(page.dishes[1].scrollCalls.length, 1);
+  assert.equal(page.dishes[1].scrollCalls[0].block, 'center');
+  assert.equal(page.dishes[1].scrollCalls[0].behavior, 'auto');
+  assert.equal(page.dishes[0].classList.contains('is-requested-dish'), false);
+  assert.equal(page.dishes[2].classList.contains('is-requested-dish'), false, 'the exact dish name wins over a description-only match');
+});
+
+test('the mobile category control carries the guest to the changed results', async () => {
+  const page = menuHarness('https://example.test/menu.html');
+  page.releaseReady();
+  await page.execution;
+  page.category.value = 'Starters';
+  page.category.dispatch('change');
+  assert.equal(page.menuCount.scrollCalls.length, 1);
+  assert.equal(page.menuCount.scrollCalls[0].block, 'center');
+  assert.equal(page.menuCount.scrollCalls[0].behavior, 'auto');
+  assert.equal(new URL(page.location.href).searchParams.get('category'), 'Starters');
 });

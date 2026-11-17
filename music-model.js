@@ -114,12 +114,23 @@ const MusicModel = (() => {
     return `${event.date}|${event.name}|${event.start}`;
   }
 
-  function isPending(event, now = Date.now()) {
+  function eventPhase(event, now = Date.now()) {
     try {
-      return eventEnd(event).getTime() > new Date(now).getTime();
+      const nowTime = new Date(now).getTime();
+      if (!Number.isFinite(nowTime)) return 'invalid';
+      const startTime = eventStart(event).getTime();
+      const endTime = eventEnd(event).getTime();
+      if (nowTime >= endTime) return 'ended';
+      if (nowTime >= startTime) return 'live';
+      return 'upcoming';
     } catch {
-      return false;
+      return 'invalid';
     }
+  }
+
+  function isPending(event, now = Date.now()) {
+    const phase = eventPhase(event, now);
+    return phase === 'upcoming' || phase === 'live';
   }
 
   function hasUsableSchedule(event) {
@@ -303,6 +314,7 @@ const MusicModel = (() => {
     displayDate,
     eventEnd,
     eventKey,
+    eventPhase,
     eventStart,
     excludeCancelledEvents,
     filterEvents,

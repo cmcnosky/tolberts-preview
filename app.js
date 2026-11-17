@@ -26,6 +26,43 @@ function updateHours() {
 }
 updateHours();
 (window.OwnerPreview?.ready || Promise.resolve()).then(updateHours);
+
+const visitDate = $('#visit-date');
+if (visitDate) {
+  const result = $('#visit-date-hours');
+  const musicLink = $('#visit-date-music');
+  const formatDate = new Intl.DateTimeFormat('en-US', {timeZone: 'America/Chicago', weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'});
+  function showVisitDate() {
+    visitDate.min = chicagoDate();
+    musicLink.hidden = true;
+    if (!visitDate.value || !visitDate.validity.valid) {
+      result.textContent = visitDate.value ? 'Choose today or a future date.' : '';
+      return;
+    }
+    // Noon UTC stays on the selected calendar day throughout Central daylight and standard time.
+    const date = new Date(visitDate.value + 'T12:00:00Z');
+    const owner = window.OwnerPreview;
+    const schedule = owner?.getTodaySchedule?.(date);
+    const day = formatDate.format(date);
+    if (schedule) {
+      const hours = schedule.closed ? 'Closed' : owner.displayTime(schedule.open) + '–' + owner.displayTime(schedule.close);
+      result.textContent = day + ' · ' + hours + (schedule.exception ? ' · ' + schedule.label : '') + '.';
+    } else {
+      const weekday = new Intl.DateTimeFormat('en-US', {weekday: 'long', timeZone: 'America/Chicago'}).format(date);
+      const row = $$('.hours > div').find(row => $('dt', row).textContent === weekday);
+      result.textContent = day + (row ? ' · Regular hours: ' + $('dd', row).textContent + '. ' : '. ') + 'Call to confirm special hours.';
+    }
+    const calendar = 'music.html?date=' + visitDate.value;
+    musicLink.href = owner?.guestUrl?.(calendar) || calendar;
+    musicLink.hidden = false;
+  }
+  visitDate.value = chicagoDate();
+  visitDate.addEventListener('input', showVisitDate);
+  visitDate.closest('details').addEventListener('toggle', showVisitDate);
+  showVisitDate();
+  visitDate.closest('details').hidden = false;
+  (window.OwnerPreview?.ready || Promise.resolve()).then(showVisitDate);
+}
 $('#inquiry-open').addEventListener('click', () => {$('input[name="date"]').min = chicagoDate(); openDialog($('#inquiry-dialog'));});
 $('#inquiry-form').addEventListener('submit', event => {
   event.preventDefault(); const data = Object.fromEntries(new FormData(event.currentTarget));

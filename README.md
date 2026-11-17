@@ -6,6 +6,12 @@ Owner-facing comparison: https://cmcnosky.github.io/tolberts-preview/proposal.ht
 
 This is an independent preview, not the restaurant’s official website. The official domain and systems have not been modified. The preview is public and marked noindex. Source provenance and limits are in research.html, operations.html, and audit.html.
 
+## Guest and editor improvements — November 17, 2026
+
+The phone homepage pairs the Main Street photograph with the headline and groups the day's performers under one date and calendar link. Parlor hours now supports a date lookup with weekly and special hours, an explicit regular-hours fallback, and a direct link to the selected day's music. Exact-dish menu links reveal the requested dish. Calendar views use scheduled start and end times for status. Menu call prompts follow the published contact number.
+
+Closing a modified owner editor opens a choice to keep editing or discard the draft. See the November 17 entry in `audit.html` and the dated verification files in the local handoff.
+
 ## End-to-end repair and preview refresh — November 16, 2026
 
 The current editorial design is preserved. This audit repairs a public music calendar that had stopped at November 15, protects Steven’s cancellations during official-feed refreshes, and refreshes the dated packaged lineup and all eight current artist photographs. The backend adds only a bounded public cancellation list; private inventory, purchasing, staffing, activity, and account data remain excluded. A versioned public ETag prevents an old cached response from hiding the new contract.

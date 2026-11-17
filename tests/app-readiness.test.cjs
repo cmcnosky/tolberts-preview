@@ -90,3 +90,51 @@ test('group inquiry binds before shared content resolves and refreshes authorita
   await Promise.resolve();
   assert.equal(selectors.get('#today-hours').textContent, '11:00–21:30');
 });
+
+test('visit date uses Chicago hours, owner exceptions, regular-hours fallback and the matching calendar date', async () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'app.js'), 'utf8');
+  const selectors = new Map();
+  function select(selector, root) {
+    if (root) return {textContent: selector === 'dt' ? 'Sunday' : '11 am – 9 pm'};
+    if (!selectors.has(selector)) selectors.set(selector, new FakeElement());
+    return selectors.get(selector);
+  }
+  const field = select('#visit-date');
+  field.validity = {valid:true};
+  field.closest = () => select('details');
+  const output = select('#visit-date-hours');
+  const link = select('#visit-date-music');
+  const owner = {ready: Promise.resolve(), state: null};
+  vm.runInNewContext(source, {
+    window:{OwnerPreview:owner}, Date, Intl, setInterval() {},
+    $:select, $$:selector => selector === '.hours > div' ? [{}] : []
+  });
+  await owner.ready;
+
+  field.value = '2030-03-10'; // Sunday when Central daylight time starts.
+  field.dispatch('input');
+  assert.match(output.textContent, /Sunday, March 10, 2030 · Regular hours: 11 am – 9 pm/);
+  assert.match(output.textContent, /confirm special hours/);
+  assert.equal(link.href, 'music.html?date=2030-03-10');
+
+  owner.guestUrl = value => value + '&owner-preview=1';
+  owner.getTodaySchedule = date => {
+    assert.equal(date.toISOString(), '2030-03-10T12:00:00.000Z');
+    return {closed:true, exception:true, label:'Private event'};
+  };
+  field.dispatch('input');
+  assert.match(output.textContent, /Closed · Private event/);
+  assert.doesNotMatch(output.textContent, /Regular hours/);
+  assert.equal(link.href, 'music.html?date=2030-03-10&owner-preview=1');
+  owner.getTodaySchedule = () => ({open:'12:00', close:'18:00', exception:true, label:'Special opening'});
+  owner.displayTime = time => time === '12:00' ? 'noon' : '6 pm';
+  field.dispatch('input');
+  assert.match(output.textContent, /noon–6 pm · Special opening/);
+  field.validity.valid = false;
+  field.dispatch('input');
+  assert.equal(link.hidden, true);
+  assert.match(output.textContent, /Choose/);
+  field.value = '';
+  field.dispatch('input');
+  assert.equal(output.textContent, '');
+});

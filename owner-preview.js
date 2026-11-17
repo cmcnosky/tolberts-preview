@@ -477,8 +477,9 @@
     phoneLinks.forEach(link => {
       const destination = phoneHref(phone);
       if (link.getAttribute('href') !== destination) link.setAttribute('href', destination);
-      if (!link.children.length && /\d{3}[^\d]*\d{3}[^\d]*\d{4}/.test(link.textContent) && !/^call\b/i.test(link.textContent.trim()) && link.textContent !== phone) {
-        link.textContent = phone;
+      if (!link.children.length && link.textContent.includes('(817) 421-4888')) {
+        const label = link.textContent.replace('(817) 421-4888', () => phone);
+        if (label !== link.textContent) link.textContent = label;
       }
     });
     const directionLinks = [

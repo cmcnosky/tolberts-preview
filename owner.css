@@ -1158,6 +1158,51 @@ details > :not(summary) { margin: 0 0 17px; }
   border-top: 1px solid var(--line);
 }
 
+.editor-discard-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid var(--red);
+  border-left-width: 5px;
+  background: #f5e3ae;
+}
+
+.editor-discard-warning > div:first-child {
+  min-width: 0;
+}
+
+.editor-discard-warning strong,
+.editor-discard-warning span {
+  display: block;
+}
+
+.editor-discard-warning strong {
+  font-size: 16px;
+}
+
+.editor-discard-warning span {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.editor-dialog.discard-confirmation-visible .dialog-actions {
+  display: none;
+}
+
+.editor-dialog.discard-confirmation-visible .editor-fields,
+.editor-dialog.discard-confirmation-visible .dialog-close {
+  opacity: .48;
+}
+
+.editor-dialog.discard-confirmation-visible .dialog-close {
+  pointer-events: none;
+}
+
 .owner-status {
   position: fixed;
   right: 24px;
@@ -1277,6 +1322,9 @@ details > :not(summary) { margin: 0 0 17px; }
   .dialog-heading h2 { font-size: 39px; }
   .dialog-actions { flex-direction: column-reverse; }
   .dialog-actions .button { width: 100%; }
+  .editor-discard-warning { align-items: stretch; flex-direction: column; }
+  .editor-discard-warning .row-actions { align-items: stretch; flex-direction: column; }
+  .editor-discard-warning .button { width: 100%; }
   .owner-status { right: 15px; bottom: 15px; width: calc(100vw - 30px); }
 }
 
