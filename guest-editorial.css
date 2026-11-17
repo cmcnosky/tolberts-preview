@@ -291,3 +291,11 @@
   :is(.menu-page,.music-page) .mobile-bottom{display:none}
   .menu-page .menu-page-heading,.music-page .music-page-head{color:#000;background:#fff}
 }
+
+@media screen and (max-width:360px) {
+  :is(.menu-page,.music-page) .header .order-link {
+    min-width: 0;
+    flex-shrink: 1;
+    white-space: normal;
+  }
+}
