@@ -90,7 +90,7 @@ img { display: block; max-width: 100%; }
   min-height: 100%;
   overflow: hidden;
   isolation: isolate;
-  background: #2a251e url("assets/main-street.webp") center 43% / cover no-repeat;
+  background: #2a251e url("assets/main-street-enhanced.webp") center 43% / cover no-repeat;
   border-right: 2px solid var(--ink);
 }
 
