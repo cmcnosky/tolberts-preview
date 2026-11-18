@@ -55,11 +55,11 @@
     field('home.mainStreetCaptionTop', 'Main Street photograph caption, first line', '.sign-print figcaption span:first-child', 'MAIN & FRANKLIN', 'text', 80, {section: 'Photographs'}),
     field('home.mainStreetCaptionBottom', 'Main Street photograph caption, second line', '.sign-print figcaption span:last-child', 'GRAPEVINE, TEXAS', 'text', 80, {section: 'Photographs'}),
     field('home.stageAlt', 'Stage photograph description', '.stage-print img', 'Tommy Katona in a black hat, playing electric guitar beneath the Tolbert’s sign with the Texas Flood drummer behind him.', 'textarea', 240, {target: 'alt', section: 'Photographs'}),
-    field('home.stageCaption', 'Stage photograph caption', '.stage-print figcaption', 'Tommy Katona of Texas Flood at Tolbert’s. Artwork based on the band’s footage.', 'text', 100, {section: 'Photographs'}),
+    field('home.stageCaption', 'Stage photograph caption', '.stage-print figcaption', 'Tommy Katona of Texas Flood.', 'text', 100, {section: 'Photographs'}),
     field('home.menuPhotoAlt', 'Food photograph description', '.food-feature img', 'Tolbert’s Bowl of Red topped with melted cheddar, diced onion and a whole green pepper.', 'textarea', 240, {target: 'alt', section: 'Photographs'}),
     field('home.menuPhotoCaption', 'Food photograph caption', '.food-feature .food-tag', 'FRANK X. TOLBERT’S ORIGINAL RECIPE', 'text', 100, {section: 'Photographs'}),
     field('home.storyPhotoAlt', 'Story photograph description', '.story-image img', 'Tolbert’s wooden bar, Texas flags and brick walls', 'textarea', 240, {target: 'alt', section: 'Photographs'}),
-    field('home.storyPhotoCaption', 'Story photograph caption', '.story-image .photo-note', 'Inside the chili parlor.', 'text', 100, {section: 'Photographs'}),
+    field('home.storyPhotoCaption', 'Story photograph caption', '.story-image .photo-note', '', 'text', 100, {section: 'Photographs'}),
     field('home.privateEventPhotoAlt', 'Groups-and-events photograph description', '#groups > img', 'Dining tables and chairs inside Tolbert’s on Main Street', 'textarea', 240, {target: 'alt', section: 'Photographs'}),
     field('home.socialStageAlt', 'Social-strip stage photograph description', '.social-strip > img:first-child', 'Musicians performing on the Tolbert’s stage', 'textarea', 240, {target: 'alt', section: 'Photographs'}),
     field('home.socialDiningAlt', 'Social-strip dining photograph description', '.social-strip > img:last-child', 'The warm dining room at Tolbert’s on Main Street', 'textarea', 240, {target: 'alt', section: 'Photographs'})

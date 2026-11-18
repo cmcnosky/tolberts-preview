@@ -376,7 +376,7 @@
     const dateNote = document.querySelector('.menu-date');
     if (dateNote) dateNote.textContent = active
       ? 'Owner view · current published dishes and prices · Prices in USD.'
-      : 'Current menu and prices published by Tolbert’s · Prices in USD.';
+      : 'Prices in USD.';
   }
 
   function renderHomeMenu() {
@@ -409,7 +409,7 @@
     const footnote = document.querySelector('.menu-footnote span');
     if (footnote) footnote.textContent = active
       ? 'Owner view of the restaurant’s shared published menu.'
-      : 'Availability and prices from the restaurant’s published workspace.';
+      : 'Prices may change.';
   }
 
   function chicagoParts(now = new Date()) {

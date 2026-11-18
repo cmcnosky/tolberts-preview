@@ -376,11 +376,9 @@
     const share = previewLink(MusicModel.shareUrl(event, location.href));
     const image = event.image || 'assets/stage.webp';
     const imageAlt = event.imageAlt || `${event.name} — promotional image`;
-    const sourceNote = sharedScheduleActive
-      ? 'From Tolbert’s shared published workspace.'
-      : liveChecked
-      ? 'From the restaurant’s live calendar.'
-      : `From saved listings checked ${savedChecked}.`;
+    const savedScheduleNote = sharedScheduleActive || liveChecked
+      ? ''
+      : `<p class="detail-source">Last checked ${esc(savedChecked)}. Call to confirm the set time.</p>`;
     const artworkAdvisory = hasArtworkTimeConflict(event)
       ? '<p class="detail-note"><strong>Schedule note:</strong> When checked November 16, the calendar listed 2:30 pm and the promotional artwork showed 3:00 pm. Call Tolbert’s to confirm before you go.</p>'
       : '';
@@ -402,7 +400,7 @@
           <p class="detail-note">For reservations and any cover charge, call the restaurant.</p>${artworkAdvisory}
           <div class="detail-utilities"><button id="save-show" type="button"><span aria-hidden="true">↓</span> Add to calendar</button><button id="copy-show-link" type="button"><span aria-hidden="true">↗</span> Copy show link</button></div>
           <div class="show-share-fallback" hidden><label for="show-share-url">Select and copy this show link</label><input id="show-share-url" type="text" readonly value="${esc(share)}"></div>
-          <p id="show-action-status" role="status"></p><p class="detail-source">${sourceNote} Confirm details before heading over.</p>
+          <p id="show-action-status" role="status"></p>${savedScheduleNote}
         </div>
       </div>`;
     setImageFallback($('.detail-image', details), event);

@@ -144,6 +144,7 @@ body.editorial-home{
 .editorial-home .story-image{padding:0;margin:0;transform:none;border:0;box-shadow:none;background:transparent}
 .editorial-home .story-image>img{width:100%;height:auto;aspect-ratio:auto;object-fit:contain}
 .editorial-home .photo-note{padding:14px 0;border-bottom:1px solid var(--line);margin:0;font:400 italic 19px/1.4 var(--serif);color:#675f52;text-align:left}
+.editorial-home .photo-note:empty{display:none}
 .editorial-home .story-copy h2{font-size:clamp(40px,4.1vw,58px);line-height:1.08}
 .editorial-home .story-copy p{font-size:16px;line-height:1.75;color:#675f52}
 .editorial-home .story-timeline{gap:20px;border-color:var(--line)}
