@@ -138,7 +138,7 @@ $('#inquiry-form').addEventListener('submit', event => {
   const name = data.name.trim(); if (!name) {$('input[name="name"]').setCustomValidity('Please enter your name.'); $('input[name="name"]').reportValidity(); return;}
   const topic = data.occasion === 'Private event' ? 'a private event' : data.occasion === 'Band booking' ? 'booking a band' : data.occasion.toLowerCase();
   const recipient = inquiryEmail();
-  const message = `Hello Tolbert’s team,\n\nI’d like to ask about ${topic}.\n\nName: ${name}\nPreferred date: ${data.date || 'To be discussed'}\nApproximate group size: ${data.size || 'To be discussed'}\n\n${data.message.trim() || 'Please let me know about availability and next steps.'}\n\nThank you,\n${name}`;
+  const message = `Hi Tolbert’s,\n\nI’d like to ask about ${topic}.\n\nName: ${name}\nPreferred date: ${data.date || 'Not sure yet'}\nApproximate group size: ${data.size || 'Not sure yet'}\n\n${data.message.trim() || 'Please let me know what’s available.'}\n\nThank you,\n${name}`;
   $('#inquiry-message').textContent = message;
   $('#inquiry-send').href = `mailto:${recipient}?subject=${encodeURIComponent(data.occasion + ' inquiry' + (data.date ? ' — ' + data.date : ''))}&body=${encodeURIComponent(message)}`;
   $('#inquiry-form').hidden = true; $('#inquiry-result').hidden = false; $('#inquiry-result').focus();

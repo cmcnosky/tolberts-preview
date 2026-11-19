@@ -112,7 +112,7 @@
 
       const heading = adapter.heading(
         "Staff schedule.",
-        "Create and revise shifts, check conflicts, and export the schedule.",
+        "Add or edit shifts, check conflicts, and download a CSV.",
         adapter.button("Add a shift", "schedule-new", "", "")
       );
       const toolbar = `<div class="toolbar schedule-toolbar"><div>${adapter.select("schedule-member-filter", "Team member", memberOptions, memberFilter)}</div><div class="schedule-total"><span>${visible.length} ${visible.length === 1 ? "shift" : "shifts"}</span><strong>${adapter.esc(hoursLabel(totalHours))}</strong>${adapter.button("Export schedule CSV", "schedule-export", "", "secondary")}</div></div>`;
@@ -122,7 +122,7 @@
             allShifts.length ? "No shifts for this person." : "No shifts scheduled.",
             team.length ? "Add a shift to build the shared sample schedule." : "Add a team member before creating a shift."
           );
-      const disclosure = `<p class="notice owner-tools-disclosure"><strong>Shared sample schedule.</strong> Times are Central; an earlier end time means the following day. Hours are planned clock hours. Staff notifications, time clocks, and payroll require connected services.</p>`;
+      const disclosure = `<p class="notice owner-tools-disclosure"><strong>Sample schedule.</strong> Times are Central. An end time earlier than the start is treated as the following day. Notifications, time clocks, and payroll need outside services.</p>`;
       return `<div class="owner-tools schedule-tools">${heading}${disclosure}${toolbar}${adapter.panel("Scheduled shifts.", body)}</div>`;
     }
 
@@ -236,19 +236,19 @@
       requireModelMethods(["createBackup", "parseBackup"]);
       const heading = adapter.heading(
         "Backup and restore.",
-        "Download a private recovery copy or review a backup before replacing the shared workspace.",
+        "Download a backup or review one before restoring it.",
         adapter.button("Download backup", "backup-export", "", "")
       );
       const current = adapter.panel(
-        "What this copy contains.",
+        "Backup contents.",
         `${summaryGrid(state)}<p class="muted">The JSON file contains this preview workspace: menu edits, shows, hours, special dates, sample inventory and orders, team entries, activity, settings, and schedules. It does not contain the owner password or session token. Photographs are recorded as references; the separate website assets and shared photo storage must also be preserved for complete recovery.</p>`,
         adapter.button("Choose backup file", "backup-import", "", "secondary")
       );
       const boundary = adapter.panel(
-        "What remains outside this demo.",
+        "Not included.",
         `<ul class="backup-boundaries"><li>Tolbert’s official restaurant domain, existing CMS migration, analytics, and redirects</li><li>SpotOn orders and customer transactions</li><li>Supplier, POS, payment, and real inventory systems</li><li>Staff invitations and role-enforced accounts</li><li>Time clocks, payroll, messaging, and notifications</li></ul><p class="muted">A backup restores only this preview workspace’s data. It does not connect or update any system listed above.</p>`
       );
-      const importControl = `<input id="owner-backup-file" class="owner-tools-file" type="file" accept="application/json,.json" hidden><p class="notice owner-tools-disclosure"><strong>Shared preview workspace.</strong> Successful saves sync across devices. Downloaded backups stay on the device where you save them; treat those files as private if they contain business-style notes.</p>`;
+      const importControl = `<input id="owner-backup-file" class="owner-tools-file" type="file" accept="application/json,.json" hidden><p class="notice owner-tools-disclosure"><strong>Preview data.</strong> Saved changes sync across devices. Backups stay on the device where you download them; keep them private if they contain business notes.</p>`;
       return `<div class="owner-tools backup-tools">${heading}${importControl}<div class="split">${current}${boundary}</div></div>`;
     }
 

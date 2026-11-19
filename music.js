@@ -80,12 +80,12 @@
         ? MusicModel.excludeCancelledEvents(data, cancelledEvents)
         : data;
       events = savedEvents;
-      setSource(`Saved fallback checked ${savedChecked}. Checking Tolbert’s live calendar…`);
+      setSource(`Showing shows saved ${savedChecked} while we check for updates…`);
       renderShows();
     } catch {
       setSource(publishedFallbackMode
-        ? 'The published lineup has ended. The saved fallback is unavailable; checking the restaurant’s live calendar…'
-        : 'Saved fallback unavailable. Checking Tolbert’s live calendar…');
+        ? 'The current list has ended. Checking Tolbert’s calendar…'
+        : 'Checking Tolbert’s calendar…');
     }
   }
 
@@ -199,7 +199,7 @@
     const dateLabel = $('#today-stage-date');
     const status = $('#today-stage-source');
     if (dateLabel) dateLabel.textContent = MusicModel.displayDate(today, {long: true});
-    const sourceText = source?.textContent || 'Times are Central. Confirm the schedule before heading over.';
+    const sourceText = source?.textContent || 'Times are Central. Call to confirm.';
     if (status) {
       if (status.textContent !== sourceText) status.textContent = sourceText;
       status.hidden = (sharedScheduleActive || Boolean(liveChecked)) && !/unavailable/i.test(sourceText);
@@ -207,12 +207,12 @@
     if (!artists.length) {
       lastTodaySignature = '';
       const message = sharedScheduleActive
-        ? 'No artist is scheduled for today in the current published lineup. Explore the calendar for another night.'
+        ? 'No show is listed for today. See the full calendar for another date.'
         : !liveResolved
         ? 'Checking today’s artists and set times…'
         : liveChecked
-          ? 'No artist is listed for today. Explore the calendar for your next night out.'
-          : 'Today’s lineup could not be confirmed. Check the official calendar before heading over.';
+          ? 'No show is listed for today. See another date.'
+          : 'Today’s schedule could not be confirmed. Check the official calendar.';
       list.innerHTML = `<p class="today-empty">${esc(message)} <a href="${officialCalendar}" target="_blank" rel="noopener">Official calendar ↗</a></p>`;
       return;
     }
@@ -251,8 +251,8 @@
 
     if (count) {
       count.textContent = matching.length
-        ? `Showing ${visible.length} of ${matching.length} upcoming ${matching.length === 1 ? 'show' : 'shows'}`
-        : 'No upcoming shows match this selection';
+        ? `${visible.length} of ${matching.length} upcoming ${matching.length === 1 ? 'show' : 'shows'}`
+        : 'No shows match these filters';
     }
 
     grid.innerHTML = visible.length ? visible.map(event => {
@@ -266,8 +266,8 @@
         : event.date === today
           ? '<span class="show-state">Later today</span>'
           : '';
-      return `<article class="show-card"><div class="show-image"><img src="${esc(image)}" width="900" height="560" alt="${esc(imageAlt)}" loading="lazy"></div><time class="show-date" datetime="${esc(event.date)}"><span>${monthLabel(event.date)}</span><strong>${Number(event.date.slice(8))}</strong><span class="show-weekday">${new Intl.DateTimeFormat('en-US', {weekday: 'short', timeZone: 'UTC'}).format(new Date(`${event.date}T12:00:00Z`))}</span></time><div class="show-copy">${timing}<p class="genre">${esc(event.genre || 'Live music')}</p><h3>${esc(event.name)}</h3><p class="show-time">${esc(event.start)}–${esc(event.end)} Central</p></div><a class="show-detail" data-event="${esc(key)}" href="${esc(link)}" aria-label="Show details for ${esc(event.name)}">Plan this night <span aria-hidden="true">↗</span></a></article>`;
-    }).join('') : `<div class="no-results"><p>${available.length ? 'No upcoming shows match these filters.' : 'No upcoming listings are available here.'}</p>${hasFilters ? '<button type="button" class="reset-shows" data-reset-shows>Clear filters and see all shows</button>' : ''}<a class="text-link light" href="${officialCalendar}" target="_blank" rel="noopener">See the official calendar ↗</a></div>`;
+      return `<article class="show-card"><div class="show-image"><img src="${esc(image)}" width="900" height="560" alt="${esc(imageAlt)}" loading="lazy"></div><time class="show-date" datetime="${esc(event.date)}"><span>${monthLabel(event.date)}</span><strong>${Number(event.date.slice(8))}</strong><span class="show-weekday">${new Intl.DateTimeFormat('en-US', {weekday: 'short', timeZone: 'UTC'}).format(new Date(`${event.date}T12:00:00Z`))}</span></time><div class="show-copy">${timing}<p class="genre">${esc(event.genre || 'Live music')}</p><h3>${esc(event.name)}</h3><p class="show-time">${esc(event.start)}–${esc(event.end)} Central</p></div><a class="show-detail" data-event="${esc(key)}" href="${esc(link)}" aria-label="Show details for ${esc(event.name)}">Details <span aria-hidden="true">↗</span></a></article>`;
+    }).join('') : `<div class="no-results"><p>${available.length ? 'No shows match these filters.' : 'No upcoming shows are listed.'}</p>${hasFilters ? '<button type="button" class="reset-shows" data-reset-shows>Clear filters</button>' : ''}<a class="text-link light" href="${officialCalendar}" target="_blank" rel="noopener">Official calendar ↗</a></div>`;
 
     if (showMore) {
       showMore.hidden = fullPage || matching.length <= 3;
@@ -448,7 +448,7 @@
       return;
     }
     if (!liveResolved) {
-      setLinkStatus('Looking for the shared show in Tolbert’s current calendar…');
+      setLinkStatus('Checking that show…');
       return;
     }
     if (dialog?.open) {
@@ -457,13 +457,13 @@
     }
     lastOpenedKey = requested;
     if (matching) {
-      setLinkStatus('This shared show has ended. The current upcoming lineup appears below.');
+      setLinkStatus('That show has ended. Upcoming shows appear below.');
     } else if (sharedScheduleActive) {
-      setLinkStatus('This shared show is not in the current published lineup. The upcoming lineup appears below.');
+      setLinkStatus('That show is not in the upcoming schedule.');
     } else if (liveChecked) {
-      setLinkStatus('This shared show was not found in the last successful live-calendar check. The current upcoming lineup appears below.');
+      setLinkStatus('That show was not found. Upcoming shows appear below.');
     } else {
-      setLinkStatus('This shared show could not be verified because the live calendar is unavailable. Check the official calendar before heading over.');
+      setLinkStatus('That show could not be confirmed. Check the official calendar.');
     }
   }
 
@@ -484,19 +484,19 @@
         hour: 'numeric',
         minute: '2-digit'
       }).format(liveChecked);
-      setSource(`Restaurant’s live calendar · checked ${checked} Central. Confirm details before heading over.`);
+      setSource(`Checked ${checked} Central. Call to confirm before you go.`);
     } catch {
       if (!liveChecked) events = savedEvents;
       if (liveChecked) {
-        setSource('Live refresh unavailable. Showing the last successful check from this visit; confirm with the official calendar.');
+        setSource('Could not refresh. Showing the last check from this visit.');
       } else if (publishedFallbackMode && packagedFallbackLoaded) {
-        setSource(`Live calendar unavailable. Showing the saved fallback checked ${savedChecked}; confirm with the official calendar.`);
+        setSource(`Showing shows saved ${savedChecked}. Check the official calendar for changes.`);
       } else if (publishedFallbackMode) {
-        setSource('The published lineup has ended and the live calendar is unavailable. Check the official concert calendar.');
+        setSource('No current shows are available here. Check the official calendar.');
       } else if (savedLoaded) {
-        setSource(`Live calendar unavailable. Showing the saved fallback checked ${savedChecked}; confirm with the official calendar.`);
+        setSource(`Showing shows saved ${savedChecked}. Check the official calendar for changes.`);
       } else {
-        setSource('The live calendar and saved fallback are unavailable. Check the official concert calendar.');
+        setSource('Show times are unavailable here. Check the official calendar.');
       }
     } finally {
       liveResolved = true;
@@ -574,7 +574,7 @@
       sharedScheduleActive = false;
       publishedFallbackMode = true;
       liveResolved = false;
-      setSource('The published lineup has ended. Loading the saved lineup and checking the restaurant’s live calendar…');
+      setSource('The current list has ended. Checking Tolbert’s calendar…');
       renderShows();
       loadSavedCalendar().finally(refreshCalendar);
       return;
@@ -598,15 +598,15 @@
     sharedScheduleActive = !publishedFallbackMode;
     if (sharedScheduleActive) {
       liveResolved = true;
-      setSource('Current lineup published by Tolbert’s · Times are Central. Confirm details before heading over.');
+      setSource('Times are Central. Call to confirm before you go.');
       renderShows();
       return;
     }
-    setSource('The published lineup has ended. Loading the saved lineup and checking the restaurant’s live calendar…');
+    setSource('The current list has ended. Checking Tolbert’s calendar…');
     renderShows();
     loadSavedCalendar().finally(refreshCalendar);
     return;
   }
-  setSource(`Loading the saved lineup checked ${savedChecked} and checking Tolbert’s live calendar…`);
+  setSource(`Loading shows saved ${savedChecked} and checking Tolbert’s calendar…`);
   loadSavedCalendar().finally(refreshCalendar);
 })();

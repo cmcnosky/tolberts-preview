@@ -163,7 +163,7 @@
   const preview = (file='index.html',label='Preview guest website ↗') => `<a class="button secondary" href="${file}?owner-preview=1">${label}</a>`;
   const empty = (title,text) => `<div class="empty-state"><h3>${title}</h3><p>${text}</p></div>`;
   const pill = (value,kind='') => `<span class="status-pill ${kind}">${esc(value)}</span>`;
-  const heading = (title,description,actions='') => `<div class="page-heading"><div><p class="eyebrow">THE OWNER ROOM</p><h1>${title}</h1><p>${description}</p></div><div class="row-actions">${actions}</div></div>`;
+  const heading = (title,description,actions='') => `<div class="page-heading"><div><p class="eyebrow">MANAGEMENT</p><h1>${title}</h1><p>${description}</p></div><div class="row-actions">${actions}</div></div>`;
   const panel = (title,body,action='') => `<section class="panel"><div class="panel-heading"><h2>${title}</h2>${action}</div>${body}</section>`;
   const field = (name,label,value='',type='text',extra='') => `<label class="field">${label}<input name="${name}" type="${type}" value="${esc(value)}" ${extra}></label>`;
   const area = (name,label,value='',extra='') => `<label class="field full">${label}<textarea name="${name}" rows="3" maxlength="1000" ${extra}>${esc(value)}</textarea></label>`;
@@ -449,14 +449,14 @@
   function renderOverview() {
     const low = M.lowStock(state); const future = state.events.filter(e => e.status !== 'Cancelled' && e.date >= dayKey()).sort((a,b)=>a.date.localeCompare(b.date));
     const pending = state.orders.filter(o => o.status === 'Draft' || o.status === 'Submitted (demo)');
-    return heading('Good to see you, Steven.','A clear view of the parlor—and the things that need your attention.',preview()) +
+    return heading('Today.','Menu, shows, stock, and anything that needs attention.',preview()) +
       `<div class="stat-grid"><div class="stat"><span>Menu available</span><strong>${state.menu.filter(i=>i.available).length}<small> / ${state.menu.length}</small></strong><p>Items in your guest preview</p></div><div class="stat"><span>On the calendar</span><strong>${future.length}</strong><p>Upcoming published shows</p></div><div class="stat"><span>Stock to review</span><strong>${low.length}</strong><p>Sample items at reorder level</p></div><div class="stat"><span>Orders in progress</span><strong>${pending.length}</strong><p>Draft or simulated submission</p></div></div>` +
-      `<div class="split">${panel('Make yourself at home.',`<p>Try a complete task, then check the result. Your changes are saved as you go.</p><div class="row-list">${listRow('Update a dish','Change a price, description, or availability.',button('Edit menu →','nav-menu'))}${listRow('Plan the next show','Set the artist, photograph, date, and set times.',button('Manage music →','nav-music'))}${listRow('Restock the kitchen','Build a sample order and receive it into stock.',button('Start an order →','new-order'))}</div>`)}` +
-      `${panel('Needs a look.',low.length ? `<p class="muted">Illustrative inventory, quantities, and supplier prices.</p><div class="row-list">${low.slice(0,3).map(i=>listRow(i.name,`${i.onHand} ${esc(i.unit)} on hand · target ${i.par}`,button('Review','edit-stock',i.id,'secondary',`Review ${i.name}`),pill('Low stock','warning'))).join('')}</div>` : empty('Stock is covered.','No sample items are at their reorder level.'),button('All inventory →','nav-inventory'))}</div>` +
-      `<div class="split">${panel('Next on the stage.',future[0] ? `<div class="event-feature"><img src="${esc(safeImage(future[0].image))}" alt="${esc(future[0].name)}"><div><p class="eyebrow">${esc(dateLabel(future[0].date))}</p><h3>${esc(future[0].name)}</h3><p>${esc(timeLabel(future[0].start))}–${esc(timeLabel(future[0].end))} Central</p>${button('Edit show','edit-event',future[0].id)}</div></div>` : empty('The stage is yours.','Add a show to see it in the guest preview.'))}${panel('Recent changes.',activityRows(4),button('All activity →','nav-activity'))}</div>`;
+      `<div class="split">${panel('Common tasks.',`<div class="row-list">${listRow('Update a dish','Change a price, description, or availability.',button('Edit menu →','nav-menu'))}${listRow('Add or edit a show','Set the artist, photograph, date, and set times.',button('Manage music →','nav-music'))}${listRow('Create a sample order','Build an order and receive it into sample stock.',button('Start an order →','new-order'))}</div>`)}` +
+      `${panel('Low stock.',low.length ? `<p class="muted">Sample counts, suppliers, and prices.</p><div class="row-list">${low.slice(0,3).map(i=>listRow(i.name,`${i.onHand} ${esc(i.unit)} on hand · target ${i.par}`,button('Review','edit-stock',i.id,'secondary',`Review ${i.name}`),pill('Low stock','warning'))).join('')}</div>` : empty('No low-stock items.','Every sample item is above its reorder level.'),button('All inventory →','nav-inventory'))}</div>` +
+      `<div class="split">${panel('Next show.',future[0] ? `<div class="event-feature"><img src="${esc(safeImage(future[0].image))}" alt="${esc(future[0].name)}"><div><p class="eyebrow">${esc(dateLabel(future[0].date))}</p><h3>${esc(future[0].name)}</h3><p>${esc(timeLabel(future[0].start))}–${esc(timeLabel(future[0].end))} Central</p>${button('Edit show','edit-event',future[0].id)}</div></div>` : empty('No upcoming shows.','Add a show to put it on the guest preview.'))}${panel('Recent changes.',activityRows(4),button('All activity →','nav-activity'))}</div>`;
   }
   function renderMenu() {
-    return heading('The menu, in your hands.','Edit the menu guests see. Availability changes remove a dish from your guest preview.',button('Add a dish','new-menu','','') + preview('menu.html','Preview menu ↗')) +
+    return heading('Menu.','Edit the dishes and prices guests see. Marking a dish unavailable removes it from the guest preview.',button('Add a dish','new-menu','','') + preview('menu.html','Preview menu ↗')) +
     searchBar('Find a dish','Name, category, or ingredient') + `<div class="row-list panel">${state.menu.map(i=>`<article data-search="${esc([i.name,i.category,i.description].join(' ').toLowerCase())}" class="list-row"><div class="row-main"><p class="eyebrow">${esc(i.category)}</p><h3>${esc(i.name)}</h3><p>${esc(i.description)}</p><strong>${esc(i.price || 'Ask for current pricing')}</strong></div><div class="row-actions">${pill(i.available ? 'Available' : 'Unavailable',i.available ? 'good':'warning')}${button('Edit','edit-menu',i.id,'secondary',`Edit ${i.name}`)}<button class="button quiet" data-action="toggle-menu" data-id="${esc(i.id)}" aria-label="${i.available ? 'Mark unavailable' : 'Make available'}: ${esc(i.name)}">${i.available ? 'Mark unavailable' : 'Make available'}</button></div></article>`).join('')}</div><div id="search-empty" hidden>${empty('No dishes found.','Try another name or clear the search.')}</div>`;
   }
   function editMenu(id) {
@@ -475,7 +475,7 @@
     const fallbackNotice=sharedScheduleNeedsOfficialFallback(state.events)
       ? '<p class="notice"><strong>No upcoming shows are published in the shared schedule.</strong> Guests will check the restaurant’s live calendar instead until you save a new upcoming show. The list below remains the exact shared schedule for editing.</p>'
       : '';
-    return heading('Keep the stage moving.','Manage the artist, photo, date, and set times. The saved lineup is a starting point for this demo.',button('Add a show','new-event','','') + preview('music.html','Preview calendar ↗')) +
+    return heading('Live music.','Add or edit artists, photos, dates, and set times.',button('Add a show','new-event','','') + preview('music.html','Preview calendar ↗')) +
       `<p class="notice">This is an editable copy of the saved lineup. It does not change Tolbert’s official calendar.</p>${fallbackNotice}<div class="card-grid">${events.map(e=>`<article class="item-card event-card"><div class="photo-tile"><img src="${esc(safeImage(e.image))}" alt="${esc(e.name)}" loading="lazy"></div><div class="item-body"><div class="item-meta"><time datetime="${esc(e.date)}">${esc(dateLabel(e.date))}</time>${pill(e.status,e.status === 'Cancelled' ? 'warning' : 'good')}</div><h2>${esc(e.name)}</h2><p>${esc(e.genre || 'Live music')}</p><strong>${esc(timeLabel(e.start))}–${esc(timeLabel(e.end))} Central</strong><div class="row-actions">${button('Edit show','edit-event',e.id,'secondary',`Edit ${e.name}`)}${button(e.status === 'Cancelled' ? 'Restore show' : 'Cancel show',e.status === 'Cancelled' ? 'restore-event':'cancel-event',e.id,'quiet',`${e.status === 'Cancelled' ? 'Restore' : 'Cancel'} ${e.name}`)}</div></div></article>`).join('')}</div>${!events.length ? empty('No shows yet.','Add the first show to your calendar.') : ''}`;
   }
   function editEvent(id) {
@@ -494,7 +494,7 @@
     });
   }
   function renderHours() {
-    return heading('Open doors. Clear hours.','Keep regular hours and special dates in one place.',preview('index.html','Preview hours ↗')) +
+    return heading('Hours.','Set regular hours, holiday hours, and one-time closures.',preview('index.html','Preview hours ↗')) +
       renderInlineRecovery('hours')+
       `<div class="split">${panel('Weekly hours.',`<form id="hours-form"><div class="row-list">${state.hours.map((h,i)=>`<div class="hours-editor"><strong>${esc(h.day)}</strong><div class="field-grid">${field('open-'+i,'Opens',h.open,'time',`required aria-label="${esc(h.day)} opens"`)}${field('close-'+i,'Closes',h.close,'time',`required aria-label="${esc(h.day)} closes"`)}${check('closed-'+i,'Closed',h.closed,`${h.day} closed`)}</div></div>`).join('')}</div><p class="muted">All times are Central. 12:00 AM means midnight at the end of the day.</p><button class="button" type="submit">Save weekly hours</button></form>`)}` +
       `${panel('Special dates.',`<p>A holiday or one-time closure overrides the weekly hours for that date.</p><div class="row-list">${state.exceptions.map(e=>listRow(dateLabel(e.date),`${esc(e.label)} · ${e.closed ? 'Closed' : `${esc(timeLabel(e.open))}–${esc(timeLabel(e.close))}`}`,button('Edit','edit-exception',e.id,'secondary',`Edit special hours for ${dateLabel(e.date)}`)+button('Remove','remove-exception',e.id,'quiet',`Remove special hours for ${dateLabel(e.date)}`))).join('') || empty('No exceptions yet.','Add holiday hours or a one-time closure.')}</div>`,button('Add special date','new-exception'))}</div>`;
@@ -509,7 +509,7 @@
     });
   }
   function renderInventory() {
-    return heading('Know what’s on the shelf.','Sample stock and costs let you try counting, reorder levels, and receiving.',button('Add stock item','new-stock','','')+button('Create purchase order','new-order')) +
+    return heading('Inventory.','Review sample stock counts, reorder levels, costs, and receiving.',button('Add stock item','new-stock','','')+button('Create purchase order','new-order')) +
       `<p class="notice">Illustrative inventory and suppliers. These are not Tolbert’s actual stock counts, vendors, or purchase prices.</p>` +
       searchBar('Find stock','Item name or supplier',`<button class="button quiet" data-action="low-stock">Show low stock</button><button class="button quiet" data-action="clear-search">Show all</button>`) +
       `<div class="row-list panel">${state.inventory.map(i=>`<article class="list-row" data-search="${esc((i.name+' '+i.vendor+(!i.archived && i.onHand<=i.reorderAt?' low stock':'')).toLowerCase())}"><div class="row-main"><p class="eyebrow">${esc(i.vendor)}</p><h3>${esc(i.name)}</h3><p>${esc(i.unit)} · ${cash(i.cost)} per unit</p><p>Reorder at ${i.reorderAt} · target ${i.par}</p></div><div class="stock-count"><strong>${i.onHand}</strong><span>${esc(i.unit)} on hand</span></div><div class="row-actions">${pill(i.archived?'Archived':i.onHand<=i.reorderAt ? 'Low stock':'Stocked',i.archived?'':i.onHand<=i.reorderAt ? 'warning':'good')}${button('Update stock','edit-stock',i.id,'secondary',`Update ${i.name} stock`)}${button(i.archived?'Restore':'Archive','toggle-stock',i.id,'quiet',`${i.archived?'Restore':'Archive'} ${i.name}`)}</div></article>`).join('')}</div><div id="search-empty" hidden>${empty('No stock matches.','Clear the filter or search by item or supplier.')}</div>`;
@@ -525,9 +525,9 @@
   }
   function renderPurchases() {
     if(activeOrder) return renderOrder(state.orders.find(o=>o.id===activeOrder));
-    return heading('From low stock to restocked.','Draft, review, simulate submission, then receive your sample order.',button('New purchase order','new-order','','')) +
+    return heading('Purchase orders.','Create a sample order, review it, simulate submission, and receive it.',button('New purchase order','new-order','','')) +
       `<p class="notice">All purchase orders are simulated. No supplier is contacted, no payment is taken, and no restaurant stock is changed.</p>` +
-      panel('Purchase orders.',state.orders.length ? `<div class="row-list">${[...state.orders].reverse().map(o=>listRow(o.number,`${esc(o.vendor)} · ${o.lines.length} line${o.lines.length===1?'':'s'} · ${cash(M.orderTotal(o))}`,button('Open order','open-order',o.id,'secondary',`Open ${o.number}`),pill(o.status,o.status==='Received'?'good':o.status==='Cancelled'?'':'warning'))).join('')}</div>` : empty('Your first order starts here.','Choose a sample supplier and the quantities you need. You will review the order before simulating submission.'));
+      panel('Purchase orders.',state.orders.length ? `<div class="row-list">${[...state.orders].reverse().map(o=>listRow(o.number,`${esc(o.vendor)} · ${o.lines.length} line${o.lines.length===1?'':'s'} · ${cash(M.orderTotal(o))}`,button('Open order','open-order',o.id,'secondary',`Open ${o.number}`),pill(o.status,o.status==='Received'?'good':o.status==='Cancelled'?'':'warning'))).join('')}</div>` : empty('No purchase orders.','Choose a sample supplier and quantities to create one. You can review it before simulating submission.'));
   }
   function renderOrder(o) {
     if(!o){activeOrder=null;return renderPurchases();}
@@ -555,29 +555,29 @@
     $('select[name=vendor]',form).addEventListener('change',drawItems); $('#purchase-items').addEventListener('input',total);drawItems();
   }
   function renderTeam() {
-    return heading('The right hands on deck.','Explore how owner, manager, and editor roles would be organized.',button('Add demo teammate','new-teammate','',''))+
+    return heading('Team.','Review the sample roles and permissions.',button('Add sample team member','new-teammate','',''))+
       `<p class="notice">Team entries illustrate permissions. They do not invite people or create working accounts; Steven is the only demo login.</p>`+
       panel('People & roles.',`<div class="row-list">${state.team.map(t=>listRow(t.name,`${esc(t.role)} · ${t.role==='Owner'?'All demo controls':t.role==='Manager'?'Operations, stock, and purchase drafts':'Menu, music, and hours'}`,button(t.id==='steven'?'Edit profile':'Edit role','edit-teammate',t.id,'secondary',`${t.id==='steven'?'Edit profile for':'Edit role for'} ${t.name}`)+(t.id==='steven'?pill('Your account','good'):button('Remove','remove-teammate',t.id,'quiet',`Remove ${t.name}`)),pill(t.status))).join('')}</div>`)+
-      `<div class="card-grid">${[['Owner','Website settings, team roles, all content, inventory, and purchase-order actions.'],['Manager','Menu, calendar, hours, stock counts, and purchase drafts.'],['Editor','Guest-facing content: menu, music, and hours.']].map(([title,copy])=>panel(title,`<p>${copy}</p>`)).join('')}</div>`;
+      `<div class="card-grid">${[['Owner','Website settings, team roles, all content, inventory, and purchase-order actions.'],['Manager','Menu, calendar, hours, stock counts, and purchase drafts.'],['Editor','Website menu, music, and hours.']].map(([title,copy])=>panel(title,`<p>${copy}</p>`)).join('')}</div>`;
   }
   function editTeammate(id) {
     const item=state.team.find(i=>i.id===id);
     openEditor(item?'Edit demo teammate':'Add demo teammate',`<p class="notice">No invitation or account will be created.</p><div class="field-grid">${field('name','Name',item?.name,'text','required maxlength="100"')}${item?.id==='steven'?'<p class="muted full">Steven keeps full owner access. This changes the display name; the login remains Steven.</p>':select('role','Role',['Owner','Manager','Editor'],item?.role || 'Editor')+select('status','Status',['Active','Inactive'],item?.status || 'Active')}</div>`,async data=>{const values={name:required(data.name,'Name'),role:item?.id==='steven'?'Owner':data.role,status:item?.id==='steven'?'Active':data.status};if(item)Object.assign(item,values);else {requireCollectionRoom(state.team,M.limits.teamMembers,'team members');state.team.push({id:M.id('team'),...values});}await persist(`Updated demo teammate: ${values.name}`);});
   }
-  function activityRows(limit=100) { return state.activity.length ? `<div class="row-list">${state.activity.slice(0,limit).map(a=>`<div class="activity-row"><span class="user-avatar" aria-hidden="true">S</span><div><strong>${esc(a.message)}</strong><p>Steven · ${new Date(a.at || a.timestamp || a.createdAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</p></div></div>`).join('')}</div>` : empty('A fresh start.','Saved edits and order actions will appear here.'); }
-  function renderActivity() { return heading('A record of the changes.','Your latest 100 workspace actions, shared across signed-in devices.')+panel('Activity.',activityRows()); }
+  function activityRows(limit=100) { return state.activity.length ? `<div class="row-list">${state.activity.slice(0,limit).map(a=>`<div class="activity-row"><span class="user-avatar" aria-hidden="true">S</span><div><strong>${esc(a.message)}</strong><p>Steven · ${new Date(a.at || a.timestamp || a.createdAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})}</p></div></div>`).join('')}</div>` : empty('No activity yet.','Saved edits and order actions will appear here.'); }
+  function renderActivity() { return heading('Activity.','The latest 100 saved actions from every signed-in device.')+panel('Activity.',activityRows()); }
   function renderSettings() {
-    return heading('Make it feel like your parlor.','Update contact details, a guest notice, and your sign-in.',preview())+
+    return heading('Settings.','Update contact details, the homepage notice, and your password.',preview())+
       renderInlineRecovery('settings')+
-      `<div class="split">${panel('Guest-facing details.',`<form id="settings-form" class="field-grid">${field('phone','Phone number',state.settings.phone,'tel','required maxlength="40"')}${field('address','Address',state.settings.address,'text','required maxlength="200"')}${area('announcement','Homepage notice',state.settings.announcement,'placeholder="Optional: special hours, a private event, or an announcement."')}<p class="muted full">Leave the notice blank to hide it. Saved details appear in your guest preview.</p><button class="button" type="submit">Save details</button></form>`)}`+
-      `${panel('Your login.',`<p><strong>Username: Steven</strong></p><p>Use a unique password of at least 12 characters. A password change signs future requests with a new private session token.</p>${button('Change password','change-password')}`)}</div>`;
+      `<div class="split">${panel('Website details.',`<form id="settings-form" class="field-grid">${field('phone','Phone number',state.settings.phone,'tel','required maxlength="40"')}${field('address','Address',state.settings.address,'text','required maxlength="200"')}${area('announcement','Homepage notice',state.settings.announcement,'placeholder="Optional: special hours, a private event, or an announcement."')}<p class="muted full">Leave the notice blank to hide it. Saved details appear in your guest preview.</p><button class="button" type="submit">Save details</button></form>`)}`+
+      `${panel('Your login.',`<p><strong>Username: Steven</strong></p><p>Use a unique password of at least 12 characters. This browser stays signed in after a successful password change.</p>${button('Change password','change-password')}`)}</div>`;
   }
   function renderWebsite() {
     const catalog=window.OwnerContent;
     if(!catalog)return heading('Website content.','The content editor could not load. Refresh this page.');
     const groups=[...new Set(catalog.fields.map(f=>f.group || 'Website text'))];
-    return heading('Your words. Your photographs.','Edit the website here, then open the guest preview to see your saved version.',preview())+
-      `<p class="notice">Edit the website copy, links, and photographs below. Successful saves update this shared preview for visitors on every device.</p>`+
+    return heading('Website.','Edit the text, links, and photographs that appear on the guest preview.',preview())+
+      `<p class="notice">Saved changes appear on the shared guest preview on every device.</p>`+
       `<div class="card-grid">${groups.map(group=>panel(esc(group),`<p>${catalog.fields.filter(f=>(f.group || 'Website text')===group).map(f=>esc(f.label)).join(' · ')}</p>${button('Edit text','edit-content',group,'secondary',`Edit ${group} website text`)}`)).join('')}</div>`+
       `<section class="website-photo-section"><h2>Website photographs</h2><div class="card-grid">${catalog.images.map(image=>`<article class="item-card"><img class="editor-photo" src="${esc(safeImage(state.settings.images?.[image.key] || image.defaultValue))}" alt="${esc(image.label)}"><h3>${esc(image.label)}</h3>${button('Change photograph','edit-photo',image.key,'secondary',`Change photograph: ${image.label}`)}</article>`).join('')}</div></section>`;
   }
@@ -618,13 +618,13 @@
     });
   }
   function changePassword() {
-    openEditor('Change password',`<p class="notice">Use a unique password you do not use for another account. Changing it updates the private owner sign-in.</p><div class="field-grid">${field('current','Current password','','password','required autocomplete="current-password"')}${field('next','New password','','password','required minlength="12" maxlength="100" autocomplete="new-password"')}${field('repeat','Repeat new password','','password','required minlength="12" maxlength="100" autocomplete="new-password"')}</div>`,async data=>{
+    openEditor('Change password',`<p class="notice">Use a unique password of at least 12 characters that you do not use for another account.</p><div class="field-grid">${field('current','Current password','','password','required autocomplete="current-password"')}${field('next','New password','','password','required minlength="12" maxlength="100" autocomplete="new-password"')}${field('repeat','Repeat new password','','password','required minlength="12" maxlength="100" autocomplete="new-password"')}</div>`,async data=>{
       if(data.next!==data.repeat)throw new Error('The new passwords do not match.');
       if(String(data.next || '').length<12)throw new Error('The new password must be at least 12 characters.');
       if(data.next===data.current)throw new Error('Choose a different password.');
       try {
         await API.changePassword(data.current,data.next);
-        status('Password changed. This browser is still signed in with the new private session.');
+        status('Password changed. This browser is still signed in.');
       } catch(error) {
         const code=error?.payload?.error?.code;
         if(error?.status===401 && code!=='invalid_credentials'){

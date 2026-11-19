@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#263f34">
   <meta name="robots" content="noindex, nofollow">
-  <title>Tolbert’s — Account Workspace</title>
-  <meta name="description" content="Manage the shared Tolbert’s preview: menu, hours, music, photographs, and operational planning.">
+  <title>Login | Tolbert’s</title>
+  <meta name="description" content="Sign in to edit the menu, hours, shows and photos, or try the sample inventory and purchase orders.">
   <link rel="canonical" href="https://cmcnosky.github.io/tolberts-preview/owner.html">
-  <meta property="og:title" content="Tolbert’s — Account Workspace">
-  <meta property="og:description" content="Explore an interactive preview for managing the menu, live music, hours, sample inventory, and simulated purchase orders.">
+  <meta property="og:title" content="Login | Tolbert’s">
+  <meta property="og:description" content="Sign in to edit the menu, hours, shows and photos, or try the sample inventory and purchase orders.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://cmcnosky.github.io/tolberts-preview/owner.html">
   <meta property="og:image" content="https://cmcnosky.github.io/tolberts-preview/assets/social-preview-20261117-bowl-of-red.jpg">
@@ -18,8 +18,8 @@
   <meta property="og:image:type" content="image/jpeg">
   <meta property="og:image:alt" content="Tolbert’s red Main Street sign on the left. On the right, a Bowl of Red above Texas Flood guitarist Tommy Katona and his drummer.">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Tolbert’s — Account Workspace">
-  <meta name="twitter:description" content="Explore menus, music, hours, sample inventory, and simulated purchasing in a working owner-interface preview.">
+  <meta name="twitter:title" content="Login | Tolbert’s">
+  <meta name="twitter:description" content="Sign in to edit the menu, hours, shows and photos, or try the sample inventory and purchase orders.">
   <meta name="twitter:image" content="https://cmcnosky.github.io/tolberts-preview/assets/social-preview-20261117-bowl-of-red.jpg">
   <meta name="twitter:image:alt" content="Tolbert’s red Main Street sign on the left. On the right, a Bowl of Red above Texas Flood guitarist Tommy Katona and his drummer.">
   <link rel="icon" href="assets/favicon.svg">
@@ -28,11 +28,11 @@
   <link rel="stylesheet" href="owner-tools.css?v=1">
   <link rel="stylesheet" href="owner-editorial.css?v=3">
   <script src="owner-model.js?v=20261109.2" defer></script>
-  <script src="owner-content.js?v=8" defer></script>
-  <script src="owner-tools.js?v=20261109.2" defer></script>
+  <script src="owner-content.js?v=9" defer></script>
+  <script src="owner-tools.js?v=20261118.1" defer></script>
   <script src="shared-api.js?v=2" defer></script>
   <script src="music-model.js?v=12" defer></script>
-  <script src="owner.js?v=20261117.1" defer></script>
+  <script src="owner.js?v=20261118.1" defer></script>
 <link rel="stylesheet" href="editorial-readability.css?v=1"></head>
 <body class="owner-page editorial-owner">
   <a class="skip-link" id="owner-skip-link" href="#login-title">Skip to sign-in</a>
@@ -41,8 +41,8 @@
     <div class="login-scene" aria-hidden="true">
       <div class="login-scene-copy">
         <p>423 South Main Street · Grapevine, Texas</p>
-        <strong>Behind the<br>red sign.</strong>
-        <span>Run the parlor. Book the stage. Keep the chili coming.</span>
+        <strong>Tolbert’s<br>management.</strong>
+        <span>Edit the menu, shows, hours, and website.</span>
       </div>
     </div>
 
@@ -56,8 +56,8 @@
         <a class="back-to-website" href="index.html">← Back to the restaurant website</a>
         <div class="login-heading">
           <p class="eyebrow">ACCOUNT ACCESS</p>
-          <h1 id="login-title" tabindex="-1">Welcome<br><em>back.</em></h1>
-          <p>Sign in to your account.</p>
+          <h1 id="login-title" tabindex="-1">Sign<br><em>in.</em></h1>
+          <p>Enter your account details.</p>
         </div>
 
         <form id="login-form" class="login-form">
@@ -66,7 +66,7 @@
 
           <div class="label-line">
             <label for="owner-password">Password</label>
-            <span>Private account</span>
+            <span>Account</span>
           </div>
           <input id="owner-password" name="password" type="password" autocomplete="current-password" required>
 
@@ -74,7 +74,7 @@
           <button class="button login-submit" type="submit">Log in <span aria-hidden="true">↗</span></button>
         </form>
 
-        <p class="demo-disclosure">Authorized changes are saved to the shared preview workspace. Purchase orders, payments, payroll, supplier connections, and staff notifications remain simulated until their services are connected.</p>
+        <p class="demo-disclosure">Menu, music, hours, and website changes save to the shared preview. Purchase orders, payments, payroll, supplier connections, and staff notifications remain simulated until those services are connected.</p>
         <noscript><p class="login-noscript">Turn on JavaScript to use the owner workspace.</p></noscript>
       </div>
     </div>
@@ -84,16 +84,16 @@
     <aside class="owner-sidebar" aria-label="Owner navigation">
       <a class="sidebar-brand" href="index.html" aria-label="Tolbert’s guest website">
         <img src="assets/logo-white.png" alt="Tolbert’s" width="150" height="72">
-        <span>Owner room</span>
+        <span>Management</span>
       </a>
 
       <div class="sidebar-intro">
         <span>423 S. Main Street</span>
-        <strong>Parlor operations</strong>
+        <strong>Tolbert’s</strong>
       </div>
 
       <button class="owner-nav-toggle" id="owner-nav-toggle" type="button" aria-controls="owner-navigation" aria-expanded="false">
-        <span class="owner-nav-toggle-label">Workspace sections</span>
+        <span class="owner-nav-toggle-label">Sections</span>
         <strong id="owner-nav-current">Today</strong>
         <span class="owner-nav-chevron" aria-hidden="true">⌄</span>
       </button>
@@ -113,15 +113,15 @@
       </nav>
 
       <div class="sidebar-foot">
-        <span>OWNER WORKSPACE</span>
-        <p>Successful saves sync across devices and update the guest preview. Supplier orders, payments, payroll, and staff notifications still need connected services.</p>
+        <span>MANAGEMENT</span>
+        <p>Successful saves sync across devices and update the guest preview. Orders, payments, payroll, and staff notices need outside services.</p>
       </div>
     </aside>
 
     <div class="owner-app">
       <header class="owner-topbar">
         <div class="topbar-location">
-          <span>Owner workspace</span>
+          <span>Management</span>
           <strong>Tolbert’s · Grapevine</strong>
         </div>
         <div class="topbar-actions">
@@ -136,8 +136,8 @@
       </header>
 
       <div class="demo-ribbon" role="note">
-        <strong>Full owner access</strong>
-        <span>Shared across devices · Guest preview reflects confirmed saves · Backups provide recovery copies</span>
+        <strong>Shared preview</strong>
+        <span>Saved changes sync across devices · Backups let you restore earlier data</span>
       </div>
 
       <main class="workspace" id="workspace" tabindex="-1">
@@ -152,7 +152,7 @@
     <form id="editor-form" method="dialog">
       <div class="dialog-heading">
         <div>
-          <p class="eyebrow">Owner editor</p>
+          <p class="eyebrow">Editor</p>
           <h2 id="editor-title">Edit details</h2>
         </div>
         <button class="dialog-close" type="button" data-close-dialog aria-label="Close editor">×</button>

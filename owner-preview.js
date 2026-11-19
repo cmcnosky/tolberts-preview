@@ -265,11 +265,11 @@
     title.textContent = 'Owner view';
     const detail = document.createElement('span');
     detail.textContent = api.state
-      ? 'Showing the shared published website'
-      : 'Shared content is unavailable · showing the built-in website content';
+      ? 'Viewing the published site'
+      : 'Showing the saved site. The latest changes couldn’t load.';
     const back = document.createElement('a');
     back.href = 'owner.html';
-    back.textContent = 'Return to owner room →';
+    back.textContent = 'Back to dashboard →';
     banner.append(title, detail, back);
     document.body.prepend(banner);
     const syncHeight = () => document.documentElement.style.setProperty('--owner-preview-banner-height', `${Math.ceil(banner.getBoundingClientRect().height)}px`);
@@ -404,11 +404,9 @@
       if (description) description.textContent = item.description || 'Available on the current menu.';
       if (price) price.textContent = item.price || 'Ask for price';
     });
-    const range = document.querySelector('.pick-heading span:last-child');
-    if (range) range.textContent = featured.length ? `01—${String(Math.min(featured.length, slots.length)).padStart(2, '0')}` : 'NO ITEMS';
     const footnote = document.querySelector('.menu-footnote span');
     if (footnote) footnote.textContent = active
-      ? 'Owner view of the restaurant’s shared published menu.'
+      ? 'Owner view · published menu.'
       : 'Prices may change.';
   }
 

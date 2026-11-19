@@ -152,7 +152,7 @@ test('data-rendering guest scripts wait for shared content while homepage contro
 test('a current or intentionally empty shared lineup remains authoritative while an ended one refreshes safely', () => {
   const music = fs.readFileSync(path.join(root, 'music.js'), 'utf8');
   assert.match(music, /publishedFallbackMode = publishedMode && !ownerViewMode && cancelledEvents !== null &&[\s\S]*publishedLineupNeedsRefresh\(previewState\.events, savedEvents\)/);
-  assert.match(music, /if \(sharedScheduleActive\)[\s\S]*Current lineup published by Tolbert’s[\s\S]*return;/);
+  assert.match(music, /if \(sharedScheduleActive\)[\s\S]*Times are Central\. Call to confirm before you go\.[\s\S]*return;/);
   assert.match(music, /excludeCancelledEvents\(liveEvents, cancelledEvents\)/);
   assert.match(music, /loadSavedCalendar\(\)\.finally\(refreshCalendar\)/);
   assert.match(music, /When checked November 16, the calendar listed 2:30 pm and the promotional artwork showed 3:00 pm/);
