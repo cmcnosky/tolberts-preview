@@ -1,6 +1,6 @@
 /* Artist artwork is content: never crop it, darken it, or cover it with labels. */
-#show-grid .show-card{display:grid;grid-template-columns:58px 180px minmax(0,1fr) auto;gap:24px;align-items:center;padding:24px 0}
-#show-grid .show-image{grid-column:2;grid-row:1;position:relative;width:180px;height:150px;aspect-ratio:auto;min-width:0;border:0;background:#191815;overflow:visible}
+#show-grid .show-card{display:grid;grid-template-columns:64px 160px minmax(0,1fr) auto;gap:22px;align-items:center;padding:20px 12px}
+#show-grid .show-image{grid-column:2;grid-row:1;position:relative;width:160px;height:140px;aspect-ratio:auto;min-width:0;border:0;background:#191815;overflow:visible}
 #show-grid .show-image::after{content:none}
 #show-grid .show-image img{width:100%;height:100%;object-fit:contain;object-position:center;opacity:1;filter:none;transform:none;transition:none}
 #show-grid .show-date{grid-column:1;grid-row:1;position:static;display:block;min-width:0;padding:9px 0;background:transparent;color:var(--gold);text-align:center;border-block:1px solid #aa9875;line-height:1.1}
@@ -10,8 +10,8 @@
 #show-grid .show-state{display:inline-flex;align-items:center;min-height:27px;margin:0 0 8px;padding:4px 8px;border:1px solid currentColor;color:var(--gold);font-size:12px;font-weight:700;line-height:1.35;letter-spacing:.7px;text-transform:uppercase}
 #show-grid .show-state-live{background:var(--gold);color:var(--ink)}
 #show-grid .genre{margin:0 0 8px;font-size:12px;line-height:1.5}
-#show-grid h3{font-family:var(--cond);font-size:36px;font-weight:600;line-height:1.05;margin:0;overflow-wrap:anywhere}
-#show-grid .show-time{font-size:15px;line-height:1.65;margin:10px 0 0;padding:0}
+#show-grid h3{font-family:var(--cond);font-size:34px;font-weight:600;line-height:1.05;margin:0;overflow-wrap:anywhere}
+#show-grid .show-time{font-size:15px;line-height:1.55;margin:8px 0 0;padding:0}
 #show-grid .show-detail{grid-column:4;grid-row:1;position:static;align-self:center;margin:0;min-height:44px}
 
 /* A compact concert bill, with an uncropped portrait or band poster beside the details. */
@@ -57,15 +57,15 @@
 #show-dialog .show-share-fallback input{width:100%;font-size:13px;padding:10px;margin-top:6px}
 
 @media(max-width:1000px){
-  #show-grid .show-card{grid-template-columns:48px 150px minmax(0,1fr);gap:20px}
-  #show-grid .show-image{width:150px;height:150px;grid-row:1/3}
+  #show-grid .show-card{grid-template-columns:48px 142px minmax(0,1fr);gap:18px}
+  #show-grid .show-image{width:142px;height:140px;grid-row:1/3}
   #show-grid .show-date{grid-row:1/3}
   #show-grid .show-detail{grid-column:3;grid-row:2;justify-self:start;margin-top:0}
   #show-grid h3{font-size:33px}
 }
 @media(max-width:600px){
-  #show-grid .show-card{grid-template-columns:116px minmax(0,1fr);gap:9px 18px;padding-block:23px;align-items:start}
-  #show-grid .show-image{grid-column:1;grid-row:1/4;width:116px;height:150px;align-self:start}
+  #show-grid .show-card{grid-template-columns:108px minmax(0,1fr);gap:7px 16px;padding:20px 0;align-items:start}
+  #show-grid .show-image{grid-column:1;grid-row:1/4;width:108px;height:140px;align-self:start}
   #show-grid .show-date{grid-column:2;grid-row:1;display:flex;align-items:baseline;gap:7px;justify-self:start;border:0;padding:0;font-size:12px}
   #show-grid .show-date span{display:inline;font-size:12px}
   #show-grid .show-date .show-weekday{order:-1;margin-right:3px;color:#ded6c3}
@@ -73,9 +73,9 @@
   #show-grid .show-copy{grid-column:2;grid-row:2}
   #show-grid .show-state{min-height:26px;margin-bottom:7px;font-size:12px}
   #show-grid .genre{font-size:11px;margin-bottom:5px}
-  #show-grid h3{font-size:29px}
-  #show-grid .show-time{font-size:14px;margin-top:8px}
-  #show-grid .show-detail{grid-column:2;grid-row:3;font-size:13px;padding:9px 11px;gap:14px;margin-top:4px}
+  #show-grid h3{font-size:28px}
+  #show-grid .show-time{font-size:14px;margin-top:6px}
+  #show-grid .show-detail{grid-column:2;grid-row:3;font-size:13px;padding:8px 10px;gap:14px;margin-top:3px}
   #show-dialog{width:calc(100% - 20px);max-height:calc(100dvh - 20px)}
   #show-dialog .show-dialog-bar{padding-left:20px}
   #show-dialog .detail-layout{grid-template-columns:108px minmax(0,1fr);gap:0 18px;padding:20px}
@@ -94,8 +94,8 @@
   #show-dialog .detail-actions a:not(.detail-call){justify-content:center}
 }
 @media(max-width:370px){
-  #show-grid .show-card{grid-template-columns:100px minmax(0,1fr);gap:9px 14px}
-  #show-grid .show-image{width:100px;height:140px}
+  #show-grid .show-card{grid-template-columns:92px minmax(0,1fr);gap:7px 13px}
+  #show-grid .show-image{width:92px;height:130px}
   #show-grid h3{font-size:26px}
   #show-dialog .detail-layout{grid-template-columns:92px minmax(0,1fr);padding:17px;column-gap:14px}
   #show-dialog .detail-image{height:165px}

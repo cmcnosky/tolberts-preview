@@ -106,24 +106,30 @@
 
 /* Menu introduction and search. */
 .menu-page .menu-page-heading{
-  padding-top:40px;
-  padding-bottom:34px;
+  padding:30px var(--guest-gutter,var(--pad)) 26px;
   color:var(--cream);
   background:var(--red);
   border:0;
 }
 .menu-page .breadcrumb,.music-page .breadcrumb{color:var(--cream);font-weight:700}
-.menu-page .menu-title-row{border-bottom:1px solid #f3e9d280}
+.menu-page .breadcrumb{margin-bottom:10px}
+.menu-page .menu-title-row{
+  align-items:center;
+  padding-bottom:18px;
+  border-bottom:1px solid #f3e9d280;
+}
 .menu-page .menu-title-row .eyebrow{color:var(--cream)}
 .menu-page .menu-title-row h1{
   color:var(--cream);
-  font:400 clamp(54px,6.4vw,88px)/1.02 var(--serif);
+  font:400 clamp(52px,5.4vw,76px)/1 var(--serif);
   letter-spacing:-.035em;
   text-transform:none;
+  margin:10px 0 12px;
 }
-.menu-page .menu-title-row p{color:var(--cream);line-height:1.75}
+.menu-page .menu-title-row p{color:var(--cream);line-height:1.55}
 .menu-page .menu-title-row>.text-link{color:var(--cream);font-family:var(--cond);text-transform:uppercase}
-.menu-page .menu-date{color:#f3e9d2cc}
+.menu-page .menu-date{color:#f3e9d2cc;margin:12px 0 14px}
+.menu-page .menu-search-form{max-width:660px}
 .menu-page .menu-search-form>label{color:var(--cream)}
 .menu-page .search-box{background:var(--cream);border:1px solid var(--cream)}
 .menu-page .search-box .button{
@@ -137,25 +143,44 @@
 }
 
 /* Menu browsing stays dense, but reads like the editorial homepage. */
-.menu-page .menu-page-layout{padding-top:38px;background:var(--cream)}
-.menu-page .menu-sidebar{border-top:4px solid var(--green)}
+.menu-page .menu-page-layout{
+  gap:36px;
+  padding:30px var(--guest-gutter,var(--pad)) 46px;
+  background:var(--cream);
+}
+.menu-page .menu-sidebar{
+  top:calc(var(--guest-header-height,76px) + 20px);
+  border-top:4px solid var(--green);
+}
 .menu-page .menu-sidebar nav>a{font-size:14px}
 .menu-page .menu-sidebar [aria-current]{color:var(--cream);background:var(--red)}
 .menu-page .sidebar-order{color:var(--red);font-weight:700}
-.menu-page .menu-tools{top:86px;background:var(--cream);border-color:var(--ink)}
+.menu-page .menu-tools{
+  top:var(--guest-header-height,76px);
+  padding:10px 0;
+  background:var(--cream);
+  border-color:var(--ink);
+  box-shadow:0 8px 12px -14px #24211ccc;
+}
+.menu-page .menu-group{
+  padding-top:26px;
+  scroll-margin-top:calc(var(--guest-header-height,76px) + 86px);
+}
 .menu-page .menu-group>h2{
   color:var(--red);
+  padding-bottom:12px;
   border-bottom:1px solid var(--ink);
   font:400 42px/1.08 var(--serif);
   letter-spacing:-.02em;
   text-transform:none;
 }
 .menu-page .menu-item h3{
-  font:400 28px/1.13 var(--serif);
+  font:400 27px/1.13 var(--serif);
   letter-spacing:-.015em;
 }
-.menu-page .menu-item p{color:#675f52}
-.menu-page .item-price{color:var(--red)}
+.menu-page .menu-item{padding:20px 0}
+.menu-page .menu-item p{color:#675f52;line-height:1.62;margin-top:8px}
+.menu-page .item-price{color:var(--red);margin-top:8px}
 .menu-page .menu-page-policy{
   color:var(--ink);
   background:var(--gold);
@@ -170,25 +195,39 @@
 
 /* The full calendar opens with the same red/cream editorial statement. */
 .music-page .music-page-head{
-  padding-top:46px;
-  padding-bottom:48px;
+  padding:32px var(--guest-gutter,var(--pad)) 34px;
   color:var(--cream);
   background:var(--red);
   border:0;
 }
+.music-page .music-page-head .breadcrumb{margin-bottom:8px}
 .music-page .music-page-head .eyebrow{color:var(--cream)}
 .music-page .music-page-head h1{
   color:var(--cream);
-  font:400 clamp(58px,7vw,94px)/1.02 var(--serif);
+  font:400 clamp(56px,5.8vw,80px)/1 var(--serif);
   letter-spacing:-.035em;
   text-transform:none;
+  margin:9px 0 12px;
 }
 .music-page .music-page-head>p:last-child{color:var(--cream)}
 .music-page .music-section{
+  padding:28px var(--guest-gutter,var(--pad)) 54px;
   color:var(--cream);
   background:var(--green);
   border-top:4px solid var(--gold);
 }
+.music-page .music-finder{
+  display:grid;
+  grid-template-columns:max-content minmax(480px,760px);
+  align-items:end;
+  gap:24px;
+  margin:0 0 18px;
+  padding:18px 0;
+  background:transparent;
+  border-block:1px solid #f3e9d238;
+}
+.music-page .filter-group{margin:0;gap:8px}
+.music-page .finder-fields{grid-template-columns:minmax(210px,.72fr) minmax(300px,1fr);gap:16px;max-width:none}
 .music-page .filter-group button{border-color:#f3e9d280;color:var(--cream)}
 .music-page .filter-group button.active,
 .music-page .filter-group button[aria-pressed=true]{color:var(--ink);background:var(--gold);border-color:var(--gold)}
@@ -197,6 +236,7 @@
   background:var(--cream);
   border-color:var(--cream);
 }
+.music-page .music-results-bar{min-height:38px}
 .music-page .music-results-bar .show-count,.music-page .source-note{color:#f3e9d2cc}
 .music-page #show-grid{border-top-color:#f3e9d255}
 .music-page #show-grid .show-card{border-bottom-color:#f3e9d255}
@@ -263,16 +303,45 @@
 @media(max-width:1100px){
   :is(.menu-page,.music-page) .header{gap:17px}
   :is(.menu-page,.music-page) .header .brand{width:165px}
+  .music-page .music-finder{grid-template-columns:1fr;align-items:start;gap:18px}
 }
 @media(max-width:760px){
   :is(.menu-page,.music-page) .header{height:76px;padding:7px 20px;gap:14px}
   :is(.menu-page,.music-page) .header .brand{width:140px;height:auto;padding:0}
   :is(.menu-page,.music-page) .header .brand img{width:96px;height:52px}
   :is(.menu-page,.music-page) .header .brand span{display:block;max-width:42px;color:#d7cbb8;font-size:9px;line-height:1.2;letter-spacing:.06em}
-  .menu-page .menu-tools{top:76px}
-  .menu-page .menu-page-heading,.music-page .music-page-head{padding-block:34px}
-  .menu-page .menu-title-row h1{font-size:50px}
-  .menu-page .menu-page-layout{padding-top:20px}
+  :is(.menu-page,.music-page) .breadcrumb{display:none}
+  .menu-page .menu-tools{
+    top:var(--guest-header-height,66px);
+    gap:8px;
+    padding:10px 0 9px;
+  }
+  .menu-page .menu-tools>label{
+    display:grid;
+    grid-template-columns:70px minmax(0,1fr);
+    gap:12px;
+  }
+  .menu-page .menu-tools select{width:100%}
+  .menu-page .menu-page-heading{padding:22px var(--guest-gutter,var(--pad)) 20px}
+  .music-page .music-page-head{padding:24px var(--guest-gutter,var(--pad)) 26px}
+  .menu-page .menu-title-row h1{font-size:48px;margin:8px 0 10px}
+  .menu-page .menu-title-row{padding-bottom:14px}
+  .menu-page .menu-title-row>.text-link{margin-top:9px;min-height:36px}
+  .menu-page .menu-date{margin:11px 0 13px}
+  .menu-page .menu-page-layout{padding:12px var(--guest-gutter,var(--pad)) 30px}
+  .menu-page .menu-group{padding-top:22px}
+  .menu-page .menu-group>h2{font-size:36px;padding-bottom:10px}
+  .menu-page .menu-item{padding:18px 0}
+  .menu-page .menu-item h3{font-size:27px}
+  .menu-page .menu-item p{font-size:16px;line-height:1.58}
+  .music-page .music-section{padding:20px var(--guest-gutter,var(--pad)) 44px}
+  .music-page .music-page-head h1{font-size:56px;margin:8px 0 11px}
+  .music-page .music-finder{gap:16px;margin-bottom:13px;padding:16px 0}
+  .music-page .filter-group{display:grid;grid-template-columns:1.1fr .8fr 1.1fr;gap:7px}
+  .music-page .filter-group button{padding:9px 7px;min-height:50px;line-height:1.25}
+  .music-page .finder-fields{grid-template-columns:1fr;gap:14px}
+  .music-page .finder-fields label{gap:6px}
+  .music-page .music-results-bar{min-height:34px}
   .music-page #show-grid h3{font-size:29px}
   .music-page #show-dialog #show-title{font-size:34px}
 }
@@ -282,8 +351,11 @@
   :is(.menu-page,.music-page) .header .brand img{width:98px}
   :is(.menu-page,.music-page) .header .brand span{display:none}
   :is(.menu-page,.music-page) .header .order-link{font-size:13px;gap:9px;padding:11px}
-  .menu-page .menu-page-heading,.music-page .music-page-head{padding-inline:20px}
-  .menu-page .menu-title-row h1{font-size:45px}
+  .menu-page .menu-title-row h1{font-size:44px}
+  .music-page .music-page-head h1{font-size:52px}
+  .music-page .music-page-head .eyebrow{font-size:11px;letter-spacing:1px}
+  .music-page .music-finder{padding:14px 0}
+  .music-page .filter-group button{font-size:12px;padding-inline:5px}
 }
 
 @media print{

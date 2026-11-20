@@ -201,8 +201,25 @@ body.editorial-owner {
 }
 
 @media (max-width: 620px) {
+  body.editorial-owner { font-size: 16px; }
+  .editorial-owner .login-scene { min-height: 218px; }
+  .editorial-owner .login-scene-copy { bottom: 19px; }
+  .editorial-owner .login-scene-copy p { font-size: 11px; letter-spacing: .12em; }
+  .editorial-owner .login-scene-copy strong { font-size: clamp(45px, 14vw, 61px); line-height: .82; }
+  .editorial-owner .login-panel { padding: 31px 20px 38px; }
+  .editorial-owner .login-brand img { width: 116px; }
+  .editorial-owner .login-brand span { font-size: 11px; }
+  .editorial-owner .back-to-website { margin-bottom: 10px; font-size: 15px; }
+  .editorial-owner .login-heading { margin: 30px 0 24px; }
+  .editorial-owner .login-heading h1 { margin-bottom: 15px; font-size: clamp(47px, 13.5vw, 60px); }
+  .editorial-owner .login-heading > p:last-child { font-size: 16px; }
+  .editorial-owner .login-form label,
+  .editorial-owner .label-line span { font-size: 14px; }
+  .editorial-owner .login-form input { min-height: 55px; }
+  .editorial-owner .demo-disclosure { font-size: 14px; line-height: 1.55; }
   .editorial-owner .page-heading h1,
   .editorial-owner .page-heading h2 { font-size: clamp(42px, 13vw, 59px); }
+  .editorial-owner .page-heading p:not(.eyebrow) { font-size: 16px; line-height: 1.55; }
   .editorial-owner .panel { box-shadow: none; }
 }
 

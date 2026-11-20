@@ -535,3 +535,47 @@ footer .footer-note { margin-top: 0; }
   .masthead-action { display:inline-flex; align-items:center; gap:8px; max-width:none; white-space:nowrap; font-size:15px; }
 }
 @media screen and (max-width:560px) { .hero-rail { font-size:11px; } }
+
+/* Keep the long decision page moving at the pace of a document, instead of
+   treating every short section like a separate full-screen slide. */
+@media screen {
+  .hero { min-height: 660px; }
+  .hero-copy { padding-block: 58px; }
+  .answers article { padding-block: 58px; }
+  .task-section,
+  .retain,
+  .measurement,
+  .screenshots,
+  .scope { padding-block: 86px; }
+  .section-intro { margin-bottom: 42px; }
+  .task-row { padding-block: 36px; }
+  .retain-grid > div { min-height: 220px; padding-block: 33px; }
+  .scope-row { padding-block: 21px; }
+  .close { padding-block: 70px; }
+  footer { padding-block: 50px; }
+}
+@media screen and (max-width:820px) {
+  .hero-copy { padding-block: 50px; }
+  .answers article { padding-block: 48px; }
+  .task-section,
+  .retain,
+  .measurement,
+  .screenshots,
+  .scope { padding-block: 64px; }
+  .section-intro { margin-bottom: 34px; }
+}
+@media screen and (max-width:560px) {
+  .hero-copy { padding: 42px 22px 46px; }
+  .hero-figure { min-height: 320px; }
+  .answers article { padding: 44px 24px; }
+  .task-section,
+  .retain,
+  .measurement,
+  .screenshots,
+  .scope { padding-block: 58px; }
+  .task-row { gap: 18px; padding-block: 29px; }
+  .retain-grid > div { padding-block: 27px; }
+  .scope-row { padding-block: 18px; }
+  .close { padding-block: 52px; }
+  footer { padding-block: 42px; }
+}

@@ -1,0 +1,440 @@
+/* Finishing rhythm for the editorial homepage's content sections. */
+
+.editorial-home #menu,
+.editorial-home .music-section,
+.editorial-home .visit-section,
+.editorial-home #story,
+.editorial-home .faq-section,
+.editorial-home footer {
+  padding-inline: var(--guest-gutter, max(20px, calc((100% - 1240px) / 2)));
+}
+
+@media (min-width: 761px) {
+  .editorial-home #menu {
+    padding-block: 72px 68px;
+  }
+
+  .editorial-home #menu .section-heading {
+    margin-bottom: 30px;
+    padding-bottom: 24px;
+  }
+
+  .editorial-home #menu .food-layout {
+    grid-template-columns: minmax(0, .88fr) minmax(0, 1.12fr);
+    gap: 56px;
+  }
+
+  .editorial-home #menu .food-picks {
+    border-top: 1px solid var(--ink);
+  }
+
+  .editorial-home #menu .food-pick {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 24px;
+    padding-block: 18px;
+    border-bottom-style: dotted;
+  }
+
+  .editorial-home #menu .food-pick .pick-arrow {
+    display: none;
+  }
+
+  .editorial-home #menu .food-pick h3 {
+    margin-bottom: 5px;
+  }
+
+  .editorial-home #menu .menu-bottom {
+    margin-top: 24px;
+    padding-top: 18px;
+  }
+
+  .editorial-home .visit-section {
+    align-items: start;
+    padding-block: 72px;
+  }
+
+  .editorial-home .visit-section .rail-access {
+    margin-top: 22px;
+    padding-top: 18px;
+  }
+
+  .editorial-home #story {
+    gap: 6%;
+    padding-block: 68px;
+  }
+
+  .editorial-home #groups .gather-content {
+    padding-block: 56px;
+    padding-left: var(--guest-gutter, max(20px, calc((100vw - 1240px) / 2)));
+  }
+
+  .editorial-home #groups > img {
+    min-height: 420px;
+  }
+
+  .editorial-home .faq-section {
+    grid-template-columns: minmax(300px, .65fr) minmax(0, 1.35fr);
+    gap: 72px;
+    padding-block: 64px;
+  }
+
+  .editorial-home .faqs summary {
+    padding-block: 18px;
+  }
+
+  .editorial-home footer {
+    padding-top: 42px;
+  }
+
+  .editorial-home .footer-top {
+    padding-bottom: 30px;
+  }
+
+  /* Treat the homepage schedule as the venue's running order, not a card deck. */
+  .editorial-home #music .show-grid {
+    display: block;
+    border-bottom: 1px solid #777063;
+  }
+
+  .editorial-home #music #show-grid .show-card {
+    display: grid;
+    grid-template-columns: clamp(82px, 8vw, 112px) clamp(145px, 16vw, 220px) minmax(0, 1fr) auto;
+    gap: clamp(18px, 2.4vw, 34px);
+    align-items: center;
+    min-height: 150px;
+    padding: 18px 0;
+    border-top: 1px solid #777063;
+  }
+
+  .editorial-home #music #show-grid .show-date {
+    grid-column: 1;
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    gap: 0 8px;
+    align-items: end;
+    width: auto;
+    padding: 0;
+    border: 0;
+    color: var(--gold);
+    text-align: left;
+  }
+
+  .editorial-home #music #show-grid .show-date > span:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .editorial-home #music #show-grid .show-date strong {
+    grid-column: 1;
+    grid-row: 2;
+    font-size: clamp(39px, 4vw, 54px);
+    line-height: .9;
+  }
+
+  .editorial-home #music #show-grid .show-date .show-weekday {
+    grid-column: 2;
+    grid-row: 2;
+    padding-bottom: 2px;
+  }
+
+  .editorial-home #music #show-grid .show-image {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    height: clamp(96px, 9vw, 124px);
+    margin: 0;
+  }
+
+  .editorial-home #music #show-grid .show-copy {
+    grid-column: 3;
+    grid-row: 1;
+    min-width: 0;
+  }
+
+  .editorial-home #music #show-grid .show-card h3 {
+    font-size: clamp(29px, 3vw, 40px);
+    line-height: 1.05;
+    margin-block: 5px 7px;
+  }
+
+  .editorial-home #music #show-grid .show-card .genre {
+    margin: 0;
+  }
+
+  .editorial-home #music #show-grid .show-state {
+    display: inline-flex;
+    width: max-content;
+    max-width: 100%;
+  }
+
+  .editorial-home #music #show-grid .show-card .show-time {
+    margin: 0;
+  }
+
+  .editorial-home #music #show-grid .show-detail {
+    grid-column: 4;
+    grid-row: 1;
+    align-self: center;
+    margin: 0;
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 1000px) {
+  .editorial-home #groups {
+    grid-template-columns: minmax(420px, .8fr) minmax(0, 1.2fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .editorial-home #menu,
+  .editorial-home .visit-section,
+  .editorial-home #story {
+    padding-block: 48px;
+  }
+
+  .editorial-home #menu .section-heading {
+    margin-bottom: 26px;
+    padding-bottom: 22px;
+  }
+
+  .editorial-home #menu .section-heading h2 {
+    margin-top: 0;
+  }
+
+  .editorial-home #menu .heading-aside {
+    margin-top: 18px;
+  }
+
+  .editorial-home #menu .food-layout {
+    gap: 24px;
+  }
+
+  .editorial-home #menu .food-tag {
+    padding-block: 13px;
+  }
+
+  .editorial-home #menu .food-pick {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 7px;
+    padding-block: 17px;
+    border-bottom-style: dotted;
+  }
+
+  .editorial-home #menu .food-pick h3 {
+    margin-bottom: 6px;
+  }
+
+  .editorial-home #menu .food-pick > div,
+  .editorial-home #menu .food-pick .price {
+    grid-column: 1;
+  }
+
+  .editorial-home #menu .food-pick > div {
+    grid-row: 1;
+  }
+
+  .editorial-home #menu .food-pick .price {
+    grid-row: 2;
+  }
+
+  .editorial-home #menu .food-pick .pick-arrow {
+    display: none;
+  }
+
+  .editorial-home #menu .menu-bottom {
+    margin-top: 24px;
+    padding-top: 0;
+  }
+
+  .editorial-home .music-section {
+    --stage-gutter: var(--guest-gutter, 20px);
+  }
+
+  .editorial-home .visit-section {
+    gap: 28px;
+  }
+
+  .editorial-home .visit-section .rail-access {
+    margin-top: 20px;
+    padding-top: 18px;
+  }
+
+  .editorial-home #story {
+    gap: 28px;
+  }
+
+  .editorial-home #story .story-timeline {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding-block: 4px;
+  }
+
+  .editorial-home #story .story-timeline > div {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    gap: 14px;
+    align-items: baseline;
+    padding-block: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .editorial-home #story .story-timeline > div:last-child {
+    border-bottom: 0;
+  }
+
+  .editorial-home #story .story-timeline strong {
+    font-size: 33px;
+  }
+
+  .editorial-home #story .story-timeline span {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .editorial-home #groups .gather-content {
+    padding-block: 42px;
+    padding-inline: var(--guest-gutter, 20px);
+  }
+
+  .editorial-home .faq-section {
+    gap: 18px;
+    padding-block: 48px;
+  }
+
+  .editorial-home .faqs summary {
+    padding-block: 18px;
+  }
+
+  .editorial-home footer {
+    padding-top: 38px;
+  }
+
+  .editorial-home .footer-top {
+    gap: 28px;
+    padding-bottom: 28px;
+  }
+
+  .editorial-home .footer-bottom {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .editorial-home #story .story-timeline > div {
+    grid-template-columns: 78px minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+
+/* On wide screens, set the food up like an actual two-page menu spread. */
+@media (min-width: 1050px) {
+  .editorial-home #menu {
+    display: grid;
+    grid-template-columns: minmax(350px, .82fr) minmax(0, 1.18fr);
+    grid-template-rows: auto auto auto;
+    column-gap: clamp(52px, 5vw, 76px);
+    align-items: start;
+  }
+
+  .editorial-home #menu .section-heading {
+    grid-column: 1;
+    grid-row: 1;
+    display: block;
+    margin: 0 0 28px;
+    padding: 0 0 24px;
+  }
+
+  .editorial-home #menu .section-heading h2 {
+    margin: 0 0 18px;
+  }
+
+  .editorial-home #menu .heading-aside {
+    max-width: 440px;
+    margin: 0;
+  }
+
+  .editorial-home #menu .heading-aside p {
+    margin-bottom: 18px;
+  }
+
+  .editorial-home #menu .food-layout {
+    display: contents;
+  }
+
+  .editorial-home #menu .food-feature {
+    grid-column: 1;
+    grid-row: 2;
+    margin: 0;
+  }
+
+  .editorial-home #menu .food-picks {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    align-self: start;
+  }
+
+  .editorial-home #menu .food-pick:first-child {
+    padding-top: 20px;
+  }
+
+  .editorial-home #menu .menu-bottom {
+    grid-column: 1;
+    grid-row: 3;
+    display: block;
+    margin: 20px 0 0;
+    padding: 0;
+  }
+
+  .editorial-home #menu .menu-bottom > span {
+    display: block;
+    max-width: 440px;
+  }
+
+  .editorial-home #menu .menu-bottom > .button {
+    display: none;
+  }
+}
+
+/* On a wide spread, read the running order alongside the photograph of the stage. */
+@media screen and (min-width: 1160px) {
+  .editorial-home #music {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    column-gap: clamp(32px, 3.3vw, 54px);
+    padding-block: clamp(50px, 5vw, 76px);
+    align-items: start;
+  }
+  .editorial-home #music .section-heading {
+    grid-area: 1 / 1 / 2 / -1;
+    display: flex; align-items: end; justify-content: space-between;
+    margin: 0 0 24px; padding: 0 0 20px; border-bottom: 2px solid #abab94;
+  }
+  .editorial-home #music .section-heading h2 { margin-top: 5px; }
+  .editorial-home #music .heading-aside { margin: 0; }
+  .editorial-home #music .stage-print { grid-area: 2 / 2 / 6 / 3; margin: 0; }
+  .editorial-home #music .lineup-toolbar {
+    grid-area: 2 / 1; flex-wrap: wrap; gap: 6px 16px;
+    padding: 0; margin: 0; border: 0;
+  }
+  .editorial-home #music .filter-group { gap: 6px; }
+  .editorial-home #music .filter-group button { padding-inline: 14px; }
+  .editorial-home #music #show-count { grid-area: 3 / 1; margin: 10px 0 12px; }
+  .editorial-home #music #show-grid { grid-area: 4 / 1; }
+  .editorial-home #music #show-grid .show-card {
+    grid-template-columns: 46px 76px minmax(0, 1fr) auto;
+    gap: 12px; min-height: 105px; padding-block: 13px;
+  }
+  .editorial-home #music #show-grid .show-image { height: 76px; }
+  .editorial-home #music #show-grid .show-date { display: flex; flex-direction: column; align-items: start; gap: 2px; }
+  .editorial-home #music #show-grid .show-date strong { font-size: 35px; }
+  .editorial-home #music #show-grid .show-card h3 { font-size: clamp(23px, 1.8vw, 30px); }
+  .editorial-home #music #show-grid .show-detail { gap: 6px; }
+  .editorial-home #music .lineup-bottom {
+    grid-area: 5 / 1; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 14px;
+  }
+  .editorial-home #music .lineup-bottom p { max-width: none; }
+  .editorial-home #music .music-note { grid-column: 1 / -1; margin-top: 26px; padding-top: 20px; }
+}
