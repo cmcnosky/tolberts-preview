@@ -3,35 +3,94 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Tolbert’s at Main and Franklin — chili and Texas Flood</title>
+  <title>Tolbert’s at Main and Franklin — sign, chili and Texas Flood</title>
   <style>
+    @font-face {
+      font-family: 'Barlow Condensed';
+      font-style: normal;
+      font-weight: 800;
+      src: url('../assets/font-2.woff2') format('woff2');
+    }
     * { box-sizing: border-box; }
     html, body { width: 1200px; height: 630px; margin: 0; }
     .cover {
       width: 100%;
       height: 100%;
+      padding: 12px;
+      border: 3px solid #24211c;
+      background: #922e20;
+    }
+    .gallery {
+      position: relative;
+      width: 100%;
+      height: 100%;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       grid-template-rows: minmax(0, 1fr) 417px;
-      gap: 4px;
-      background: #f3e9d2;
+      border: 4px solid #e9b852;
+      background: #922e20;
+      overflow: hidden;
     }
-    .cover img {
+    .panel {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      background: #24211c;
+    }
+    .panel img {
       display: block;
       width: 100%;
       height: 100%;
       object-fit: cover;
+      filter: saturate(1.025) contrast(1.025);
     }
-    .storefront { grid-row: span 2; object-position: 90% center; }
+    .storefront-panel {
+      grid-row: span 2;
+      border-right: 9px solid #922e20;
+      box-shadow: inset -3px 0 #e9b852;
+    }
+    .chili-panel {
+      border-bottom: 9px solid #922e20;
+      box-shadow: inset 0 -3px #e9b852;
+    }
+    .location-rail {
+      position: absolute;
+      z-index: 2;
+      left: 50%;
+      top: 50%;
+      width: 258px;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      border: 3px solid #24211c;
+      outline: 3px solid #922e20;
+      background: #e9b852;
+      color: #24211c;
+      font: 800 34px/1 'Barlow Condensed', 'Arial Narrow', sans-serif;
+      letter-spacing: 2.5px;
+      white-space: nowrap;
+      transform: translate(-50%, -50%) rotate(-90deg);
+    }
+    .storefront { object-position: 90% center; }
     .performance { object-view-box: inset(430px 490px 14px 0); }
     .chili { object-position: 50% 30%; }
   </style>
 </head>
 <body>
   <main class="cover" aria-label="Tolbert’s Restaurant and Chili Parlor in Grapevine">
-    <img class="storefront" src="../assets/main-street-enhanced.webp" alt="The tall red Tolbert’s sign outside the restaurant at Main and Franklin">
-    <img class="chili" src="../assets/bowl-of-red-enhanced.webp" alt="Tolbert’s Bowl of Red topped with melted cheddar, diced onion and a whole green pepper.">
-    <img class="performance" src="../assets/texas-flood-enhanced-artwork.webp" alt="Tommy Katona playing guitar with the Texas Flood drummer behind him">
+    <div class="gallery">
+      <div class="panel storefront-panel">
+        <img class="storefront" src="../assets/main-street-enhanced.webp" alt="The tall red Tolbert’s sign outside the restaurant at Main and Franklin">
+      </div>
+      <div class="panel chili-panel">
+        <img class="chili" src="../assets/bowl-of-red-enhanced.webp" alt="Tolbert’s Bowl of Red topped with melted cheddar, diced onion and a whole green pepper">
+      </div>
+      <div class="panel performance-panel">
+        <img class="performance" src="../assets/texas-flood-enhanced-artwork.webp" alt="Tommy Katona playing guitar with the Texas Flood drummer behind him">
+      </div>
+      <div class="location-rail" aria-hidden="true">MAIN &amp; FRANKLIN</div>
+    </div>
   </main>
 </body>
 </html>

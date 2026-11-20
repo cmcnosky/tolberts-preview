@@ -268,3 +268,66 @@ body.editorial-owner {
   .editorial-owner .navigation-ready .owner-nav button:focus-visible { outline: 3px solid var(--cream); outline-offset: -5px; box-shadow: none; }
   .editorial-owner .navigation-ready .owner-nav button[aria-current="page"]:focus-visible { outline-color: var(--ink); }
 }
+
+/* Density pass: get a returning owner to the form and the active task sooner.
+   Controls retain their existing tap sizes; space is removed from display-only
+   headings, panel padding, and the decorative login scene. */
+@media screen {
+  .editorial-owner .login-panel{padding-block:36px}
+  .editorial-owner .login-heading{margin:28px 0 22px}
+  .editorial-owner .login-heading h1{margin-bottom:12px;font-size:clamp(52px,4.5vw,66px)}
+  .editorial-owner .demo-ticket{margin-top:18px}
+  .editorial-owner .demo-disclosure{margin-top:13px}
+
+  .editorial-owner .workspace{padding:28px clamp(24px,3vw,46px) 56px}
+  .editorial-owner .page-heading{margin-bottom:20px;padding-bottom:16px}
+  .editorial-owner .page-heading h1,
+  .editorial-owner .page-heading h2{font-size:clamp(42px,4vw,58px)}
+  .editorial-owner .panel{padding:20px}
+  .editorial-owner .panel+.panel{margin-top:16px}
+  .editorial-owner .panel-heading{margin-bottom:14px;padding-bottom:11px}
+  .editorial-owner .stat-grid{gap:13px;margin-bottom:18px}
+  .editorial-owner .stat{min-height:108px;padding:15px}
+  .editorial-owner .card-grid{gap:14px}
+  .editorial-owner .item-card{padding:16px}
+  .editorial-owner .toolbar{margin-bottom:16px}
+  .editorial-owner .split{gap:16px}
+  .editorial-owner .split+.split{margin-top:18px}
+}
+
+@media screen and (max-width:620px){
+  .editorial-owner .login-scene{min-height:170px}
+  .editorial-owner .login-scene-copy{bottom:13px}
+  .editorial-owner .login-scene-copy p{margin-bottom:6px}
+  .editorial-owner .login-scene-copy strong{font-size:clamp(39px,11.5vw,50px);line-height:.84}
+  .editorial-owner .login-panel{padding:20px 16px 28px}
+  .editorial-owner .login-panel::before{inset:7px}
+  .editorial-owner .login-brand{display:flex;align-items:center;gap:10px}
+  .editorial-owner .login-brand img{width:106px}
+  .editorial-owner .login-brand span{padding:0;font-size:9px}
+  .editorial-owner .back-to-website{min-height:40px;margin-bottom:2px}
+  .editorial-owner .login-heading{margin:16px 0 18px}
+  .editorial-owner .login-heading h1{margin-bottom:10px;font-size:45px;line-height:.86}
+  .editorial-owner .login-heading>p:last-child{font-size:16px;line-height:1.45}
+  .editorial-owner .login-form input{min-height:52px;margin-top:6px}
+  .editorial-owner .label-line{margin-top:12px}
+  .editorial-owner .login-error{min-height:18px;margin-top:5px}
+  .editorial-owner .login-submit{min-height:52px}
+  .editorial-owner .demo-ticket{padding:11px 12px}
+  .editorial-owner .demo-disclosure{font-size:14px;line-height:1.45}
+
+  .editorial-owner .workspace{padding:20px 14px 48px}
+  .editorial-owner .demo-ribbon{gap:0;padding:6px 16px}
+  .editorial-owner .demo-ribbon span{font-size:14px;line-height:1.35}
+  .editorial-owner .page-heading{margin-bottom:16px;padding-bottom:13px}
+  .editorial-owner .page-heading h1,
+  .editorial-owner .page-heading h2{font-size:42px;line-height:1}
+  .editorial-owner .page-heading>button,
+  .editorial-owner .page-heading>div:last-child:not(:first-child){margin-top:12px}
+  .editorial-owner .panel{padding:14px}
+  .editorial-owner .panel-heading{margin-bottom:12px;padding-bottom:10px}
+  .editorial-owner .stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .editorial-owner .stat{min-height:90px;padding:13px}
+  .editorial-owner .stat p{display:none}
+  .editorial-owner .item-card{padding:14px}
+}

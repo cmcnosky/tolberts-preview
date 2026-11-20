@@ -30,3 +30,38 @@ body.editorial-document{--cream:#f3e9d2;--paper:#fff8e9;--ink:#24211c;--red:#922
 .editorial-document a:focus-visible{outline:3px solid var(--gold);outline-offset:4px;box-shadow:0 0 0 6px var(--ink)}
 @media(max-width:620px){body.editorial-document{font-size:16px;line-height:1.68}.editorial-document .document-masthead{padding:12px 18px;gap:12px;flex-wrap:wrap}.editorial-document .document-brand img{width:104px;height:55px}.editorial-document .document-masthead nav{width:100%;justify-content:space-between;gap:14px;border-top:1px solid rgba(243,233,210,.22)}.editorial-document .document-masthead nav a{font-size:15px}.editorial-document main{padding:30px 20px 56px}.editorial-document h1{margin:27px 0 17px;font-size:clamp(44px,12.7vw,58px);line-height:.99}.editorial-document h2{font-size:31px;line-height:1.1}.editorial-document .lede{font-size:18px;line-height:1.55}.editorial-document .meta{font-size:13px;line-height:1.55}.editorial-document main>section,.editorial-document main>h2{padding-top:26px;margin-top:36px}.editorial-document .note{margin:25px 0;padding:20px}.editorial-document .decision-list li{padding:21px 18px}.editorial-document .decision-list span,.editorial-document td{font-size:16px}.editorial-document table{margin-block:22px 30px}.editorial-document .links{gap:9px}.editorial-document .links a{width:100%;padding-block:6px;border-bottom:1px solid var(--line)}}
 @media print{.editorial-document .document-masthead,.editorial-document .document-skip{display:none}.editorial-document main{padding:0;max-width:none}.editorial-document{background:white;color:black}}
+
+/* Density pass: supporting evidence should read like a concise field report.
+   Type remains 16px or larger; the reduction comes from repeated margins,
+   padding, and an unusually loose line-height. */
+@media screen{
+  body.editorial-document{font-size:17px;line-height:1.58}
+  .editorial-document main{padding:34px 35px 54px}
+  .editorial-document h1{margin:22px 0 14px;font-size:clamp(48px,5.4vw,70px)}
+  .editorial-document .lede{margin-bottom:17px;font-size:20px;line-height:1.52}
+  .editorial-document p{margin-bottom:14px;line-height:1.58}
+  .editorial-document li{margin-bottom:10px;line-height:1.58}
+  .editorial-document main>section,
+  .editorial-document main>h2{padding-top:24px;margin-top:32px}
+  .editorial-document table{margin:19px 0 25px}
+  .editorial-document td{line-height:1.5}
+  .editorial-document .decision-list{margin-top:17px;margin-bottom:30px}
+  .editorial-document .decision-list li{padding:20px}
+  .editorial-document .note{margin:21px 0;padding:18px 21px}
+  .editorial-document .links{margin-top:30px}
+}
+@media screen and (max-width:620px){
+  body.editorial-document{font-size:16px;line-height:1.55}
+  .editorial-document main{padding:20px 18px 42px}
+  .editorial-document h1{margin:18px 0 13px;font-size:clamp(43px,12vw,53px)}
+  .editorial-document h2{font-size:30px}
+  .editorial-document .lede{font-size:18px;line-height:1.5}
+  .editorial-document p,
+  .editorial-document li{line-height:1.55}
+  .editorial-document main>section,
+  .editorial-document main>h2{padding-top:21px;margin-top:28px}
+  .editorial-document .note{margin:18px 0;padding:17px}
+  .editorial-document .decision-list li{padding:17px 16px}
+  .editorial-document table{margin-block:17px 23px}
+  .editorial-document .links{margin-top:24px}
+}

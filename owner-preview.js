@@ -534,7 +534,7 @@
     node.replaceChildren();
     if (!lines.length) return;
     lines.forEach((line, index) => {
-      if (index) node.append(document.createElement('br'));
+      if (index) node.append(' ', document.createElement('br'));
       if (index === definition.emphasisLine) {
         const emphasis = document.createElement('em');
         emphasis.textContent = line;

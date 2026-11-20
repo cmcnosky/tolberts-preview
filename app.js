@@ -100,37 +100,20 @@ if (photoDialog && enlargePhoto && typeof photoDialog.showModal === 'function') 
   photoDialog.addEventListener('close', fitPhoto);
 }
 const stageFilm = $('#stage-film');
-const watchStageFilm = $('#watch-texas-flood');
-if (stageFilm && watchStageFilm && typeof stageFilm.showModal === 'function') {
-  const player = $('video', stageFilm);
-  const playbackError = $('.stage-film-error', stageFilm);
-  const soundButton = $('#stage-sound');
-  const soundIsOff = () => player.muted || player.volume === 0;
-  soundButton.hidden = false;
-  soundButton.addEventListener('click', () => {
-    const wasOff = soundIsOff();
-    if (wasOff && player.volume === 0) player.volume = 1;
-    player.muted = !wasOff;
+const filmLinks = $$('#watch-texas-flood, [data-watch-stage]');
+if (stageFilm && filmLinks.length && typeof stageFilm.showModal === 'function') {
+  const mount = $('.stage-player', stageFilm);
+  const template = $('#stage-film-template');
+  filmLinks.forEach(link => {
+    link.setAttribute('aria-haspopup', 'dialog');
+    link.addEventListener('click', event => {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      openDialog(stageFilm, link);
+      mount.replaceChildren(template.content.cloneNode(true));
+    });
   });
-  player.addEventListener('volumechange', () => {
-    soundButton.textContent = soundIsOff() ? 'Turn sound on' : 'Mute sound';
-  });
-  player.addEventListener('error', () => { playbackError.hidden = false; });
-  player.addEventListener('playing', () => { playbackError.hidden = true; });
-  watchStageFilm.setAttribute('aria-haspopup', 'dialog');
-  watchStageFilm.addEventListener('click', event => {
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    event.preventDefault();
-    openDialog(stageFilm, watchStageFilm);
-    player.muted = true;
-    if (player.error) player.load();
-    player.play().catch(() => { /* Native controls allow a retry; the original is linked below. */ });
-  });
-  stageFilm.addEventListener('close', () => {
-    player.pause();
-    player.currentTime = 0;
-    player.muted = true;
-  });
+  stageFilm.addEventListener('close', () => mount.replaceChildren());
 }
 $('#inquiry-open').addEventListener('click', () => {$('input[name="date"]').min = chicagoDate(); openDialog($('#inquiry-dialog'));});
 $('#inquiry-form').addEventListener('submit', event => {

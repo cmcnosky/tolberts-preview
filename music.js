@@ -14,7 +14,10 @@
   const dialog = $('#show-dialog');
   const details = $('#show-details');
   const fullPage = document.body.dataset.musicPage === 'full';
-  const savedChecked = 'November 16, 2026';
+  const snapshotDate = new Date('2026-11-16T12:00:00Z');
+  const snapshotLabel = month => snapshotDate.toLocaleDateString('en-US', {month, day: 'numeric', year: 'numeric', timeZone: 'UTC'});
+  const savedChecked = snapshotLabel('long');
+  const savedStamp = snapshotLabel('short');
   const officialCalendar = 'https://tolbertsrestaurant.com/calendar/';
   const previewState = window.OwnerPreview?.state || null;
   const stateMode = Boolean(previewState && Array.isArray(previewState.events));
@@ -157,7 +160,7 @@
     dateSelect.replaceChildren();
     const all = document.createElement('option');
     all.value = '';
-    all.textContent = 'All upcoming dates';
+    all.textContent = 'All dates';
     dateSelect.append(all);
     for (const date of dates) {
       const option = document.createElement('option');
@@ -198,11 +201,18 @@
     const artists = MusicModel.todayEvents(events, now);
     const dateLabel = $('#today-stage-date');
     const status = $('#today-stage-source');
-    if (dateLabel) dateLabel.textContent = MusicModel.displayDate(today, {long: true});
+    if (dateLabel) {
+      dateLabel.textContent = MusicModel.displayDate(today);
+      dateLabel.title = MusicModel.displayDate(today, {long: true, year: true});
+    }
     const sourceText = source?.textContent || 'Times are Central. Call to confirm.';
     if (status) {
-      if (status.textContent !== sourceText) status.textContent = sourceText;
-      status.hidden = (sharedScheduleActive || Boolean(liveChecked)) && !/unavailable/i.test(sourceText);
+      const savedBill = artists.length && !sharedScheduleActive && !liveChecked && packagedFallbackLoaded;
+      const note = savedBill
+        ? `Saved ${savedStamp} · ${liveResolved ? 'Call to confirm.' : 'Checking updates…'}`
+        : sourceText;
+      if (status.textContent !== note) status.textContent = note;
+      status.hidden = (sharedScheduleActive || Boolean(liveChecked)) && !/unavailable|could not refresh/i.test(sourceText);
     }
     if (!artists.length) {
       lastTodaySignature = '';
@@ -226,7 +236,7 @@
       const href = ended ? previewLink('music.html') : previewLink(MusicModel.shareUrl(event, location.href));
       const image = event.image || 'assets/stage.webp';
       const alt = event.image ? (event.imageAlt || `Promotional image for ${event.name}`) : 'The Tolbert’s stage';
-      return `<a class="today-artist" href="${esc(href)}" aria-label="${esc(event.name)}, ${esc(event.start)} to ${esc(event.end)} Central. ${ended ? 'Scheduled set ended. View upcoming shows.' : 'View show details.'}"><img class="today-artist-photo" src="${esc(image)}" alt="${esc(alt)}" width="80" height="80"><span class="today-artist-copy"><span class="today-card-label">Playing today</span><strong class="today-artist-name">${esc(event.name)}</strong><span class="today-artist-time">${esc(event.start)}–${esc(event.end)} <span>Central</span></span><span class="today-artist-state">${esc(state)}</span></span></a>`;
+      return `<a class="today-artist" data-phase="${phase}" href="${esc(href)}" aria-label="${esc(event.name)}, ${esc(event.start)} to ${esc(event.end)} Central. ${ended ? 'Scheduled set ended. View upcoming shows.' : 'View show details.'}"><img class="today-artist-photo" src="${esc(image)}" alt="${esc(alt)}" width="80" height="80"><span class="today-artist-copy"><span class="today-card-label">Playing today</span><strong class="today-artist-name">${esc(event.name)}</strong><span class="today-artist-time">${esc(event.start)}–${esc(event.end)} <span>Central</span></span><span class="today-artist-state">${esc(state)}</span></span></a>`;
     }).join('');
     $$('.today-artist-photo', list).forEach((image, index) => setImageFallback(image, artists[index]));
   }

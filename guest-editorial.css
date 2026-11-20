@@ -371,3 +371,77 @@
     white-space: normal;
   }
 }
+
+/* Density pass: move the first dish or show into view sooner without making
+   menu copy or controls smaller. The title bands now work as navigation and
+   search tools instead of acting like separate hero screens. */
+@media screen and (min-width:761px){
+  .menu-page .menu-page-heading{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(360px,.58fr);
+    grid-template-areas:
+      "crumb crumb"
+      "title search"
+      "date search";
+    column-gap:48px;
+    align-items:end;
+    padding-block:16px 17px;
+  }
+  .menu-page .breadcrumb{grid-area:crumb;min-height:34px;margin-bottom:6px}
+  .menu-page .menu-title-row{grid-area:title;align-items:end;padding-bottom:10px}
+  .menu-page .menu-title-row h1{font-size:clamp(50px,4.5vw,64px);margin:5px 0 6px}
+  .menu-page .menu-title-row p{font-size:15px}
+  .menu-page .menu-date{grid-area:date;margin:8px 0 0}
+  .menu-page .menu-search-form{grid-area:search;align-self:end;width:100%;max-width:none;padding-bottom:1px}
+
+  .music-page .music-page-head{padding-block:18px 21px}
+  .music-page .music-page-head .breadcrumb{min-height:34px;margin-bottom:3px}
+  .music-page .music-page-head h1{font-size:clamp(55px,4.8vw,68px);margin:4px 0 6px}
+  .music-page .music-section{padding-top:18px}
+  .music-page .music-finder{padding-block:13px;margin-bottom:10px}
+}
+
+@media screen and (max-width:760px){
+  .menu-page .menu-page-heading{padding-block:13px 14px}
+  .menu-page .menu-title-row{padding-bottom:10px}
+  .menu-page .menu-title-row .eyebrow,
+  .menu-page .menu-title-row p{display:none}
+  .menu-page .menu-title-row h1{font-size:44px;line-height:.98;margin:1px 0 4px}
+  .menu-page .menu-title-row>.text-link{min-height:32px;margin-top:3px}
+  .menu-page .menu-date{margin:7px 0 8px;font-size:12px;line-height:1.55}
+  .menu-page .menu-search-form>label{margin-bottom:5px}
+  .menu-page .menu-tools{gap:4px;padding-block:6px}
+  .menu-page .back-search{min-height:44px}
+  .menu-page .menu-group{padding-top:14px}
+  .menu-page .menu-group+.menu-group{margin-top:14px}
+  .menu-page .menu-group>h2{padding-bottom:8px}
+  .menu-page .menu-item{padding-block:13px}
+  .menu-page .menu-item h3{font-size:25px;line-height:1.08}
+  .menu-page .menu-item p{margin-top:5px;line-height:1.5}
+  .menu-page .item-price{margin-top:5px}
+  .menu-page .menu-page-policy{padding-block:18px}
+
+  .music-page .music-page-head{padding-block:13px 15px}
+  .music-page .music-page-head h1{font-size:48px;line-height:.98;margin:3px 0 5px}
+  .music-page .music-section{padding-top:12px;padding-bottom:34px}
+  .music-page .music-finder{gap:10px;margin-bottom:8px;padding-block:10px}
+  .music-page .filter-group{gap:6px}
+  .music-page .filter-group button{min-height:46px;padding-block:7px}
+  .music-page .finder-fields{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .music-page .finder-fields label{gap:4px;font-size:12px;line-height:1.25}
+  .music-page .finder-fields input,
+  .music-page .finder-fields select{min-height:46px;padding-inline:9px}
+  .music-page #show-grid .show-card{padding-block:14px}
+  .music-page .music-help{margin-top:32px;padding-top:27px}
+}
+
+@media screen and (max-width:400px){
+  .menu-page .menu-title-row h1{font-size:42px}
+  .music-page .music-page-head h1{font-size:46px}
+  .music-page .filter-group button{font-size:12px}
+  .music-page .finder-fields input,
+  .music-page .finder-fields select{font-size:16px}
+}
+@media screen and (max-width:360px){
+  .music-page .finder-fields{grid-template-columns:1fr}
+}
