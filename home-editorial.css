@@ -541,12 +541,16 @@ body.editorial-home{
   flex-wrap: wrap; gap: 0 14px; padding: 2px 14px;
   color: var(--ink); font: 500 15px/1.4 var(--sans);
 }
+.stage-film-credit #stage-sound {
+  min-height: 44px; padding: 6px 12px; background: var(--green); border: 0;
+  color: var(--paper); font: 700 16px/1.25 var(--sans); cursor: pointer;
+}
 .stage-film-credit a {
   display: inline-flex; align-items: center; min-height: 44px;
   font-weight: 700; color: var(--red); text-decoration: underline; text-underline-offset: 3px;
 }
 @media (max-width: 500px) {
-  .stage-film-credit { padding-top: 8px; }
+  .stage-film-credit { padding-block: 5px; }
 }
 
 .stage-photo-actions,

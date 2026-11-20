@@ -104,16 +104,67 @@ const filmLinks = $$('#watch-texas-flood, [data-watch-stage]');
 if (stageFilm && filmLinks.length && typeof stageFilm.showModal === 'function') {
   const mount = $('.stage-player', stageFilm);
   const template = $('#stage-film-template');
+  const soundButton = $('#stage-sound');
+  const soundHint = $('#stage-sound-hint');
+  let apiReady;
+  let player;
+  let soundTimer;
+  function loadVideoAPI() {
+    if (window.YT?.Player) return Promise.resolve(window.YT);
+    if (!apiReady) apiReady = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      window.onYouTubeIframeAPIReady = () => resolve(window.YT);
+      script.src = 'https://www.youtube.com/iframe_api';
+      script.onerror = () => { apiReady = null; script.remove(); reject(new Error('Video controls unavailable')); };
+      document.head.append(script);
+    });
+    return apiReady;
+  }
+  function reflectVolume() {
+    const label = player.isMuted() || player.getVolume() === 0 ? 'Turn sound on' : 'Mute sound';
+    if (soundButton.textContent !== label) soundButton.textContent = label;
+  }
+  soundButton.addEventListener('click', () => {
+    if (!player) return;
+    if (player.isMuted() || player.getVolume() === 0) {
+      if (player.getVolume() === 0) player.setVolume(65);
+      player.unMute();
+    } else {
+      player.mute();
+    }
+  });
   filmLinks.forEach(link => {
     link.setAttribute('aria-haspopup', 'dialog');
     link.addEventListener('click', event => {
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       event.preventDefault();
       openDialog(stageFilm, link);
-      mount.replaceChildren(template.content.cloneNode(true));
+      const frame = template.content.querySelector('iframe').cloneNode(true);
+      const source = new URL(frame.src);
+      source.searchParams.set('origin', location.origin);
+      frame.src = source.href;
+      mount.replaceChildren(frame);
+      loadVideoAPI().then(YT => {
+        if (!frame.isConnected || !stageFilm.open) return;
+        new YT.Player(frame, {events: {onReady(event) {
+          if (!frame.isConnected || !stageFilm.open) return;
+          player = event.target;
+          reflectVolume();
+          soundButton.hidden = false;
+          soundHint.hidden = true;
+          soundTimer = window.setInterval(reflectVolume, 350);
+        }}});
+      }).catch(() => { /* The embedded player's own volume control stays available. */ });
     });
   });
-  stageFilm.addEventListener('close', () => mount.replaceChildren());
+  stageFilm.addEventListener('close', () => {
+    window.clearInterval(soundTimer);
+    player?.destroy();
+    player = null;
+    mount.replaceChildren();
+    soundButton.hidden = true;
+    soundHint.hidden = false;
+  });
 }
 $('#inquiry-open').addEventListener('click', () => {$('input[name="date"]').min = chicagoDate(); openDialog($('#inquiry-dialog'));});
 $('#inquiry-form').addEventListener('submit', event => {
